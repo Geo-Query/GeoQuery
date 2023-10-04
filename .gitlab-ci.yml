@@ -1,10 +1,9 @@
-# Official Lang Image
 image: python:latest
 test:
-    script:
-        - pip install virtualenv
-        - virtualenv venv
-        - source venv/bin/activate
-        - pip install ruff pytest
-        - pip install
-        - pytest
+  script:
+    - pip install virtualenv
+    - virtualenv venv
+    - source venv/bin/activate
+    - pip install ruff pytest
+    - pip install
+    - pytest
