@@ -16,4 +16,5 @@ before_script:
 
 test:
     script:
-        pip install ruff
+        pip install ruff pytest
+        pytest
