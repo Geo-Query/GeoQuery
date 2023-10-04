@@ -1,9 +1,9 @@
-image: python:latest
-test:
+image: python:3.11
+
+run_pytest:
+  stage: test
   script:
-    - pip install virtualenv
-    - virtualenv venv
-    - source venv/bin/activate
-    - pip install ruff pytest
+    - pip install pytest ruff
     - pip install
     - pytest
+    
