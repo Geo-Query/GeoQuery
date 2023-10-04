@@ -1,4 +1,3 @@
-
 # SH35 Main Repository
 ------------------------
 
@@ -13,8 +12,6 @@ Benjamin Parsons-Willis, 2664758P@student.gla.ac.uk, 07529606324
 Anwar Abdullah, 2666539a@student.gla.ac.uk, 07709939510
 
 Finlay Gray, 2677288g@student.gla.ac.uk, 07938625301
-
-Reuben Spivey, 2664429s@studnet.gla.ac.uk, 07593419495
 
 Calum Robertson, 2665639r@student.gla.ac.uk, 07368119260
 
