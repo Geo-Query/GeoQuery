@@ -10,8 +10,9 @@ Requirements:
 Solutions:
 - In order to run in acceptable time, we must build an index of the raw-unordered data.
 - This index will store 2 sets of lat/long coordinates for each file, and must be queried with 2 sets of coordinates, to find all files that intersect.
-- This index will follow the K-D-Tree data structure, will store opposite corners of each file as seperate points, if any point is contained within the queried range, this is an overlap.
-- How will we manipulate this data structure in Rust? Use [bitvec](https://github.com/ferrilab/bitvec)
+- This index will follow the R* Tree data structure, will store opposite corners of each file as seperate points, if any point is contained within the queried range, this is an overlap.
+- How will we manipulate this data structure in Rust? Use the [rstar](https://docs.rs/rstar/latest/rstar/) library.
+- This structure can implement serde, to allow for saving of index to disk.
 
 - Interfacing with python server... Could be called using subprocess directly as a cmd line, could be a daemon and use IPC to communicate with py-server, or could host a rudimentary unsecured/or maybe even secured, local http server.
 
