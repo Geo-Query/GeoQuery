@@ -1,14 +1,13 @@
 use rstar::{AABB, RTreeObject};
-use crate::data::MapData;
 
 pub struct Region {
-    top_left: [i32; 2],
-    bottom_right: [i32; 2],
+    pub(crate) top_left: [i32; 2],
+    pub(crate) bottom_right: [i32; 2],
 }
 
 pub struct RegionNode {
     pub region: Region,
-    value: i32 // TODO: Somehow define this reference?
+    pub value: i32 // TODO: Somehow define this reference?
 }
 
 impl RTreeObject for RegionNode {
