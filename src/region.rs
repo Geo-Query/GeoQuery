@@ -8,7 +8,7 @@ pub struct Region {
 
 pub struct RegionNode {
     pub region: Region,
-    value: i32 // Somehow define this reference?
+    value: i32 // TODO: Somehow define this reference?
 }
 
 impl RTreeObject for RegionNode {
