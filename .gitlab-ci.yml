@@ -4,6 +4,6 @@ run_pytest:
   stage: test
   script:
     - pip install pytest ruff
-    - pip install
+    - pip install -r requirements.txt
     - pytest
     
