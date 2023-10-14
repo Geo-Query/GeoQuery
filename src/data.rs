@@ -1,33 +1,29 @@
 use std::any::Any;
 use std::iter::Map;
 use std::path::PathBuf;
+use crate::kml::parse_kml_file;
 use crate::region::Region;
 
-enum FileType {
-    FooType // TODO: Implement readers for each filetype.
+pub enum FileType { // TODO: Implement readers for each filetype.
+    // Started KML Parser
+    KML,
 }
 
-pub struct PlaceholderHandleType {
+pub struct MapFileDescriptor {
     pub file_type: FileType,
     pub file_path: PathBuf
 }
 
 pub struct MapData {
-    pub handle: PlaceholderHandleType,
+    pub handle: MapFileDescriptor,
     pub region: Region,
 }
 
 impl MapData {
-    fn from_file_handle(handle: PlaceholderHandleType) -> MapData {
+    pub fn from_file_handle(handle: MapFileDescriptor) {
         match handle.file_type {
-            FileType::FooType => {
-                MapData {
-                    handle,
-                    region: Region{
-                        top_left: [-1,-1],
-                        bottom_right: [0,0]
-                    },
-                }
+            FileType::KML => {
+                parse_kml_file(handle);
             }
         }
     }
