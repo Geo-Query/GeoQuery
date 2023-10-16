@@ -1,10 +1,12 @@
 use std::path::PathBuf;
 use crate::spatial::Region;
 use crate::kml::parse_kml;
+use crate::tiff::parse_tiff;
 
 #[derive(Debug)]
 pub enum DataType {
     Kml,
+    TIFF,
     Unknown(String)
 }
 
@@ -41,6 +43,7 @@ pub fn parse_from_descriptor(descriptor: Descriptor) -> Result<Region, ParsingEr
     return match &descriptor.data_type {
         Some(t) => match t {
             DataType::Kml => parse_kml(descriptor),
+            DataType::TIFF => parse_tiff(descriptor),
             DataType::Unknown(_) => Err(ParsingErrorState::UnknownExtension(descriptor))
         },
         None => Err(ParsingErrorState::NoExtension(descriptor))

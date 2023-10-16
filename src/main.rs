@@ -1,14 +1,23 @@
 use std::path::PathBuf;
-use crate::parsing::{ParsingErrorState};
+use crate::parsing::{DataType, ParsingErrorState};
+
 mod kml;
 mod util;
 mod spatial;
 mod index;
 mod parsing;
+mod tiff;
 
 fn main() {
     let kml_file = parsing::Descriptor::new(PathBuf::from("/home/ben/uni/psd/teamproj/sh35-data-parsing/luciad_and_leuven.kml"));
-    match parsing::parse_from_descriptor(kml_file) {
+
+    let tiff_file = parsing::Descriptor {
+        path: PathBuf::from("/home/ben/uni/psd/teamproj/sh35-data-parsing/planetsat.tif"),
+        data_type: Some(DataType::TIFF)
+    };
+
+
+    match parsing::parse_from_descriptor(tiff_file) {
         Ok(region) => {
             println!("Result: {:?}", region);
         },
