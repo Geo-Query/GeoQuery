@@ -1,8 +1,9 @@
 [package]
 name = "sh35-data-parsing"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 
 [dependencies]
 anyhow = "1.0.75"
 rstar = "0.11.0"
+xml-rs = "0.8.19"
