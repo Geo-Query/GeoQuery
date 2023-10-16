@@ -1,8 +1,9 @@
 use rstar::{AABB, RTreeObject};
 
+#[derive(Debug)]
 pub struct Region {
-    pub(crate) top_left: [i32; 2],
-    pub(crate) bottom_right: [i32; 2],
+    pub(crate) bottom_left: [f64; 2],
+    pub(crate) top_right: [f64; 2],
 }
 
 pub struct RegionNode {
@@ -11,9 +12,9 @@ pub struct RegionNode {
 }
 
 impl RTreeObject for RegionNode {
-    type Envelope = AABB<[i32; 2]>;
+    type Envelope = AABB<[f64; 2]>;
 
     fn envelope(&self) -> Self::Envelope {
-        AABB::from_corners(self.region.top_left, self.region.bottom_right)
+        AABB::from_corners(self.region.bottom_left, self.region.top_right)
     }
 }

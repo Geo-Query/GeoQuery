@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use rstar::RTree;
 use crate::data::MapData;
 
+
 struct State {
     pub index: RTree<region::RegionNode>,
     pub data: Vec<data::MapData>
@@ -19,5 +20,6 @@ fn main() {
         file_type: data::FileType::KML,
         file_path: PathBuf::from("/home/ben/uni/psd/teamproj/sh35-data-parsing/luciad_and_leuven.kml"),
     };
-    MapData::from_file_handle(kml_file);
+    let result = MapData::from_file_handle(kml_file);
+    println!("Result: {:?}", result.region);
 }
