@@ -4,7 +4,7 @@
     height: 900px;
     margin: auto;
     margin-top: 100px;
-
+    cursor: crosshair;
 }
 
 .mouse-position-tooltip {
@@ -16,3 +16,16 @@
     z-index: 1000; /* Optional: to ensure it's on top */
 }
 
+.bounding-box {
+    border: 2px solid rgb(255, 255, 255);
+}
+  
+
+.back-button {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1000; /* Ensure the button is above the map */
+      }
+
+  
