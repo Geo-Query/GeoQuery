@@ -1,4 +1,5 @@
-use std::fs::File;
+use std::collections::HashMap;
+use std::fs::{File, read};
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use crate::parsing::{Descriptor, ParsingErrorState};
 use crate::spatial::Region;
@@ -16,9 +17,9 @@ pub enum IFDValue {
     ASCII(String),
     SHORT(Vec<u16>),
     LONG(Vec<u32>),
-    RATIONAL(),
+    RATIONAL(Vec<(u32, u32)>),
     UNDEFINED(Vec<u8>),
-    DOUBLE(f64)
+    DOUBLE(Vec<f64>)
 }
 
 #[derive(Debug, Clone)]
@@ -183,8 +184,168 @@ impl IFDEntry {
             offset
         })
     }
-    fn resolve_value(&self, reader: &mut BufReader<File>) -> Result<&IFDValue, TifErrorState> {
-        todo!()
+    fn resolve_value(&mut self, reader: &mut BufReader<File>, byte_order: &ByteOrder) -> Result<&IFDValue, TifErrorState> {
+        if self.value.is_none() {
+            match &self.offset {
+                Some(o) => {
+                    match reader.seek(o.clone()) {
+                        Ok(..) => {
+                            let value = match self.field_type {
+                                IFDFieldType::BYTE => { ;
+                                    let mut values: Vec<u8> = Vec::new();
+                                    for _ in 0..self.count {
+                                        let mut value_buf = [0u8];
+                                        match reader.read_exact(&mut value_buf) {
+                                            Ok(..) => {
+                                                values.push(match byte_order {
+                                                    LittleEndian => u8::from_le_bytes(value_buf),
+                                                    BigEndian => u8::from_be_bytes(value_buf)
+                                                });
+                                            },
+                                            Err(_) => {
+                                                return Err(InvalidIFD);
+                                            }
+                                        }
+                                    }
+                                    IFDValue::BYTE(values)
+                                }
+                                IFDFieldType::ASCII => {
+                                    let mut bytes: Vec<u8> = Vec::new();
+
+                                    for _ in 0..self.count {
+                                        let mut value_buf = [0u8];
+                                        match reader.read_exact(&mut value_buf) {
+                                            Ok(..) => {
+                                                bytes.push(value_buf[0]);
+                                            },
+                                            Err(_) => {
+                                                return Err(InvalidIFD);
+                                            }
+                                        }
+                                    }
+                                    match String::from_utf8(bytes) {
+                                        Ok(s) => {
+                                            IFDValue::ASCII(s)
+                                        },
+                                        Err(_) => {
+                                            return Err(InvalidIFD);
+                                        }
+                                    }
+                                }
+                                IFDFieldType::SHORT => {
+                                    let mut values: Vec<u16> = Vec::new();
+
+                                    for _ in 0..self.count {
+                                        let mut value_buf = [0u8, 0u8];
+                                        match reader.read_exact(&mut value_buf) {
+                                            Ok(..) => {
+                                                values.push(match byte_order {
+                                                    BigEndian => u16::from_be_bytes(value_buf),
+                                                    LittleEndian => u16::from_le_bytes(value_buf)
+                                                });
+                                            },
+                                            Err(_) => {
+                                                return Err(InvalidIFD);
+                                            }
+                                        }
+                                    }
+
+                                    IFDValue::SHORT(values)
+                                }
+                                IFDFieldType::LONG => {
+                                    let mut values: Vec<u32> = Vec::new();
+
+                                    for _ in 0..self.count {
+                                        let mut value_buf = [0u8; 4];
+                                        match reader.read_exact(&mut value_buf) {
+                                            Ok(..) => {
+                                                values.push(match byte_order {
+                                                    LittleEndian => u32::from_le_bytes(value_buf),
+                                                    BigEndian => u32::from_be_bytes(value_buf)
+                                                });
+                                            },
+                                            Err(_) => {
+                                                return Err(InvalidIFD);
+                                            }
+                                        }
+                                    }
+                                    IFDValue::LONG(values)
+                                }
+                                IFDFieldType::RATIONAL => {
+                                    let mut values: Vec<(u32, u32)> = Vec::new();
+
+                                    for _ in 0..self.count {
+                                        let mut value_buf = [0u8; 8];
+
+                                        match reader.read_exact(&mut value_buf) {
+                                            Ok(..) => {
+                                                values.push((match byte_order {
+                                                    LittleEndian => u32::from_le_bytes(value_buf[0..2].try_into().unwrap()),
+                                                    BigEndian => u32::from_be_bytes(value_buf[0..2].try_into().unwrap())
+                                                }, match byte_order {
+                                                    LittleEndian => u32::from_le_bytes(value_buf[2..4].try_into().unwrap()),
+                                                    BigEndian => u32::from_be_bytes(value_buf[2..4].try_into().unwrap())
+                                                }));
+                                            },
+                                            Err(_) => {
+                                                return Err(InvalidIFD);
+                                            }
+                                        }
+                                    }
+                                    IFDValue::RATIONAL(values)
+                                }
+                                IFDFieldType::UNDEFINED => {
+                                    let mut values: Vec<u8> = Vec::new();
+
+                                    for _ in 0..self.count {
+                                        let mut value_buf = [0u8];
+                                        match reader.read_exact(&mut value_buf) {
+                                            Ok(..) => {
+                                                values.push(value_buf[0]);
+                                            },
+                                            Err(_) => {
+                                                return Err(InvalidIFD);
+                                            }
+                                        }
+                                    }
+                                    IFDValue::UNDEFINED(values)
+                                }
+                                IFDFieldType::DOUBLE => {
+                                    let mut values: Vec<f64> = Vec::new();
+
+                                    for _ in 0..self.count {
+                                        let mut value_buf = [0u8; 8];
+
+                                        match reader.read_exact(&mut value_buf) {
+                                            Ok(..) => {
+                                                values.push(match byte_order {
+                                                    LittleEndian => f64::from_le_bytes(value_buf),
+                                                    BigEndian => f64::from_be_bytes(value_buf)
+                                                });
+                                            },
+                                            Err(_) => {
+                                                return Err(InvalidIFD);
+                                            }
+                                        }
+                                    }
+
+                                    IFDValue::DOUBLE(values)
+                                }
+                            };
+
+                            self.value = Some(value);
+                        },
+                        Err(_) => {
+                            return Err(InvalidIFD);
+                        }
+                    }
+                },
+                None => {
+                    return Err(InvalidIFD);
+                }
+            }
+        }
+        return Ok(self.value.as_ref().unwrap());
     }
 }
 
@@ -288,7 +449,7 @@ pub fn parse_tiff(descriptor: Descriptor) -> Result<Region, ParsingErrorState> {
                 }
             };
             println!("Byte Order: {:?}, Offset: {}", byte_order, offset);
-            let (entries, next_ifd) = match parse_ifd(&mut reader, SeekFrom::Start(offset as u64), &byte_order) {
+            let (mut entries, next_ifd) = match parse_ifd(&mut reader, SeekFrom::Start(offset as u64), &byte_order) {
                 Ok(x) => x,
                 Err(_) => {
                     eprintln!("Encountered Error! Invalid IFD!");
@@ -296,6 +457,12 @@ pub fn parse_tiff(descriptor: Descriptor) -> Result<Region, ParsingErrorState> {
                 }
             };
             println!("Entries: {:?}", entries);
+            let mut tag_lookup: HashMap<u16, IFDEntry> = entries.into_iter().map(|entry| (entry.tag, entry)).collect();
+
+            println!("ImageWidth: {:?}", tag_lookup.get_mut(&256u16).expect("No ImageWidth Entry!").resolve_value(&mut reader, &byte_order));
+            println!("ImageLength: {:?}", tag_lookup.get_mut(&257u16).expect("No ImageLength Entry!").resolve_value(&mut reader, &byte_order));
+            println!("ModelTiePoint: {:?}", tag_lookup.get_mut(&33922u16).expect("No ModelTiePoint Entry!").resolve_value(&mut reader, &byte_order));
+
             println!("Next IFD: {:?}", next_ifd);
 
             return Ok(Region{
