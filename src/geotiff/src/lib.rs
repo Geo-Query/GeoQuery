@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use crate::err::TIFFErrorState;
 use crate::err::TIFFErrorState::UnexpectedFormat;
 use crate::tag::{EntryValue, IFDEntry};
+use crate::geokeydirectory::GeoKeyDirectory;
 
 mod ifd;
 mod util;
@@ -12,6 +13,7 @@ mod err;
 mod tag;
 mod header;
 mod geokeydirectory;
+mod projections;
 
 pub trait FileDescriptor {
     fn get_path(&self) -> &PathBuf;
@@ -43,11 +45,39 @@ pub fn parse_tiff(descriptor: Box<dyn FileDescriptor>) -> Result<Region, TIFFErr
             };
             println!("Entries: {:?}", entries);
             let mut tag_lookup: HashMap<u16, IFDEntry> = entries.into_iter().map(|entry| (entry.tag, entry)).collect();
+            let geo_key_directory = match tag_lookup.get_mut(&34735u16) {
+                Some(e) => match e.resolve(&byte_order, &mut reader) {
+                    Ok(v) => match v {
+                        EntryValue::SHORT(v) => match GeoKeyDirectory::from_shorts(v.clone()) {
+                            Ok(d) => d,
+                            Err(e) => {
+                                eprintln!("Error Parsing GeoKeyDirectory: {:?}", e);
+                                return Err(UnexpectedFormat(String::from("Failed to parse GeoKeyDirectory")));
+                            }
+                        },
+                        _ => {
+                            return Err(UnexpectedFormat(String::from("Invalid value for GeoKeyDirectory (not shorts!)")));
+                        }
+                    },
+                    Err(e) => {
+                        eprintln!("Error Resolving GeoKeyDirectory: {:?}", e);
+                        return Err(UnexpectedFormat(String::from("Failed to resolve GeoKeyDirectory")));
+                    }
+                },
+                _ => {
+                    return Err(UnexpectedFormat(String::from("No GeoKeyDirectory")));
+                }
+            };
 
+            println!("GeoKeyDirectory: {:?}", geo_key_directory);
 
-
-
-
+            let proj = match projections::get_proj_from_key_directory(geo_key_directory, &mut tag_lookup, &byte_order, &mut reader, "EPSG:4326") {
+                Ok(proj) => proj,
+                Err(e) => {
+                    eprintln!("Got error: {:?}", e);
+                    panic!();
+                }
+            };
 
 
 
@@ -64,6 +94,7 @@ pub fn parse_tiff(descriptor: Box<dyn FileDescriptor>) -> Result<Region, TIFFErr
             println!("GeoKeyDirectory: {:?}", tag_lookup.get_mut(&34735u16).expect("No GeoKeyDirectory!").resolve(&byte_order, &mut reader));
             // println!("GeoDoubleParams: {:?}", tag_lookup.get_mut(&34736u16).expect("No GeoDoubleParams!").resolve(&byte_order, &mut reader));
             println!("GeoAsciiParams: {:?}", tag_lookup.get_mut(&34737u16).expect("No GeoAsciiParams!").resolve(&byte_order, &mut reader));
+
 
             let geo_ascii = match tag_lookup.get_mut(&34737u16) {
                 Some(ascii) => match ascii.resolve(&byte_order, &mut reader) {
