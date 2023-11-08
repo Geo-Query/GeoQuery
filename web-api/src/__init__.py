@@ -59,17 +59,17 @@ def get_coordinates():
     try:
         data = request.json
 
-        if 'northEast' not in data or 'southWest' not in data:
-            raise ValueError("Invalid structure: 'northEast' and 'southWest' required")
+        if 'topRight' not in data or 'bottomLeft' not in data:
+            raise ValueError("Invalid structure: 'topRight' and 'bottomRight' required")
 
-        north_east = data['northEast']
-        south_west = data['southWest']
+        top_right = data['topRight']
+        bottom_left = data['bottomLeft']
 
-        if not all(key in north_east for key in ['lat', 'lng']) or not all(key in south_west for key in ['lat', 'lng']):
-            raise ValueError("Invalid structure: 'lat' and 'lng' required for 'northEast' and 'southWest'")
+        if not all(key in top_right for key in ['lat', 'lng']) or not all(key in bottom_left for key in ['lat', 'lng']):
+            raise ValueError("Invalid structure: 'lat' and 'lng' required for 'topRight' and 'bottomLeft'")
 
-        ne_lat, ne_lng = float(north_east['lat']), float(north_east['lng'])
-        sw_lat, sw_lng = float(south_west['lat']), float(south_west['lng'])
+        ne_lat, ne_lng = float(top_right['lat']), float(top_right['lng'])
+        sw_lat, sw_lng = float(bottom_left['lat']), float(bottom_left['lng'])
 
         return jsonify({'success': 'true', 'message': 'Coordinates received'})
     except ValueError as e:
