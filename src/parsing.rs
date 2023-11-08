@@ -1,7 +1,7 @@
 use std::path::PathBuf;
+use geotiff::{parse_tiff, FileDescriptor};
 use crate::spatial::Region;
 use crate::kml::parse_kml;
-use crate::tiff::parse_tiff;
 
 #[derive(Debug)]
 pub enum DataType {
@@ -14,6 +14,12 @@ pub enum DataType {
 pub struct Descriptor {
     pub path: PathBuf,
     pub data_type: Option<DataType>
+}
+
+impl FileDescriptor for Descriptor {
+    fn get_path(&self) -> &PathBuf {
+        &self.path
+    }
 }
 
 pub enum ParsingErrorState {
@@ -41,13 +47,21 @@ impl Descriptor {
 }
 
 
-pub fn parse_from_descriptor(descriptor: Descriptor) -> Result<Region, ParsingErrorState> {
-    return match &descriptor.data_type {
+pub fn parse_from_descriptor(descriptor: Descriptor) -> () {
+    match &descriptor.data_type {
         Some(t) => match t {
-            DataType::Kml => parse_kml(descriptor),
-            DataType::TIFF => parse_tiff(descriptor),
-            DataType::Unknown(_) => Err(ParsingErrorState::UnknownExtension(descriptor))
+            DataType::Kml => {
+                parse_kml(descriptor);
+            },
+            DataType::TIFF => {
+                parse_tiff(Box::new(descriptor));
+            },
+            DataType::Unknown(_) => {
+                eprintln!("Unimplemented data type! {:?}", &descriptor.data_type)
+            }
         },
-        None => Err(ParsingErrorState::NoExtension(descriptor))
+        None => {
+            eprintln!("No data type! {:?}", &descriptor.data_type)
+        }
     }
 }

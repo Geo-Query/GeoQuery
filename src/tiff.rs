@@ -62,27 +62,7 @@ pub enum ByteOrder {
     BigEndian
 }
 
-#[derive(Debug, Clone)]
-pub enum EntryType {
-    BYTES,
-    ASCII,
-    SHORT,
-    LONG,
-    RATIONAL,
-    UNDEFINED,
-    DOUBLE
-}
 
-#[derive(Debug, Clone)]
-pub enum EntryValue {
-    BYTES(Vec<u8>),
-    ASCII(Vec<String>),
-    SHORT(Vec<u16>),
-    LONG(Vec<u32>),
-    RATIONAL(Vec<(u32, u32)>),
-    UNDEFINED(Vec<u8>),
-    DOUBLE(Vec<f64>)
-}
 
 #[derive(Debug, Clone)]
 pub struct IFDEntry {
