@@ -19,7 +19,9 @@ pub struct Descriptor {
 pub enum ParsingErrorState {
     UnknownExtension(Descriptor),
     NoExtension(Descriptor),
-    FileError(Descriptor, std::io::ErrorKind)
+    FileError(Descriptor, std::io::ErrorKind),
+    InvalidOrUnhandledFormat(Descriptor),
+    NoGeoData(Descriptor)
 }
 
 impl Descriptor {
