@@ -13,7 +13,6 @@ use crate::spatial::Region;
 fn main() {
     // Set of test paths, will be gotten by a recursive directory search eventually.
     let paths = vec![
-        "/home/ben/uni/psd/teamproj/sh35-data-parsing/planetsat.tif",
         "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Sat Imagery/PlanetSAT_10_0s3_N54W004.tif",
         "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/250k/SU.tif",
         "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/OpenMap Local/SU01NE.tif",
