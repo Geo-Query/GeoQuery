@@ -1,64 +1,100 @@
+use std::arch::x86_64::_mm256_abs_epi16;
+use std::fs::File;
+use std::io::BufReader;
 use std::path::PathBuf;
-use crate::parsing::{DataType, ParsingErrorState};
+use proj::ProjError::Path;
 
 mod kml;
-mod util;
 mod spatial;
 mod index;
-mod parsing;
-use geotiff::parse_tiff;
+use geotiff::{parse_tiff, TIFFErrorState};
+use crate::kml::{KMLErrorState, parse_kml};
+use crate::spatial::Region;
 
 
 fn main() {
-    let kml_file = parsing::Descriptor::new(PathBuf::from("/home/ben/uni/psd/teamproj/sh35-data-parsing/luciad_and_leuven.kml"));
-    // TIFF Paths:
-    // /home/ben/uni/psd/teamproj/sh35-data-parsing/planetsat.tif
-    // /home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Sat Imagery/PlanetSAT_10_0s3_N54W004.tif // Has GKD with EPSG
-    // /home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/250k/SU.tif // Does not have this behaviour // HAS CUSTOM GEO SYSTEM.
-    // /home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/OpenMap Local/SU01NE.tif // Has off le/be behaviour
-    // /home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/miniscale/MiniScale_(standard)_R23.tif // Does not have odd behaviour
-    // /home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/VectorMapDistrict/SU01.tif // Has odd littleendian/bigendian behaviour.
-    // /home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Aerial Imagery/ST9143.tif // HAS SIDECAR - NOT WORKING
-    let tiff_file = parsing::Descriptor {
-        //path: PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/250k/SU.tif"),
-        //path: PathBuf::from("/home/ben/uni/psd/teamproj/sh35-data-parsing/planetsat.tif"),
-        path: PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/VectorMapDistrict/SU01.tif"),
+    // Set of test paths, will be gotten by a recursive directory search eventually.
+    let paths = vec![
+        "/home/ben/uni/psd/teamproj/sh35-data-parsing/planetsat.tif",
+        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Sat Imagery/PlanetSAT_10_0s3_N54W004.tif",
+        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/250k/SU.tif",
+        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/OpenMap Local/SU01NE.tif",
+        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/miniscale/MiniScale_(standard)_R23.tif",
+        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/VectorMapDistrict/SU01.tif",
+        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Aerial Imagery/ST9143.tif"
+    ];
 
-        //path: PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/OpenMap Local/SU01NE.tif"),
-        //path: PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Aerial Imagery/ST9143.tif"),
-        //path: PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/miniscale/MiniScale_(standard)_R23.tif"),
-        data_type: Some(DataType::TIFF)
-    };
+    // Convert raw strings to path buffers for opening.
+    let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
 
-    parsing::parse_from_descriptor(tiff_file);
-    // match parsing::parse_from_descriptor(tiff_file) {
-    //     Ok(region) => {
-    //         println!("Result: {:?}", region);
-    //     },
-    //     Err(error_kind) => match error_kind {
-    //         ParsingErrorState::UnknownExtension(descriptor) => {
-    //             eprintln!("Encountered unknown extension {:?}", descriptor.data_type);
-    //             panic!();
-    //         },
-    //         ParsingErrorState::NoExtension(descriptor) => {
-    //             eprintln!("No file extension for file: {:?}", descriptor);
-    //             panic!();
-    //         },
-    //         ParsingErrorState::FileError(descriptor, error_kind) => {
-    //             eprintln!("Failed to open: {:?}", descriptor);
-    //             eprintln!("ErrorKind: {:?}", error_kind);
-    //             panic!();
-    //         }
-    //
-    //         ParsingErrorState::InvalidOrUnhandledFormat(descriptor) => {
-    //             eprintln!("Unexpected format for file: {:?}", descriptor);
-    //             panic!();
-    //         }
-    //         ParsingErrorState::NoGeoData(descriptor) => {
-    //             eprintln!("File does not contain required GeoData to get coordinate boundaries!");
-    //             eprintln!("File: {:?}", descriptor);
-    //             panic!();
-    //         }
-    //     }
-    // };
+    let mut regions: Vec<Box<dyn Region>> = Vec::with_capacity(paths.len());
+    // Iterate over supplied files.
+    for path in paths {
+        // Get the file extension.
+        match path.extension() {
+            Some(ext) => { // Unwrap code to get OSStr -> str for comparison.
+                match ext.to_str() {
+                    Some(ext) => match File::open(&path) {
+                        Ok(file) => match ext { // Once have extension, match against it.
+                            "kml" => {
+                                let mut reader = BufReader::new(file);
+                                if let Some(region) = match parse_kml(&mut reader) {
+                                    Ok(r) => Some(r),
+                                    Err(e) => match e {
+                                        KMLErrorState::UnexpectedFormat(e) => {
+                                            eprintln!("KML File Parsing Failure");
+                                            eprintln!("Due to error: {:?}", e);
+                                            eprintln!("This is an unhandled format error, please contact developer.");
+                                            eprintln!("Panic!");
+                                            panic!();
+                                        }
+                                        KMLErrorState::NotEnoughGeoData => {
+                                            eprintln!("File: {:?}", path);
+                                            eprintln!("Does not contain any coordinate data.");
+                                            eprintln!("Ignoring."); // Ignore as non-fatal.
+                                            None
+                                        }
+                                    }
+                                } { regions.push(region); }
+                            },
+                            "tif" => {
+                                let mut reader = BufReader::new(file);
+                                if let Some(region) = match parse_tiff(&mut reader) {
+                                    Ok(r) => Some(r),
+                                    Err(e) => match e {
+                                        TIFFErrorState::HeaderError(_) => None, // TODO: Handle ErrorStates neatly.
+                                        TIFFErrorState::IFDEntryError(_) => None,
+                                        TIFFErrorState::UnexpectedFormat(_) => None,
+                                        TIFFErrorState::NotEnoughGeoData => None
+                                    }
+                                } {regions.push(region)}
+                            },
+                            _ => {
+                                eprintln!("File: {:?}", path);
+                                eprintln!("Unhandled format: {ext}");
+                                eprintln!("Ignored!"); // Ignore for debug purposes. Will be annoying having to remove unimplemented files.
+                            }
+                        },
+                        Err(e) => {
+                            eprintln!("File: {:?}", path);
+                            eprintln!("Could not be opened: {:?}", e);
+                            eprintln!("Throwing Panic!");
+                            panic!();
+                        }
+                    },
+                    None => {
+                        eprintln!("File: {:?}", path);
+                        eprintln!("Has extension: {:?}", ext);
+                        eprintln!("But cannnot get the extension from wrapping OSStr.");
+                        eprintln!("This should not happen, thus panic! Please contact developer.");
+                        panic!(); // Panic as should be unreachable.
+                    }
+                }
+            },
+            None => {
+                eprintln!("File: {:?}", path);
+                eprintln!("Has no EXTENSION! Thus ignored!"); // Files without extensions are ignored, but a log is made.
+            }
+        }
+    }
 }

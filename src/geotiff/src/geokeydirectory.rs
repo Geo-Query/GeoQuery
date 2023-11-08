@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::format;
-use crate::tag::EntryValue;
+use crate::entry::EntryValue;
 
 #[derive(Debug)]
 pub enum GeoKeyDirectoryError {

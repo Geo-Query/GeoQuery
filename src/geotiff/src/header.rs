@@ -1,38 +1,34 @@
-use std::fs::File;
-use std::io::{BufReader, Read, Seek, SeekFrom};
-use crate::err::TIFFErrorState;
+use std::io::{SeekFrom};
+use crate::header::HeaderErrorState::UnexpectedMagicNumber;
+use crate::TIFFErrorState;
 use crate::util::{ByteOrder, FromBytes};
 
-pub fn parse_header(reader: &mut BufReader<File>) -> Result<(ByteOrder, u32), TIFFErrorState> {
-    match reader.seek(SeekFrom::Start(0)) {
-        Ok(..) => {
-            let mut buf = [0u8; 8];
-            let byte_order = match reader.read_exact(&mut buf) {
-                Ok(..) => {
-                    if buf[0..2] == [73, 73] {
-                        ByteOrder::LittleEndian
-                    } else if buf[0..2] == [77, 77] {
-                        ByteOrder::BigEndian
-                    } else {
-                        return Err(TIFFErrorState::UnexpectedFormat("Unexpected Header Format 1".to_string()));
-                    }
-                },
-                Err(_) => {
-                    return Err(TIFFErrorState::UnexpectedFormat("Unexpected Header Format 2".to_string()));
-                }
-            };
-            if !match &byte_order {
-                ByteOrder::LittleEndian => (buf[2..4][0] == 42) && (buf[2..4][1] == 0),
-                ByteOrder::BigEndian => (buf[2..4][0] == 0) && (buf[2..4][1] == 42)
-            } {
-                println!("{:?}", byte_order);
-                println!("{:?} {:?}", buf[2..4][0], buf[2..4][1]);
-                // Is not tiff!
-                return Err(TIFFErrorState::UnexpectedFormat("Unexpected Header Format 3".to_string()));
-            }
+pub enum HeaderErrorState {
+    UnexpectedByteOrder(Option<[u8; 2]>),
+    UnexpectedMagicNumber([u8; 2]),
+    InvalidLength(usize)
+}
 
-            return Ok((byte_order.clone(), u32::from_bytes(&buf[4..8], &byte_order, )));
-        },
-        Err(_) => Err(TIFFErrorState::UnexpectedFormat("Unexpected Header Format 4".to_string()))
+pub fn parse_header(buffer: &[u8]) -> Result<(ByteOrder, SeekFrom), TIFFErrorState> {
+    if buffer.len() != 8 {
+        return Err(TIFFErrorState::HeaderError(HeaderErrorState::InvalidLength(buffer.len())));
     }
+
+    let byte_order = match buffer[0..2] {
+        [73, 73] => ByteOrder::LittleEndian,
+        [77, 77] => ByteOrder::BigEndian,
+        _ => return Err(TIFFErrorState::HeaderError(HeaderErrorState::UnexpectedByteOrder(Some([buffer[0], buffer[1]]))))
+    };
+
+    let magic_numbers = &buffer[2..4];
+    if !match byte_order {
+        ByteOrder::LittleEndian => (magic_numbers[0] == 42) && (magic_numbers[1] == 0),
+        ByteOrder::BigEndian => (magic_numbers[0] == 0) && (magic_numbers[1] == 42)
+    } {
+        return Err(TIFFErrorState::HeaderError(UnexpectedMagicNumber([magic_numbers[0], magic_numbers[1]])));
+    }
+    let ifd_offset = SeekFrom::Start(
+        u32::from_bytes(&buffer[4..8], &byte_order) as u64
+    );
+    return Ok((byte_order, ifd_offset));
 }

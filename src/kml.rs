@@ -1,62 +1,107 @@
-use crate::parsing::{Descriptor, ParsingErrorState};
 use crate::spatial::{Coordinate, Region};
-use crate::util::draw_boundaries;
 use std::fs::File;
+use std::io::BufReader;
+use std::num::ParseFloatError;
 use std::str::FromStr;
 use xml::reader::{EventReader, XmlEvent};
+use crate::kml::KMLErrorState::UnexpectedFormat;
 
-pub fn parse_kml(descriptor: Descriptor) -> Result<Region, ParsingErrorState> {
-    println!("Entered!");
-    match File::open(&descriptor.path) { // Open file handle, throw error if failure.
-        Ok(file) => {
-            let mut file_reader = EventReader::new(file).into_iter(); // Instantiate file reader.
-            let mut coordinates: Vec<Coordinate> = vec![]; // Create collection of coords.
-            while let Some(Ok(event)) = file_reader.next() { // Capture events until file over.
-                match event { // Wait for StartElement (coordinates)
-                    XmlEvent::StartElement {name, ..} if name.local_name == "coordinates" => { // If elem is coords,
-                        while let Some(Ok(event)) = file_reader.next() { // Capture all events, (Until ends, see EndElement handler)
-                            match event { // Match event type (Characters or EndElement (coordinates))
-                                XmlEvent::Characters(_0) => { // If chars, parse.
-                                    let _0 = _0.replace("\n", ""); // Strip newlines
-                                    let coordinate_sets = _0.split_whitespace(); // Split by whitespace, dividing into coordinate_sets.
-                                    for coordinate_set in coordinate_sets {
-                                        let coordinate_set = coordinate_set.split(",").take(2); // Split by commas, dividing into coordinate values.
-                                        let mut coordinate_set = coordinate_set.map(|v| match f64::from_str(v) {
-                                            Ok(v) => v, // If can be converted to float; just return.
-                                            Err(_) => {
-                                                // If can't, trigger a panic.
-                                                // This is reasonable because any non-conformity of file-types
-                                                // needs to be handled at this point.
-                                                println!("Failed to parse coordinate in file: {:?}", descriptor);
-                                                println!("Value attempted to parse: {}", v);
-                                                panic!();
-                                            }
-                                        });
-                                        coordinates.push( // Push coords to collected vector; or throw error and panic if one missing.
-                                            if let (Some(x), Some(y)) = (coordinate_set.next(), coordinate_set.next()) {
-                                                (x, y)
-                                            } else {
-                                                println!("Failed to parse coordinate set in file: {:?}", descriptor);
-                                                println!("Missing X, or Y, coordinate");
-                                                panic!();
-                                            }
-                                        )
-                                    }
-                                },
-                                XmlEvent::EndElement {name} if name.local_name == "coordinates" => break,
-                                _ => {}
-                            }
-                        }
-                    }
-                    _ => {}
-                }
-            };
-            let (bottom_left, top_right) = draw_boundaries(coordinates); // Draw a bounding box around given coords
-            return Ok(Region {
-                bottom_left,
-                top_right
-            }); // Return region defined by file.
-        },
-        Err(e) => Err(ParsingErrorState::FileError(descriptor, e.kind()))
+pub fn get_boundaries(coordinates: Vec<Coordinate>) -> (Coordinate, Coordinate) {
+    let mut min_x: f64 = coordinates[0].0;
+    let mut min_y: f64 = coordinates[0].1;
+    let mut max_x: f64 = coordinates[0].0;
+    let mut max_y: f64 = coordinates[0].1;
+    for coordinate in coordinates {
+        if coordinate.0 > max_x {
+            max_x = coordinate.0;
+        }
+        if coordinate.0 < min_x {
+            min_x = coordinate.0;
+        }
+        if coordinate.1 > max_y {
+            max_y = coordinate.1;
+        }
+        if coordinate.1 < min_y {
+            min_y = coordinate.1;
+        }
     }
+    return ((min_x, min_y), (max_x, max_y));
+}
+
+#[derive(Debug)]
+pub struct KMLRegion {
+    pub bottom_left: Coordinate,
+    pub top_right: Coordinate
+}
+
+impl Region for KMLRegion {
+    fn bottom_left(&self) -> Coordinate {
+        self.bottom_left
+    }
+
+    fn bottom_right(&self) -> Coordinate {
+        (self.top_right.0, self.bottom_left.1)
+    }
+
+    fn top_left(&self) -> Coordinate {
+        (self.bottom_left.0, self.top_right.1)
+    }
+
+    fn top_right(&self) -> Coordinate {
+        self.top_right
+    }
+}
+
+pub enum KMLErrorState {
+    UnexpectedFormat(String),
+    NotEnoughGeoData
+}
+
+pub fn parse_kml(reader: &mut BufReader<File>) -> Result<Box<dyn Region>, KMLErrorState> {
+    // Initialise Event iterator, as well as coordinate buffer.
+    let mut reader = EventReader::new(reader).into_iter();
+    let mut coordinates: Vec<(f64, f64)> = vec![];
+
+    while let Some(Ok(event)) = reader.next() { // Capture events until file over.
+        match event {
+            XmlEvent::StartElement {name, ..} if name.local_name == "coordinates" => { // When Coordinate element starts...
+                while let Some(Ok(event)) = reader.next() { // Start capturing all events until Coordinate element ends.
+                    match event {
+                        XmlEvent::Characters(_0) => { // While capturing, get all raw chars.
+                            // Conform data into coordinate pairs...
+                            let _0 = _0.replace("\n", "");
+                            let coordinate_pairs = _0.split_whitespace(); // Split by whitespace, each coord set is space seperated.
+                            for coordinate_pair in coordinate_pairs {
+                                let coordinate_strs: Vec<&str> = coordinate_pair.split(",").collect();
+                                if coordinate_strs.len() < 2 {
+                                    return Err(UnexpectedFormat(String::from(format!("Expected coordinate pair of len 2, got: {:?}", coordinate_strs))));
+                                }
+                                coordinates.push((
+                                    match f64::from_str(coordinate_strs[0]) {
+                                        Ok(v) => v,
+                                        Err(e) => {
+                                            return Err(UnexpectedFormat(String::from(format!("Failed to parse floating point coord: {}", coordinate_strs[0]))));
+                                        }
+                                    }, match f64::from_str(coordinate_strs[1]) {
+                                        Ok(v) => v,
+                                        Err(e) => {
+                                            return Err(UnexpectedFormat(String::from(format!("Failed to parse floating point coord: {}", coordinate_strs[1]))));
+                                        }
+                                    }
+                                ));
+                            }
+                        },
+                        XmlEvent::EndElement {name} if name.local_name == "coordinates" => break, // Handle end of coordinate element
+                        _ => {} // Ignore contained elems
+                    }
+                }
+            }
+            _ => {} // Ignore all but start elem.
+        }
+    }
+    let (bottom_left, top_right) = get_boundaries(coordinates); // Draw a bounding box around given coords
+    return Ok(Box::new(KMLRegion {
+        bottom_left,
+        top_right
+    })); // Return region defined by file.
 }

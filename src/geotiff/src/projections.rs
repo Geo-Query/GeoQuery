@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::BufReader;
 use proj::Proj;
 use crate::geokeydirectory::GeoKeyDirectory;
-use crate::tag::IFDEntry;
+use crate::entry::IFDEntry;
 use crate::util::ByteOrder;
 
 #[derive(Debug)]
