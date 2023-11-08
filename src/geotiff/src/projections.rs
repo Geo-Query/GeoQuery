@@ -44,43 +44,35 @@ pub fn get_proj_from_key_directory(geo_key_directory: GeoKeyDirectory, tag: &mut
         }
     };
 
-    let epsg_code = match model_type {
-        ModelType::Projected => match geo_key_directory.keys.get(&2048) {
-            Some(v) => if v.location == 0 {
-                match v.value {
-                    Some(v) => v,
-                    None => {
-                        return Err(ProjectionErrorState::UnexpectedFormat(String::from("Location was 0 for projected ESPG code! Expected value!")))
-                    }
+    let epsg_code = if let Some(v) = geo_key_directory.keys.get(&2048) {
+        if v.location == 0 {
+            match v.value {
+                Some(v) => if v == 4277 {
+                    27700
+                } else {
+                    v
+                },
+                None => {
+                    return Err(ProjectionErrorState::UnexpectedFormat(String::from("Location was 0 for Geographic ESPG code! Expected value!")))
                 }
-            } else {
-                return Err(ProjectionErrorState::UnexpectedFormat(String::from("Expected Projected ESPG code to be single short!")));
-            },
-            None => {
-                return Err(ProjectionErrorState::NotEnoughGeoData);
             }
+        } else {
+            return Err(ProjectionErrorState::UnexpectedFormat(String::from("Expected Geographic ESPG code to be single short!")));
         }
-        ModelType::Geographic => match geo_key_directory.keys.get(&3072) {
-            Some(v) => if v.location == 0 {
-                match v.value {
-                    Some(v) => v,
-                    None => {
-                        return Err(ProjectionErrorState::UnexpectedFormat(String::from("Location was 0 for Geographic ESPG code! Expected value!")))
-                    }
+    } else if let Some(v) = geo_key_directory.keys.get(&3072) {
+        if v.location == 0 {
+            match v.value {
+                Some(v) => v,
+                None => {
+                    return Err(ProjectionErrorState::UnexpectedFormat(String::from("Location was 0 for projected ESPG code! Expected value!")))
                 }
-            } else {
-                return Err(ProjectionErrorState::UnexpectedFormat(String::from("Expected Geographic ESPG code to be single short!")));
-            },
-            None => {
-                return Err(ProjectionErrorState::NotEnoughGeoData);
             }
-        },
-        ModelType::Geocentric => {
-            eprintln!("Unhandled GEOCENTRIC data! Throwing err!");
-            return Err(ProjectionErrorState::UnexpectedFormat(String::from("Unhandled GEOCENTRIC data type.")))
+        } else {
+            return Err(ProjectionErrorState::UnexpectedFormat(String::from("Expected Projected ESPG code to be single short!")));
         }
+    } else {
+        return Err(ProjectionErrorState::NotEnoughGeoData);
     };
-
     return match Proj::new_known_crs(
         format!("EPSG:{}", epsg_code).as_str(),
         target_espg,

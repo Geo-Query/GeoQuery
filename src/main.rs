@@ -20,8 +20,12 @@ fn main() {
     // /home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/VectorMapDistrict/SU01.tif // Has odd littleendian/bigendian behaviour.
     // /home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Aerial Imagery/ST9143.tif // HAS SIDECAR - NOT WORKING
     let tiff_file = parsing::Descriptor {
-        path: PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/250k/SU.tif"),
+        //path: PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/250k/SU.tif"),
         //path: PathBuf::from("/home/ben/uni/psd/teamproj/sh35-data-parsing/planetsat.tif"),
+        path: PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/VectorMapDistrict/SU01.tif"),
+
+        //path: PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/OpenMap Local/SU01NE.tif"),
+        //path: PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Aerial Imagery/ST9143.tif"),
         //path: PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/miniscale/MiniScale_(standard)_R23.tif"),
         data_type: Some(DataType::TIFF)
     };

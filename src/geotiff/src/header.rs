@@ -12,7 +12,7 @@ pub fn parse_header(reader: &mut BufReader<File>) -> Result<(ByteOrder, u32), TI
                     if buf[0..2] == [73, 73] {
                         ByteOrder::LittleEndian
                     } else if buf[0..2] == [77, 77] {
-                        ByteOrder::LittleEndian
+                        ByteOrder::BigEndian
                     } else {
                         return Err(TIFFErrorState::UnexpectedFormat("Unexpected Header Format 1".to_string()));
                     }

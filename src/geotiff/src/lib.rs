@@ -2,10 +2,12 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, SeekFrom};
 use std::path::PathBuf;
+use proj::Proj;
 use crate::err::TIFFErrorState;
 use crate::err::TIFFErrorState::UnexpectedFormat;
 use crate::tag::{EntryValue, IFDEntry};
 use crate::geokeydirectory::GeoKeyDirectory;
+use crate::projections::ProjectionErrorState::NotEnoughGeoData;
 
 mod ifd;
 mod util;
@@ -79,8 +81,106 @@ pub fn parse_tiff(descriptor: Box<dyn FileDescriptor>) -> Result<Region, TIFFErr
                 }
             };
 
+            let top_left = match tag_lookup.get_mut(&33922u16) {
+                Some(t) => match t.resolve(&byte_order, &mut reader) {
+                    Ok(v) => match v {
+                        EntryValue::DOUBLE(values) => (match values.get(3) {
+                            Some(v) => v.clone(),
+                            None => {
+                                return Err(UnexpectedFormat(String::from("No ModelTiePoint")));
+                            }
+                        }, match values.get(4) {
+                            Some(v) => v.clone(),
+                            None => {
+                                return Err(UnexpectedFormat(String::from("No ModelTiePoint")));
+                            }
+                        }),
+                        _ => {
+                            return Err(UnexpectedFormat(String::from("No ModelTiePoint")));
+                        }
+                    }
+                    Err(_) => {
+                        return Err(UnexpectedFormat(String::from("No ModelTiePoint")));
+                    }
+                },
+                None => {
+                    return Err(UnexpectedFormat(String::from("No ModelTiePoint")));
+                }
+            };
+
+            let scale = match tag_lookup.get_mut(&33550u16) {
+                Some(t) => match t.resolve(&byte_order, &mut reader) {
+                    Ok(v) => match v {
+                        EntryValue::DOUBLE(values) => (match values.get(0) {
+                            Some(v) => v.clone(),
+                            None => {
+                                return Err(UnexpectedFormat(String::from("No Scale")));
+                            }
+                        }, match values.get(1) {
+                            Some(v) => v.clone(),
+                            None => {
+                                return Err(UnexpectedFormat(String::from("No Scale")));
+                            }
+                        }),
+                        _ => {
+                            return Err(UnexpectedFormat(String::from("No Scale")));
+                        }
+                    }
+                    Err(_) => {
+                        return Err(UnexpectedFormat(String::from("No Scale")));
+                    }
+                },
+                None => {
+                    return Err(UnexpectedFormat(String::from("No Scale")));
+                }
+            };
+
+            let image_dimensions = (match tag_lookup.get_mut(&256u16) {
+                    Some(t) => match t.resolve(&byte_order, &mut reader) {
+                        Ok(v) => match v {
+                            EntryValue::SHORT(values) => match values.get(0) {
+                                Some(v) => v.clone(),
+                                None => {
+                                    return Err(UnexpectedFormat(String::from("No Dim X")));
+                                }
+                            },
+                            _ => {
+                                return Err(UnexpectedFormat(String::from("No Dim X")));
+                            }
+                        }
+                        Err(_) => {
+                            return Err(UnexpectedFormat(String::from("No Dim X")));
+                        }
+                    },
+                    None => {
+                        return Err(UnexpectedFormat(String::from("No Dim X")));
+                    }
+                }, match tag_lookup.get_mut(&257u16) {
+                    Some(t) => match t.resolve(&byte_order, &mut reader) {
+                        Ok(v) => match v {
+                            EntryValue::SHORT(values) => match values.get(0) {
+                                Some(v) => v.clone(),
+                                None => {
+                                    return Err(UnexpectedFormat(String::from("No Dim Y")));
+                                }
+                            },
+                            _ => {
+                                return Err(UnexpectedFormat(String::from("No Dim Y")));
+                            }
+                        }
+                        Err(_) => {
+                            return Err(UnexpectedFormat(String::from("No Dim Y")));
+                        }
+                    },
+                    None => {
+                        return Err(UnexpectedFormat(String::from("No Dim Y")));
+                    }
+                });
 
 
+
+
+            calculate_extent(top_left, scale, image_dimensions, proj);
 
 
 
@@ -118,32 +218,7 @@ pub fn parse_tiff(descriptor: Box<dyn FileDescriptor>) -> Result<Region, TIFFErr
                     return Err(UnexpectedFormat(String::from("No GeoAscii Params")));
                 }
             };
-            let top_left = match tag_lookup.get_mut(&33922u16) {
-                Some(t) => match t.resolve(&byte_order, &mut reader) {
-                    Ok(v) => match v {
-                        EntryValue::DOUBLE(values) => (match values.get(3) {
-                            Some(v) => v.clone(),
-                            None => {
-                                return Err(UnexpectedFormat(String::from("No ModelTiePoint")));
-                            }
-                        }, match values.get(4) {
-                            Some(v) => v.clone(),
-                            None => {
-                                return Err(UnexpectedFormat(String::from("No ModelTiePoint")));
-                            }
-                        }),
-                        _ => {
-                            return Err(UnexpectedFormat(String::from("No ModelTiePoint")));
-                        }
-                    }
-                    Err(_) => {
-                        return Err(UnexpectedFormat(String::from("No ModelTiePoint")));
-                    }
-                },
-                None => {
-                    return Err(UnexpectedFormat(String::from("No ModelTiePoint")));
-                }
-            };
+
             let scale = match tag_lookup.get_mut(&33550u16) {
                 Some(t) => match t.resolve(&byte_order, &mut reader) {
                     Ok(v) => match v {
@@ -170,47 +245,7 @@ pub fn parse_tiff(descriptor: Box<dyn FileDescriptor>) -> Result<Region, TIFFErr
                     return Err(UnexpectedFormat(String::from("No Scale")));
                 }
             };
-            // let image_dimensions = (match tag_lookup.get_mut(&256u16) {
-            //     Some(t) => match t.resolve(&byte_order, &mut reader) {
-            //         Ok(v) => match v {
-            //             EntryValue::SHORT(values) => match values.get(0) {
-            //                 Some(v) => v.clone(),
-            //                 None => {
-            //                     return Err(InvalidOrUnhandledFormat(descriptor));
-            //                 }
-            //             },
-            //             _ => {
-            //                 return Err(InvalidOrUnhandledFormat(descriptor));
-            //             }
-            //         }
-            //         Err(_) => {
-            //             return Err(InvalidOrUnhandledFormat(descriptor));
-            //         }
-            //     },
-            //     None => {
-            //         return Err(NoGeoData(descriptor));
-            //     }
-            // }, match tag_lookup.get_mut(&257u16) {
-            //     Some(t) => match t.resolve(&byte_order, &mut reader) {
-            //         Ok(v) => match v {
-            //             EntryValue::SHORT(values) => match values.get(0) {
-            //                 Some(v) => v.clone(),
-            //                 None => {
-            //                     return Err(InvalidOrUnhandledFormat(descriptor));
-            //                 }
-            //             },
-            //             _ => {
-            //                 return Err(InvalidOrUnhandledFormat(descriptor));
-            //             }
-            //         }
-            //         Err(_) => {
-            //             return Err(InvalidOrUnhandledFormat(descriptor));
-            //         }
-            //     },
-            //     None => {
-            //         return Err(NoGeoData(descriptor));
-            //     }
-            // });
+            //
             // let proj_build = match Proj::new_known_crs(&geo_ascii, "EPSG:4326", None) {
             //     Ok(v) => v,
             //     Err(e) => {
@@ -288,13 +323,25 @@ pub fn parse_tiff(descriptor: Box<dyn FileDescriptor>) -> Result<Region, TIFFErr
         }
     }
 }
-#[cfg(test)]
-mod tests {
-    use super::*;
+fn calculate_extent(
+    top_left: (f64, f64),
+    scale: (f64, f64),
+    image_dimensions: (u16, u16),
+    proj: Proj
+) -> () {
+    // Initialize the Proj struct with the known CRS (Coordinate Reference System)
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+    // Calculate the bottom-right coordinates in the image's CRS
+    let bottom_right = (
+        top_left.0 + (scale.0 * image_dimensions.0 as f64),
+        top_left.1 - (scale.1 * image_dimensions.1 as f64), // subtract because pixel scale is usually positive as you go down
+    );
+
+    // Convert the top-left and bottom-right coordinates to latitude and longitude
+    let top_left_lat_long = proj.convert((top_left.0, top_left.1));
+    let bottom_right_lat_long = proj.convert((bottom_right.0, bottom_right.1));
+
+    // Print out the extents in latitude and longitude
+    println!("Top Left Latitude/Longitude: {:?}", top_left_lat_long);
+    println!("Bottom Right Latitude/Longitude: {:?}", bottom_right_lat_long);
 }
