@@ -1,26 +1,27 @@
 use std::collections::HashMap;
-use std::fmt::format;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::PathBuf;
-use proj::Proj;
+use proj::{Proj, ProjError};
 use crate::entry::{EntryValue, IFDEntry};
-use crate::geokeydirectory::GeoKeyDirectory;
+pub use crate::geokeydirectory::GeoKeyDirectoryErrorState;
 pub use crate::header::HeaderErrorState;
 pub use crate::entry::IFDEntryErrorState;
+use crate::geokeydirectory::GeoKeyDirectory;
 use crate::util::FromBytes;
 
 mod util;
 mod entry;
 mod header;
 mod geokeydirectory;
-mod projections;
 
 pub enum TIFFErrorState {
     HeaderError(HeaderErrorState),
     IFDEntryError(IFDEntryErrorState),
+    GeoKeyDirectoryError(GeoKeyDirectoryErrorState),
+    UnexpectedFormat(String),
+    ProjectionError(ProjError),
     NotEnoughGeoData,
-    UnexpectedFormat(String)
 }
 
 pub trait FileDescriptor {
@@ -30,8 +31,8 @@ pub trait FileDescriptor {
 
 #[derive(Debug)]
 pub struct GeoTiffRegion {
-    pub bottom_left: (f64, f64),
-    pub top_right: (f64, f64)
+    pub bottom_right: (f64, f64),
+    pub top_left: (f64, f64)
 }
 
 pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<Box<GeoTiffRegion>, TIFFErrorState> {
@@ -84,20 +85,87 @@ pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<Box<GeoTiffRegion>, TI
         }
     }
 
-    // Read next 4 bytes for next ifd if you care.
-    println!("Entries: {:?}", entries);
+    // Read next 4 bytes for next ifd if you care
+    // TODO: Implement support for multiple IFDs.
+    // println!("Entries: {:?}", entries);
+
 
     let geo_key_directory = match entries.get_mut(&34735) {
-        Some(v) => v.resolve(&byte_order, reader)?,
+        Some(v) => if let EntryValue::SHORT(v) = v.resolve(&byte_order, reader)?  {
+            v
+        } else {
+            return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected GeoKeyDirectory to be of type SHORT!")));
+        },
         None => return Err(TIFFErrorState::NotEnoughGeoData)
     };
 
-    println!("GeoKeyDirectory: {:?}", geo_key_directory);
+    let geo_key_directory = GeoKeyDirectory::from_shorts(geo_key_directory)?;
 
-    return Ok(Box::new(GeoTiffRegion {
-        bottom_left: (0.0, 0.0),
-        top_right: (0.0, 0.0)
-    }));
+    // println!("GeoKeyDirectory: {:?}", geo_key_directory);
+
+    let projection = geo_key_directory.get_projection("EPSG:4326")?;
+
+    let top_left = match entries.get_mut(&33922) {
+        None => return Err(TIFFErrorState::NotEnoughGeoData),
+        Some(v) => if let EntryValue::DOUBLE(v) = v.resolve(&byte_order, reader)? {
+            if let (Some(x), Some(y)) = (v.get(3), v.get(4)) {
+                (x.clone(), y.clone())
+            } else {
+                return Err(TIFFErrorState::NotEnoughGeoData)
+            }
+        } else {
+            return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected ModelTiePoint to be of type DOUBLE!")));
+        }
+    };
+    let scale =  match entries.get_mut(&33550) {
+        None => return Err(TIFFErrorState::NotEnoughGeoData),
+        Some(v) => if let EntryValue::DOUBLE(v) = v.resolve(&byte_order, reader)? {
+            if let (Some(x), Some(y)) = (v.get(0), v.get(1)) {
+                (x.clone(), y.clone())
+            } else {
+                return Err(TIFFErrorState::NotEnoughGeoData)
+            }
+        } else {
+            return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected ModelTiePoint to be of type DOUBLE!")));
+        }
+    };
+    let x = if let Some(entry) = entries.get_mut(&256) {
+        // Resolve the entry to a specific value (like width).
+        if let EntryValue::SHORT(v) = entry.resolve(&byte_order, reader)? {
+            if let Some(x) = v.get(0) {
+                x.clone()
+            } else {
+                return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected ImageWidth!")));
+            }
+        } else {
+            return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected ImageWidth to be of type SHORT!")));
+
+        }
+    } else {
+        // If the entry for ImageWidth does not exist, return an error.
+        return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected ImageWidth!")));
+    };
+
+    let y = if let Some(entry) = entries.get_mut(&257) {
+        // Resolve the entry to a specific value (like width).
+        if let EntryValue::SHORT(v) = entry.resolve(&byte_order, reader)? {
+            if let Some(y) = v.get(0) {
+                y.clone()
+            } else {
+                return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected ImageLength!")));
+            }
+        } else {
+            return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected ImageLength to be of type SHORT!")));
+
+        }
+    } else {
+        // If the entry for ImageWidth does not exist, return an error.
+        return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected ImageLength!")));
+    };
+
+    let region = calculate_extent(top_left, scale, (x,y), projection)?;
+
+    return Ok(Box::new(region));
 }
 
 // pub fn parse_tiff_old(descriptor: Box<dyn FileDescriptor>) -> Result<Region, TIFFErrorState> {
@@ -402,7 +470,7 @@ fn calculate_extent(
     scale: (f64, f64),
     image_dimensions: (u16, u16),
     proj: Proj
-) -> () {
+) -> Result<GeoTiffRegion, TIFFErrorState> {
     // Initialize the Proj struct with the known CRS (Coordinate Reference System)
 
     // Calculate the bottom-right coordinates in the image's CRS
@@ -411,11 +479,14 @@ fn calculate_extent(
         top_left.1 - (scale.1 * image_dimensions.1 as f64), // subtract because pixel scale is usually positive as you go down
     );
 
-    // Convert the top-left and bottom-right coordinates to latitude and longitude
-    let top_left_lat_long = proj.convert((top_left.0, top_left.1));
-    let bottom_right_lat_long = proj.convert((bottom_right.0, bottom_right.1));
-
-    // Print out the extents in latitude and longitude
-    println!("Top Left Latitude/Longitude: {:?}", top_left_lat_long);
-    println!("Bottom Right Latitude/Longitude: {:?}", bottom_right_lat_long);
+    return Ok(GeoTiffRegion {
+        top_left: match proj.convert(top_left) {
+            Ok(v) => v,
+            Err(e) => return Err(TIFFErrorState::ProjectionError(e))
+        },
+        bottom_right: match proj.convert(bottom_right) {
+            Ok(v) => v,
+            Err(e) => return Err(TIFFErrorState::ProjectionError(e))
+        }
+    });
 }

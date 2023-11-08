@@ -1,9 +1,11 @@
 use std::collections::HashMap;
-use std::fmt::format;
-use crate::entry::EntryValue;
+use proj::{Proj, ProjCreateError};
+use crate::GeoKeyDirectoryErrorState::{ProjectionError, UnexpectedFormat};
+use crate::TIFFErrorState;
 
 #[derive(Debug)]
-pub enum GeoKeyDirectoryError {
+pub enum GeoKeyDirectoryErrorState {
+    ProjectionError(ProjCreateError),
     UnexpectedFormat(String)
 }
 
@@ -16,12 +18,12 @@ pub struct GeoKeyDirectoryHeader {
 
 
 impl GeoKeyDirectoryHeader {
-    pub fn from_shorts(shorts: &[u16]) -> Result<GeoKeyDirectoryHeader, GeoKeyDirectoryError> {
+    pub fn from_shorts(shorts: &[u16]) -> Result<GeoKeyDirectoryHeader, TIFFErrorState> {
         if shorts.len() != 4 {
-            return Err(GeoKeyDirectoryError::UnexpectedFormat(String::from("Unexpected length header!")));
+            return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from("Unexpected length header!"))));
         }
         if shorts[0] != 1 {
-            return Err(GeoKeyDirectoryError::UnexpectedFormat(String::from(format!("Unexpected Key Directory Version! {:?}", shorts[0]))));
+            return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from(format!("Unexpected Key Directory Version! {:?}", shorts[0])))));
         }
 
         return Ok(GeoKeyDirectoryHeader {
@@ -41,9 +43,9 @@ pub struct GeoKey {
 }
 
 impl GeoKey {
-    pub fn from_shorts(shorts: &[u16]) -> Result<GeoKey, GeoKeyDirectoryError>{
+    pub fn from_shorts(shorts: &[u16]) -> Result<GeoKey, TIFFErrorState>{
         if shorts.len() != 4 {
-            return Err(GeoKeyDirectoryError::UnexpectedFormat(String::from("Unexpected length key!")));
+            return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from("Unexpected length key!"))));
         }
         let id = shorts[0];
         let location = shorts[1];
@@ -59,12 +61,6 @@ impl GeoKey {
     }
 }
 
-#[derive(Debug)]
-pub enum GeoKeyResolution {
-    Value(u16),
-    Tag(u16)
-}
-
 
 #[derive(Debug)]
 pub struct GeoKeyDirectory {
@@ -73,10 +69,9 @@ pub struct GeoKeyDirectory {
 }
 
 impl GeoKeyDirectory {
-    pub fn from_shorts(shorts: Vec<u16>) -> Result<GeoKeyDirectory, GeoKeyDirectoryError> {
+    pub fn from_shorts(shorts: &Vec<u16>) -> Result<GeoKeyDirectory, TIFFErrorState> {
         if shorts.len() < 4 {
-            return Err(GeoKeyDirectoryError::UnexpectedFormat(String::from("Unexpected number of shorts! No Header!")));
-
+            return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from("Unexpected number of shorts! No Header!"))));
         }
 
         let header = match GeoKeyDirectoryHeader::from_shorts(&shorts[0..4]) {
@@ -87,7 +82,7 @@ impl GeoKeyDirectory {
         };
 
         if shorts.len() != (4 + (header.count * 4)) as usize {
-            return Err(GeoKeyDirectoryError::UnexpectedFormat(String::from("Unexpected number of shorts! Should be a multiple of 4!")));
+            return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from("Unexpected number of shorts! Should be a multiple of 4!"))));
         };
         let mut map = HashMap::with_capacity(header.count as usize);
         for chunk in shorts[4..shorts.len()].chunks(4) {
@@ -104,5 +99,43 @@ impl GeoKeyDirectory {
             header,
             keys: map,
         });
+    }
+
+    pub fn get_projection(&self, target_epsg: &str) -> Result<Proj, TIFFErrorState> {
+        return match Proj::new_known_crs(
+            format!("EPSG:{}", if let Some(v) = self.keys.get(&2048) {
+                if v.location == 0 {
+                    match v.value {
+                        Some(v) => if v == 4277 {
+                            27700
+                        } else {
+                            v
+                        },
+                        None => {
+                            return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from("Location for Geographic EPSG code was 0! Expected value! But none found."))));
+                        }
+                    }
+                } else {
+                    return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from(format!("Expected Geographic EPSG code to be single short! Actual got tag location: {}", v.location)))));
+                }
+            } else if let Some(v) = self.keys.get(&3072) {
+                if v.location == 0 {
+                    match v.value {
+                        Some(v) => v,
+                        None => return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from("Location for Projected EPSG code was 0! Expected value! But none found."))))
+                    }
+
+                } else {
+                    return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from(format!("Expected Projected EPSG code to be single short! Actual got tag location: {}", v.location)))));
+                }
+            } else {
+                return Err(TIFFErrorState::NotEnoughGeoData);
+            }).as_str(),
+            target_epsg,
+            None
+        ) {
+            Ok(proj) => Ok(proj),
+            Err(e) => Err(TIFFErrorState::GeoKeyDirectoryError(ProjectionError(e)))
+        }
     }
 }

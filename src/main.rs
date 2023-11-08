@@ -5,7 +5,7 @@ use std::path::PathBuf;
 mod kml;
 mod spatial;
 mod index;
-use geotiff::{parse_tiff, TIFFErrorState, HeaderErrorState, IFDEntryErrorState};
+use geotiff::{parse_tiff, TIFFErrorState, HeaderErrorState, IFDEntryErrorState, GeoKeyDirectoryErrorState};
 use crate::kml::{KMLErrorState, parse_kml};
 use crate::spatial::Region;
 
@@ -111,6 +111,28 @@ fn main() {
                                             println!("Encountered tiff file without GeoData, ignoring as will be caught by sidecar if present.");
                                             None
                                         }
+                                        TIFFErrorState::GeoKeyDirectoryError(geo_key_directory_error) => match geo_key_directory_error {
+                                            GeoKeyDirectoryErrorState::ProjectionError(p) => {
+                                                eprintln!("File: {:?}", path);
+                                                eprintln!("Failed to create projection for file, see: {:?}", p);
+                                                eprintln!("Likely that a new coordinate system needs to be implemented.");
+                                                eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                                panic!();
+                                            }
+                                            GeoKeyDirectoryErrorState::UnexpectedFormat(s) => {
+                                                eprintln!("File: {:?}", path);
+                                                eprintln!("Failed to read GeoKeyDirectory, Reason: {}", s);
+                                                eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                                panic!();
+                                            }
+                                        },
+
+                                        TIFFErrorState::ProjectionError(p) => {
+                                            eprintln!("File: {:?}", path);
+                                            eprintln!("Failed to perform final projection, Error: {}", p);
+                                            eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                            panic!();
+                                        }
                                     }
                                 } {regions.push(region)}
                             },
@@ -142,4 +164,6 @@ fn main() {
             }
         }
     }
+    println!("Got regions: {regions:?}");
+
 }

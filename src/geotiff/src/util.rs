@@ -1,10 +1,3 @@
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::BufReader;
-use crate::geokeydirectory::GeoKeyDirectory;
-use crate::geokeydirectory::GeoKeyDirectoryError::UnexpectedFormat;
-use crate::entry::{EntryValue, IFDEntry};
-
 // ByteOrder enum.
 #[derive(Debug, Clone)]
 pub enum ByteOrder {

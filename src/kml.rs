@@ -1,10 +1,9 @@
 use crate::spatial::{Coordinate, Region};
 use std::fs::File;
 use std::io::BufReader;
-use std::num::ParseFloatError;
 use std::str::FromStr;
 use xml::reader::{EventReader, XmlEvent};
-use crate::kml::KMLErrorState::UnexpectedFormat;
+use crate::kml::KMLErrorState::{NotEnoughGeoData, UnexpectedFormat};
 
 pub fn get_boundaries(coordinates: Vec<Coordinate>) -> (Coordinate, Coordinate) {
     let mut min_x: f64 = coordinates[0].0;
@@ -80,12 +79,12 @@ pub fn parse_kml(reader: &mut BufReader<File>) -> Result<Box<dyn Region>, KMLErr
                                     match f64::from_str(coordinate_strs[0]) {
                                         Ok(v) => v,
                                         Err(e) => {
-                                            return Err(UnexpectedFormat(String::from(format!("Failed to parse floating point coord: {}", coordinate_strs[0]))));
+                                            return Err(UnexpectedFormat(String::from(format!("Failed to parse floating point coord: {} with err: {:?}", coordinate_strs[0], e))));
                                         }
                                     }, match f64::from_str(coordinate_strs[1]) {
                                         Ok(v) => v,
                                         Err(e) => {
-                                            return Err(UnexpectedFormat(String::from(format!("Failed to parse floating point coord: {}", coordinate_strs[1]))));
+                                            return Err(UnexpectedFormat(String::from(format!("Failed to parse floating point coord: {} with err: {:?}", coordinate_strs[1], e))));
                                         }
                                     }
                                 ));
@@ -99,6 +98,11 @@ pub fn parse_kml(reader: &mut BufReader<File>) -> Result<Box<dyn Region>, KMLErr
             _ => {} // Ignore all but start elem.
         }
     }
+
+    if coordinates.len() == 0 {
+        return Err(NotEnoughGeoData);
+    }
+
     let (bottom_left, top_right) = get_boundaries(coordinates); // Draw a bounding box around given coords
     return Ok(Box::new(KMLRegion {
         bottom_left,

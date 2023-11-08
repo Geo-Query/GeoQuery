@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug};
 use geotiff::GeoTiffRegion;
 
 // Coordinate type alias; for ease of use.
@@ -18,18 +18,18 @@ pub trait Region: Debug {
 
 impl Region for GeoTiffRegion {
     fn bottom_left(&self) -> Coordinate {
-        self.bottom_left
+        (self.top_left.0, self.bottom_right.1)
     }
 
     fn bottom_right(&self) -> Coordinate {
-        (self.top_right.0, self.bottom_left.1)
+        self.bottom_right
     }
 
     fn top_left(&self) -> Coordinate {
-        (self.bottom_left.0, self.top_right.1)
+        self.top_left
     }
 
     fn top_right(&self) -> Coordinate {
-        self.top_right
+        (self.bottom_right.0, self.top_left.1)
     }
 }
