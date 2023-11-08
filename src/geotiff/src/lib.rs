@@ -4,9 +4,10 @@ use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::PathBuf;
 use proj::Proj;
-use crate::entry::{EntryValue, IFDEntry, IFDEntryErrorState};
+use crate::entry::{EntryValue, IFDEntry};
 use crate::geokeydirectory::GeoKeyDirectory;
-use crate::header::HeaderErrorState;
+pub use crate::header::HeaderErrorState;
+pub use crate::entry::IFDEntryErrorState;
 use crate::util::FromBytes;
 
 mod util;

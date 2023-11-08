@@ -1,13 +1,11 @@
-use std::arch::x86_64::_mm256_abs_epi16;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
-use proj::ProjError::Path;
 
 mod kml;
 mod spatial;
 mod index;
-use geotiff::{parse_tiff, TIFFErrorState};
+use geotiff::{parse_tiff, TIFFErrorState, HeaderErrorState, IFDEntryErrorState};
 use crate::kml::{KMLErrorState, parse_kml};
 use crate::spatial::Region;
 
@@ -62,10 +60,57 @@ fn main() {
                                 if let Some(region) = match parse_tiff(&mut reader) {
                                     Ok(r) => Some(r),
                                     Err(e) => match e {
-                                        TIFFErrorState::HeaderError(_) => None, // TODO: Handle ErrorStates neatly.
-                                        TIFFErrorState::IFDEntryError(_) => None,
-                                        TIFFErrorState::UnexpectedFormat(_) => None,
-                                        TIFFErrorState::NotEnoughGeoData => None
+                                        TIFFErrorState::HeaderError(header_err) => match header_err {
+                                            HeaderErrorState::UnexpectedByteOrder(b) => {
+                                                eprintln!("File: {:?}", path);
+                                                eprintln!("Has unexpected byte_order value: {:?}", b);
+                                                eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                                panic!();
+                                            }
+                                            HeaderErrorState::UnexpectedMagicNumber(b) => {
+                                                eprintln!("File: {:?}", path);
+                                                eprintln!("Has unexpected magic number value: {:?}", b);
+                                                eprintln!("This file may not be a real TIFF");
+                                                eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                                panic!();
+                                            }
+                                            HeaderErrorState::InvalidLength(length) => {
+                                                eprintln!("File: {:?}", path);
+                                                eprintln!("Was passed invalid header buffer, of length {} (should be 8)", length);
+                                                eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                                panic!();
+                                            }
+                                        },
+                                        TIFFErrorState::IFDEntryError(ifd_error_state) => match ifd_error_state {
+                                            IFDEntryErrorState::UnexpectedEntryType(t) => {
+                                                eprintln!("File: {:?}", path);
+                                                eprintln!("Contains unimplemented tag type: {}", t);
+                                                eprintln!("This tag type needs to be implemented!");
+                                                eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                                panic!();
+                                            }
+                                            IFDEntryErrorState::MissingAssociatedValue(t) => {
+                                                eprintln!("File: {:?}", path);
+                                                eprintln!("Has tag: {}, but the value is inaccessible!", t);
+                                                eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                                panic!();
+                                            }
+                                            IFDEntryErrorState::InvalidLength(length) => {
+                                                eprintln!("File: {:?}", path);
+                                                eprintln!("Was passed invalid tag buffer, of length {} (should be 12)", length);
+                                                eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                                panic!();
+                                            }
+                                        },
+                                        TIFFErrorState::UnexpectedFormat(s) => {
+                                            eprintln!("Unexpected TIFF Format Error!");
+                                            eprintln!("Reason: {}", s);
+                                            panic!();
+                                        },
+                                        TIFFErrorState::NotEnoughGeoData => {
+                                            println!("Encountered tiff file without GeoData, ignoring as will be caught by sidecar if present.");
+                                            None
+                                        }
                                     }
                                 } {regions.push(region)}
                             },

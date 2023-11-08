@@ -78,7 +78,7 @@ impl IFDEntry {
 
 
 
-    pub(crate) fn resolve(&mut self, byte_order: &ByteOrder, reader: &mut BufReader<File>) -> Result<&EntryValue, TIFFErrorState> {
+    pub fn resolve(&mut self, byte_order: &ByteOrder, reader: &mut BufReader<File>) -> Result<&EntryValue, TIFFErrorState> {
         if self.value.is_none() {
             let value: EntryValue = match &self.field_type {
                 EntryType::BYTES => EntryValue::BYTES(if self.count < 5 {

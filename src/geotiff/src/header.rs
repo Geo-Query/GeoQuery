@@ -4,7 +4,7 @@ use crate::TIFFErrorState;
 use crate::util::{ByteOrder, FromBytes};
 
 pub enum HeaderErrorState {
-    UnexpectedByteOrder(Option<[u8; 2]>),
+    UnexpectedByteOrder([u8; 2]),
     UnexpectedMagicNumber([u8; 2]),
     InvalidLength(usize)
 }
@@ -17,7 +17,7 @@ pub fn parse_header(buffer: &[u8]) -> Result<(ByteOrder, SeekFrom), TIFFErrorSta
     let byte_order = match buffer[0..2] {
         [73, 73] => ByteOrder::LittleEndian,
         [77, 77] => ByteOrder::BigEndian,
-        _ => return Err(TIFFErrorState::HeaderError(HeaderErrorState::UnexpectedByteOrder(Some([buffer[0], buffer[1]]))))
+        _ => return Err(TIFFErrorState::HeaderError(HeaderErrorState::UnexpectedByteOrder([buffer[0], buffer[1]])))
     };
 
     let magic_numbers = &buffer[2..4];
