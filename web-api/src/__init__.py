@@ -1,7 +1,9 @@
-from flask import Flask,render_template,request, abort
+from flask import Flask, render_template, request, abort, jsonify
+from flask_cors import CORS
 from urllib import parse
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route("/")
 def home():
@@ -52,4 +54,23 @@ def search():
     
     return "Validated successfully"
 
+@app.route('/api/post-coordinates', methods=['POST'])
+def get_coordinates():
+    try:
+        data = request.json
 
+        if 'northEast' not in data or 'southWest' not in data:
+            raise ValueError("Invalid structure: 'northEast' and 'southWest' required")
+
+        north_east = data['northEast']
+        south_west = data['southWest']
+
+        if not all(key in north_east for key in ['lat', 'lng']) or not all(key in south_west for key in ['lat', 'lng']):
+            raise ValueError("Invalid structure: 'lat' and 'lng' required for 'northEast' and 'southWest'")
+
+        ne_lat, ne_lng = float(north_east['lat']), float(north_east['lng'])
+        sw_lat, sw_lng = float(south_west['lat']), float(south_west['lng'])
+
+        return jsonify({'success': 'true', 'message': 'Coordinates received'})
+    except ValueError as e:
+        return jsonify({'success': 'false', 'message': str(e)}), 400
