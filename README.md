@@ -17,3 +17,9 @@ Solutions:
 - Interfacing with python server... Could be called using subprocess directly as a cmd line, could be a daemon and use IPC to communicate with py-server, or could host a rudimentary unsecured/or maybe even secured, local http server.
 
 - Reading files will be handled by pluggable readers, all implementing a common trait defining a std input of file descriptors, and a std output of 2 lat/long coords representing the boundaries of the file.
+
+## Implementation Notes:
+--------------------------
+Kinds of failure:
+    UnexpectedFormat - Should be displayed clearly to the user.
+    MissingRequiredData - Should be ignored, and a small warning. In the case of GeoTiff, should look for a sidecar?
