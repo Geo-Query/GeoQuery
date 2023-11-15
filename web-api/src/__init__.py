@@ -104,3 +104,28 @@ def lat_long_builder(lat1, long1, lat2, long2):
     message = messageClasses.Message(content, 0)
 
     return message
+
+
+# This function takes a message, checks if it is a FILE_NAMES message and then unpacks and returns it
+def file_names_decoder(message):
+
+    # Checks if message argument is a Message object
+    try:
+        assert(isinstance(message, messageClasses.Message))
+    except AssertionError:
+        raise AssertionError("Argument must be an object of the Message Class")
+
+    # Check if message type is FILE_NAMES
+    try:
+        assert(message.message_header.message_type == 1)
+    except AssertionError:
+        raise AssertionError("Message should be a FILE_NAMES message")
+
+    content = message.message_content.content
+    length = message.message_header.message_length
+
+    # Will probably need to alter when output from data parser is defined
+    fm = "{}s".format(length)
+    file_names = struct.unpack(fm, content)
+
+    return file_names

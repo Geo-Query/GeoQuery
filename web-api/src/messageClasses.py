@@ -1,10 +1,11 @@
 import typing
 
 LAT_LONG: int = 0
+FILE_NAMES: int = 1
 BYTE_ORDER: typing.Literal['little', 'big'] = "little"
 
 # Place message types here
-message_types = [LAT_LONG]
+message_types = [LAT_LONG, FILE_NAMES]
 
 # Class Definitions made by Ben
 
