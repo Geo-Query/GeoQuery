@@ -10,10 +10,9 @@ import leafletImage from 'leaflet-image';
 
 
 
-const MapComponent = () => {
+const MapComponent = ({ setBoundingBox, boundingBox }) => {
   const defaultCenter = [55.869829854, -4.28583219];
   const defaultZoom = 10;
-  const [boundingBox, setBoundingBox] = useState(null);
   const [mousePosition, setMousePosition] = useState(null);
   const [staticImageUrl, setStaticImageUrl] = useState(null); // New state for static image URL
 
@@ -97,6 +96,7 @@ const MapComponent = () => {
         const layer = e.layer;
         if (e.layerType === 'rectangle') {
           const bounds = layer.getBounds();
+<<<<<<< 240efb52af7b18abe9b092df2bdef277e401c839
           const southWest = bounds.getSouthWest();
           const northEast = bounds.getNorthEast();
           const newBoundingBox = {
@@ -105,6 +105,14 @@ const MapComponent = () => {
           };
           setBoundingBox(newBoundingBox);
           captureMap(map, newBoundingBox);
+=======
+          const southWest = bounds.getSouthWest(); // Bottom-left
+          const northEast = bounds.getNorthEast(); // Top-right
+          setBoundingBox({
+            bottomLeft: { lat: southWest.lat, lng: southWest.lng },
+            topRight: { lat: northEast.lat, lng: northEast.lng },
+          });          
+>>>>>>> 4faac3dbe6221c0e8ce3fb89d6d257d5725a421c
         }
       });
       
@@ -141,6 +149,7 @@ const MapComponent = () => {
     <div style={{ position: "relative" }}>
       {staticImageUrl ? ( // Conditionally display static image or dynamic map
         <div>
+<<<<<<< 240efb52af7b18abe9b092df2bdef277e401c839
             <img
               src={staticImageUrl}
               alt="Static Map"
@@ -167,6 +176,10 @@ const MapComponent = () => {
         <div className="bounding-box">
           <p>Bottom Left: {boundingBox.bottomLeft.join(", ")}</p>
           <p>Top Right: {boundingBox.topRight.join(", ")}</p>
+=======
+          <p>Bottom Left: {boundingBox.bottomLeft.lat}, {boundingBox.bottomLeft.lng}</p>
+          <p>Top Right: {boundingBox.topRight.lat}, {boundingBox.topRight.lng}</p>
+>>>>>>> 4faac3dbe6221c0e8ce3fb89d6d257d5725a421c
         </div>
       )}
   
@@ -183,6 +196,22 @@ const MapComponent = () => {
   </div>
 )}
 
+<<<<<<< 240efb52af7b18abe9b092df2bdef277e401c839
+=======
+
+      {mousePosition && (
+        <div
+          className="mouse-position-tooltip"
+          style={{
+            top: mousePosition.containerPoint.y,
+            left: mousePosition.containerPoint.x,
+          }}
+        >
+          Lat: {mousePosition.latlng.lat.toFixed(4)}, Lng:{" "}
+          {mousePosition.latlng.lng.toFixed(4)}
+        </div>
+      )}
+>>>>>>> 4faac3dbe6221c0e8ce3fb89d6d257d5725a421c
     </div>
   );
 };
