@@ -1,5 +1,7 @@
 from flask import Flask,render_template,request, abort
 from urllib import parse
+import messageClasses
+import struct
 import zmq
 
 app = Flask(__name__)
@@ -53,24 +55,37 @@ def search():
     
     return "Validated successfully"
 
+
 #This function can be called in order to send a specific amount of requests to the data parser, with a specific message
-def dataParserIO(request_amount,message_to_send):
+
+def data_parser_io(request_amount, message_to_send):
     context = zmq.Context()
 
-    #Socket to talk to server
-    socket = context.socket(zmq.REP)
-    socket.bind("Received request: %s")
+    # Socket to talk to server
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://localhost:5555")
 
-    #Sends request to server
-    for request in range(request_amount):
-        print("Sending Request %s ..." % request)
+    # Sends request to server
+    for r in range(request_amount):
+        print("Sending Request {r} ...")
         socket.send(message_to_send)
 
-        #Checks if a return message has been sent, if it has returns it
+        # Checks if a return message has been sent, if it has, returns it
         message_received = socket.recv()
 
         if message_received is not None:
+            print("Message Received")
             return message_received
 
 
+# This function builds a lat and long message and returns it
+# will have to change the struct code in order to implement BYTE_ORDER
+def lat_long_builder(lat1, long1, lat2, long2):
 
+    float_array = [lat1, long1, lat2, long2]
+    float_array_bytes = struct.pack('f' * len(float_array), *float_array)
+
+    content = messageClasses.MessageContent(float_array_bytes)
+    message = messageClasses.Message(content, 0)
+
+    return message
