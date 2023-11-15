@@ -6,6 +6,7 @@ mod kml;
 mod spatial;
 mod index;
 mod dt2;
+mod geojson;
 
 use geotiff::{parse_tiff, TIFFErrorState, HeaderErrorState, IFDEntryErrorState, GeoKeyDirectoryErrorState};
 use crate::dt2::parse_dt2;
