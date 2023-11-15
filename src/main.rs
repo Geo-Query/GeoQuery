@@ -10,6 +10,7 @@ mod geojson;
 
 use geotiff::{parse_tiff, TIFFErrorState, HeaderErrorState, IFDEntryErrorState, GeoKeyDirectoryErrorState};
 use crate::dt2::parse_dt2;
+use crate::geojson::parse_geojson;
 use crate::kml::{KMLErrorState, parse_kml};
 use crate::spatial::Region;
 
@@ -150,6 +151,12 @@ fn main() {
                                     Err(e) => {
                                         println!("{e:?}");
                                     }
+                                }
+                            },
+                            "geojson" => {
+                                let mut reader = BufReader::new(file);
+                                match parse_geojson(&mut reader) {
+                                    _ => {}
                                 }
                             }
                             _ => {

@@ -3,6 +3,11 @@ use std::io::BufReader;
 use crate::spatial::{Coordinate, Region};
 
 #[derive(Debug)]
+pub enum GeoJSONErrorState {
+    InvalidJSON
+}
+
+#[derive(Debug)]
 pub struct GeoJSONRegion {
     top_left: Coordinate,
     bottom_right: Coordinate
@@ -26,6 +31,7 @@ impl Region for GeoJSONRegion {
     }
 }
 
-pub fn parse_geojson(reader: &mut BufReader<File>) {
-    todo!()
+pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<Box<GeoJSONRegion>, GeoJSONErrorState> {
+
+
 }
