@@ -82,6 +82,14 @@ def data_parser_io(request_amount, message_to_send):
 # will have to change the struct code in order to implement BYTE_ORDER
 def lat_long_builder(lat1, long1, lat2, long2):
 
+    try:
+        assert isinstance(lat1, float)
+        assert isinstance(long1, float)
+        assert isinstance(lat2, float)
+        assert isinstance(long2, float)
+    except AssertionError:
+        raise AssertionError("Lat. and Long. Arguments should be float")
+
     float_array = [lat1, long1, lat2, long2]
     float_array_bytes = struct.pack('f' * len(float_array), *float_array)
 

@@ -6,6 +6,8 @@ BYTE_ORDER: typing.Literal['little', 'big'] = "little"
 # Place message types here
 message_types = [LAT_LONG]
 
+# Class Definitions made by Ben
+
 
 class MessageHeader:
     message_type: int
