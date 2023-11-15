@@ -56,10 +56,16 @@ def search():
     return "Validated successfully"
 
 
-#This function can be called in order to send a specific amount of requests to the data parser, with a specific message
+# This function can be called in order to send a specific amount of requests to the data parser, with a specific message
 
 def data_parser_io(request_amount, message_to_send):
     context = zmq.Context()
+
+    # Checks if message_to_send is a Message object
+    try:
+        assert(isinstance(message_to_send,messageClasses.Message))
+    except AssertionError:
+        raise AssertionError("Message to be sent must be an object of the Message Class")
 
     # Socket to talk to server
     socket = context.socket(zmq.REQ)
@@ -82,6 +88,7 @@ def data_parser_io(request_amount, message_to_send):
 # will have to change the struct code in order to implement BYTE_ORDER
 def lat_long_builder(lat1, long1, lat2, long2):
 
+    # Checks that arguments are floats
     try:
         assert isinstance(lat1, float)
         assert isinstance(long1, float)
