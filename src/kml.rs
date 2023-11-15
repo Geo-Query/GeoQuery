@@ -56,7 +56,7 @@ pub enum KMLErrorState {
     NotEnoughGeoData
 }
 
-pub fn parse_kml(reader: &mut BufReader<File>) -> Result<Box<dyn Region>, KMLErrorState> {
+pub fn parse_kml(reader: &mut BufReader<File>) -> Result<Box<KMLRegion>, KMLErrorState> {
     // Initialise Event iterator, as well as coordinate buffer.
     let mut reader = EventReader::new(reader).into_iter();
     let mut coordinates: Vec<(f64, f64)> = vec![];

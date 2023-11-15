@@ -5,6 +5,8 @@ use std::path::PathBuf;
 mod kml;
 mod spatial;
 mod index;
+mod dt2;
+
 use geotiff::{parse_tiff, TIFFErrorState, HeaderErrorState, IFDEntryErrorState, GeoKeyDirectoryErrorState};
 use crate::kml::{KMLErrorState, parse_kml};
 use crate::spatial::Region;
