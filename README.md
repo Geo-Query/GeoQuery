@@ -14,7 +14,7 @@ Progression:
   - SHAPEFILE [ ]
 - File Searching [ ]
 - Index save/read [ ]
-- I/O for Flask server
+- I/O for Flask server [ ]
 
 Requirements:
 - Must run in acceptable time, over multiple TB of raw data.
