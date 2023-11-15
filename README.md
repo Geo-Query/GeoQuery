@@ -1,5 +1,21 @@
 Language: Rust
 ---------------------------------------------------------------------------------------------------
+Progression:
+- RStar Implementation [x]
+- Region Parsing: [ ]
+  - KML [x]
+  - GEOTIFF w/o sidecar [x]
+  - DTED [x]
+  - GEOTIFF w/ sidecar [ ]
+  - GEOJSON [ ]
+  - GPKG [ ]
+  - MBTILES [ ]
+  - OSM/PBF [ ]
+  - SHAPEFILE [ ]
+- File Searching [ ]
+- Index save/read [ ]
+- I/O for Flask server
+
 Requirements:
 - Must run in acceptable time, over multiple TB of raw data.
 - Must not modify the data directly (Can have a local working dir)
