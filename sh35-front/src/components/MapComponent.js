@@ -6,10 +6,9 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
 import "./MapComponent.css";
 
-const MapComponent = () => {
+const MapComponent = ({ setBoundingBox, boundingBox }) => {
   const defaultCenter = [55.869829854, -4.28583219];
   const defaultZoom = 10;
-  const [boundingBox, setBoundingBox] = useState(null);
   const [mousePosition, setMousePosition] = useState(null);
 
   const MousePositionControl = () => {
@@ -65,9 +64,9 @@ const MapComponent = () => {
           const southWest = bounds.getSouthWest(); // Bottom-left
           const northEast = bounds.getNorthEast(); // Top-right
           setBoundingBox({
-            bottomLeft: [southWest.lat, southWest.lng],
-            topRight: [northEast.lat, northEast.lng],
-          });
+            bottomLeft: { lat: southWest.lat, lng: southWest.lng },
+            topRight: { lat: northEast.lat, lng: northEast.lng },
+          });          
         }
         console.log("Shape created!", e);
       });
@@ -94,10 +93,11 @@ const MapComponent = () => {
 
       {boundingBox && (
         <div>
-          <p>Bottom Left: {boundingBox.bottomLeft.join(", ")}</p>
-          <p>Top Right: {boundingBox.topRight.join(", ")}</p>
+          <p>Bottom Left: {boundingBox.bottomLeft.lat}, {boundingBox.bottomLeft.lng}</p>
+          <p>Top Right: {boundingBox.topRight.lat}, {boundingBox.topRight.lng}</p>
         </div>
       )}
+
 
       {mousePosition && (
         <div
