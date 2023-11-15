@@ -8,21 +8,24 @@ mod index;
 mod dt2;
 
 use geotiff::{parse_tiff, TIFFErrorState, HeaderErrorState, IFDEntryErrorState, GeoKeyDirectoryErrorState};
+use crate::dt2::parse_dt2;
 use crate::kml::{KMLErrorState, parse_kml};
 use crate::spatial::Region;
 
 
 fn main() {
     // Set of test paths, will be gotten by a recursive directory search eventually.
+    // let paths = vec![
+    //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Sat Imagery/PlanetSAT_10_0s3_N54W004.tif",
+    //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/250k/SU.tif",
+    //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/OpenMap Local/SU01NE.tif",
+    //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/miniscale/MiniScale_(standard)_R23.tif",
+    //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/VectorMapDistrict/SU01.tif",
+    //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Aerial Imagery/ST9143.tif"
+    // ];
     let paths = vec![
-        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Sat Imagery/PlanetSAT_10_0s3_N54W004.tif",
-        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/250k/SU.tif",
-        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/OpenMap Local/SU01NE.tif",
-        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/miniscale/MiniScale_(standard)_R23.tif",
-        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/VectorMapDistrict/SU01.tif",
-        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Aerial Imagery/ST9143.tif"
+        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/terrain/DTED/PlanetDEM_1s__W4_N52.dt2"
     ];
-
     // Convert raw strings to path buffers for opening.
     let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
 
@@ -137,6 +140,17 @@ fn main() {
                                     }
                                 } {regions.push(region)}
                             },
+                            "dt2" => {
+                                let mut reader = BufReader::new(file);
+                                match parse_dt2(&mut reader) {
+                                    Ok(v) => {
+                                        println!("{v:?}");
+                                    },
+                                    Err(e) => {
+                                        println!("{e:?}");
+                                    }
+                                }
+                            }
                             _ => {
                                 eprintln!("File: {:?}", path);
                                 eprintln!("Unhandled format: {ext}");
