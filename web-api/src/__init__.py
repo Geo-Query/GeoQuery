@@ -1,5 +1,6 @@
 from flask import Flask,render_template,request, abort
 from urllib import parse
+import zmq
 
 app = Flask(__name__)
 
@@ -51,5 +52,25 @@ def search():
 
     
     return "Validated successfully"
+
+#This function can be called in order to send a specific amount of requests to the data parser, with a specific message
+def dataParserIO(request_amount,message_to_send):
+    context = zmq.Context()
+
+    #Socket to talk to server
+    socket = context.socket(zmq.REP)
+    socket.bind("Received request: %s")
+
+    #Sends request to server
+    for request in range(request_amount):
+        print("Sending Request %s ..." % request)
+        socket.send(message_to_send)
+
+        #Checks if a return message has been sent, if it has returns it
+        message_received = socket.recv()
+
+        if message_received is not None:
+            return message_received
+
 
 
