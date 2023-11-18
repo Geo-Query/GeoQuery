@@ -13,4 +13,5 @@ anyhow = "1.0.75"
 rstar = "0.11.0"
 xml-rs = "0.8.19"
 proj = "0.27.2"
+json-event-parser = "0.1.1"
 geotiff = { path="src/geotiff" }
