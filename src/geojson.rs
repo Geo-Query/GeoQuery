@@ -1,6 +1,8 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
+use std::thread::sleep;
+use std::time::Duration;
 use crate::spatial::{Coordinate, Region};
 use json_event_parser::{JsonReader, JsonEvent};
 use proj::Coord;
@@ -63,44 +65,51 @@ pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<Box<GeoJSONRegion>,
     let mut coordinate_pairs: Vec<[f64; 2]> = Vec::new();
 
 
+
     while let Ok(event) = json_reader.read_event(&mut buffer) {
         match event {
             JsonEvent::ObjectKey(k) if k == "coordinates" => {
-                let mut array_depth = 0;
-                let mut pair_build = [0f64, 0f64];
-                let mut pair_cursor = 0;
+                // Coordinate capture.
+                let mut depth = 0;
+                let mut dimensions = 0;
+                let mut coord_pair_buf = [0f64, 0f64];
                 while let Ok(event) = json_reader.read_event(&mut buffer) {
+                    // coord capture logic...
                     match event {
                         JsonEvent::StartArray => {
-                            array_depth += 1;
+                            depth += 1; // Iterate depth.
                         },
-                        JsonEvent::Number(n) => {
-                            let n: f64 = match n.parse() {
-                                Ok(v) => v,
-                                Err(e) => return Err(GeoJSONErrorState::UnparsableCoordinate(n.to_string()))
-                            };
-                            pair_build[pair_cursor] = n;
-                            pair_cursor += 1;
-                        }, // TODO: Expecting 2D! How to handle 3D?
                         JsonEvent::EndArray => {
-                            array_depth -= 1;
-                            if array_depth == 0 {
-                                break;
+                            depth -= 1; // Decrement
+                            if dimensions != 0 {
+                                coordinate_pairs.push(coord_pair_buf.clone());
                             }
-                            coordinate_pairs.push(pair_build);
-                            pair_cursor = 0;
-                        }
-                        JsonEvent::EndObject => {
-                            break;
+                            dimensions = 0;
                         },
-                        _ => {} // Handle other cases?
+                        JsonEvent::Number(num_str) => {
+                            if dimensions < 2 {
+                                coord_pair_buf[dimensions] = match num_str.parse::<f64>() {
+                                    Ok(v) => v,
+                                    Err(e) => {
+                                        eprintln!("Unparsable number string GEOJSON file! {e:?}");
+                                        return Err(GeoJSONErrorState::UnparsableCoordinate(num_str.to_string()));
+                                    }
+                                }
+                            }
+                            dimensions += 1;
+
+                        }
+                        _ => {}
+                    }
+                    if depth == 0 {
+                        break; // Terminate loop.
                     }
                 }
+
             },
             JsonEvent::Eof => break,
             _ => {}
-        }
-    }
+    }}
 
     let boundaries = get_boundaries(coordinate_pairs);
     println!("Boundaries: {boundaries:?}");
