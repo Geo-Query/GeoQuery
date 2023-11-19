@@ -37,25 +37,25 @@ pub enum GeoJSONErrorState {
 
 #[derive(Debug)]
 pub struct GeoJSONRegion {
-    top_left: Coordinate,
-    bottom_right: Coordinate
+    top_right: Coordinate,
+    bottom_left: Coordinate
 }
 
 impl Region for GeoJSONRegion {
     fn bottom_left(&self) -> Coordinate {
-        todo!()
+        self.bottom_left
     }
 
     fn bottom_right(&self) -> Coordinate {
-        self.bottom_right
+        (self.top_right.0, self.bottom_left.1)
     }
 
     fn top_left(&self) -> Coordinate {
-        self.top_left
+        (self.bottom_left.0, self.top_right.1)
     }
 
     fn top_right(&self) -> Coordinate {
-        todo!()
+        self.top_right
     }
 }
 
@@ -66,7 +66,12 @@ pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<Box<GeoJSONRegion>,
 
 
 
-    while let Ok(event) = json_reader.read_event(&mut buffer) {
+    while let event = match json_reader.read_event(&mut buffer) {
+        Ok(event) => event,
+        Err(e) => {
+            return Err(GeoJSONErrorState::InvalidJSON(Box::new(e)));
+        }
+    } {
         match event {
             JsonEvent::ObjectKey(k) if k == "coordinates" => {
                 // Coordinate capture.
@@ -91,13 +96,12 @@ pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<Box<GeoJSONRegion>,
                                 coord_pair_buf[dimensions] = match num_str.parse::<f64>() {
                                     Ok(v) => v,
                                     Err(e) => {
-                                        eprintln!("Unparsable number string GEOJSON file! {e:?}");
+                                        eprintln!("Unparsable number string in GEOJSON file! {e:?}");
                                         return Err(GeoJSONErrorState::UnparsableCoordinate(num_str.to_string()));
                                     }
                                 }
                             }
                             dimensions += 1;
-
                         }
                         _ => {}
                     }
@@ -114,7 +118,7 @@ pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<Box<GeoJSONRegion>,
     let boundaries = get_boundaries(coordinate_pairs);
     println!("Boundaries: {boundaries:?}");
     return Ok(Box::new(GeoJSONRegion {
-        top_left: boundaries.1,
-        bottom_right: boundaries.0,
+        top_right: boundaries.1,
+        bottom_left: boundaries.0,
     }))
 }
