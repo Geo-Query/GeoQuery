@@ -27,7 +27,7 @@ fn main() {
     //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/terrain/DTED/PlanetDEM_1s__W4_N52.dt2"
     // ];
     let paths = vec![
-        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Vector/geojson/world.geojson"
+        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/dted/DTED-Checking/TCD_DTED119/DTED/E000/N42.DT1"
     ];
     // Convert raw strings to path buffers for opening.
     let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
@@ -40,7 +40,7 @@ fn main() {
             Some(ext) => { // Unwrap code to get OSStr -> str for comparison.
                 match ext.to_str() {
                     Some(ext) => match File::open(&path) {
-                        Ok(file) => match ext { // Once have extension, match against it.
+                        Ok(file) => match ext.to_ascii_lowercase().as_str() { // Once have extension, match against it.
                             "kml" => {
                                 let mut reader = BufReader::new(file);
                                 if let Some(region) = match parse_kml(&mut reader) {
@@ -143,7 +143,7 @@ fn main() {
                                     }
                                 } {regions.push(region)}
                             },
-                            "dt2" => {
+                            "dt2" | "dt1" => {
                                 let mut reader = BufReader::new(file);
                                 match parse_dt2(&mut reader) {
                                     Ok(v) => {
@@ -191,6 +191,12 @@ fn main() {
                                             DSIErrorState::InvalidDDMMSSH(ddmmssh) => {
                                                 eprintln!("File: {:?}", path);
                                                 eprintln!("Failed to read DSI, Encountered unparsable coordinate: {ddmmssh:?}");
+                                                eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                                panic!();
+                                            },
+                                            DSIErrorState::InvalidDDDMMSSH(dddmmssh) => {
+                                                eprintln!("File: {:?}", path);
+                                                eprintln!("Failed to read DSI, Encountered unparsable coordinate: {dddmmssh:?}");
                                                 eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
                                                 panic!();
                                             }

@@ -20,7 +20,8 @@ pub enum UHLErrorState {
 pub enum DSIErrorState {
     InvalidLength(usize),
     InvalidSentinel([u8; 4]),
-    InvalidDDMMSSH([u8; 8])
+    InvalidDDMMSSH([u8; 7]),
+    InvalidDDDMMSSH([u8; 8])
 }
 
 fn parse_dddmmssh(data: &[u8]) -> Result<f64, &'static str> {
@@ -53,29 +54,29 @@ fn parse_dddmmssh(data: &[u8]) -> Result<f64, &'static str> {
 
     Ok(longitude)
 }
-fn parse_ddmmssh(data: &[u8]) -> Result<f64, &'static str> {
+fn parse_ddmmssh(data: &[u8]) -> Result<f64, DT2ErrorState> {
     if data.len() != 7 {
-        return Err("Invalid length of data");
+        return Err(DT2ErrorState::DSIError(DSIErrorState::InvalidDDMMSSH(data.try_into().unwrap())));
     }
 
     let degrees = String::from_utf8(data[0..2].to_vec())
-        .map_err(|_| "Invalid degrees")?
+        .map_err(|_| DT2ErrorState::DSIError(DSIErrorState::InvalidDDMMSSH(data.try_into().unwrap())))?
         .parse::<f64>()
-        .map_err(|_| "Invalid degrees")?;
+        .map_err(|_| DT2ErrorState::DSIError(DSIErrorState::InvalidDDMMSSH(data.try_into().unwrap())))?;
 
     let minutes = String::from_utf8(data[2..4].to_vec())
-        .map_err(|_| "Invalid minutes")?
+        .map_err(|_| DT2ErrorState::DSIError(DSIErrorState::InvalidDDMMSSH(data.try_into().unwrap())))?
         .parse::<f64>()
-        .map_err(|_| "Invalid minutes")?;
+        .map_err(|_| DT2ErrorState::DSIError(DSIErrorState::InvalidDDMMSSH(data.try_into().unwrap())))?;
 
     let seconds = String::from_utf8(data[4..6].to_vec())
-        .map_err(|_| "Invalid seconds")?
+        .map_err(|_| DT2ErrorState::DSIError(DSIErrorState::InvalidDDMMSSH(data.try_into().unwrap())))?
         .parse::<f64>()
-        .map_err(|_| "Invalid seconds")?;
+        .map_err(|_| DT2ErrorState::DSIError(DSIErrorState::InvalidDDMMSSH(data.try_into().unwrap())))?;
 
     let hemisphere = data[6] as char;
     if hemisphere != 'N' && hemisphere != 'S' && hemisphere != 'W' && hemisphere != 'E' {
-        return Err("Invalid hemisphere");
+        return Err(DT2ErrorState::DSIError(DSIErrorState::InvalidDDMMSSH(data.try_into().unwrap())));
     }
 
     let sign = if (hemisphere == 'S' || hemisphere == 'W') { -1.0 } else { 1.0 };
@@ -124,7 +125,7 @@ impl UserHeaderLabel {
         }
         let sentinel = &buffer[0..4];
         if sentinel != [85, 72, 76, 49] { // Assert equivalent to given byte string (UHL1 in ASCII)
-            return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidSentinel(<[u8; 4]>::try_from(sentinel.clone()).unwrap())))
+            return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidSentinel(<[u8; 4]>::try_from(sentinel).unwrap())))
         }
         // Sentinel is valid, IS A UHL1!
 
@@ -135,7 +136,7 @@ impl UserHeaderLabel {
             Err(e) => {
                 eprintln!("Failed to decode origin longitude string.");
                 eprintln!("Encountered: {e}");
-                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(longitude_str.clone().try_into().unwrap())))
+                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(longitude_str.try_into().unwrap())))
             }
         };
         let latitude_str = &buffer[12..20];
@@ -144,7 +145,7 @@ impl UserHeaderLabel {
             Err(e) => {
                 eprintln!("Failed to decode origin latitude string.");
                 eprintln!("Encountered: {e}");
-                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(latitude_str.clone().try_into().unwrap())))
+                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(latitude_str.try_into().unwrap())))
             }
         };
         return Ok(UserHeaderLabel {
@@ -169,15 +170,15 @@ impl DataSetIdentification {
 
         let sentinel = &buffer[0..4];
         if sentinel != [68, 83, 73, 85] {
-            return Err(DT2ErrorState::DSIError(DSIErrorState::InvalidSentinel(sentinel.clone().try_into().unwrap())));
+            return Err(DT2ErrorState::DSIError(DSIErrorState::InvalidSentinel(sentinel.try_into().unwrap())));
         }
         let sw_lat_str = &buffer[204..211];
         let sw_lat = match parse_ddmmssh(sw_lat_str) {
             Ok(v) => v,
             Err(e) => {
                 eprintln!("Failed to decode sw latitude string.");
-                eprintln!("Encountered: {e}");
-                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(sw_lat_str.clone().try_into().unwrap())))
+                eprintln!("Encountered: {e:?}");
+                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(sw_lat_str.try_into().unwrap())))
             }
         };
         let sw_long_str = &buffer[211..219];
@@ -185,8 +186,8 @@ impl DataSetIdentification {
             Ok(v) => v,
             Err(e) => {
                 eprintln!("Failed to decode sw longitude string.");
-                eprintln!("Encountered: {e}");
-                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(sw_long_str.clone().try_into().unwrap())))
+                eprintln!("Encountered: {e:?}");
+                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(sw_long_str.try_into().unwrap())))
             }
         };
 
@@ -195,8 +196,8 @@ impl DataSetIdentification {
             Ok(v) => v,
             Err(e) => {
                 eprintln!("Failed to decode NW latitude string.");
-                eprintln!("Encountered: {e}");
-                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(nw_lat_str.clone().try_into().unwrap())))
+                eprintln!("Encountered: {e:?}");
+                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(nw_lat_str.try_into().unwrap())))
             }
         };
         let nw_long_str = &buffer[226..234];
@@ -204,8 +205,8 @@ impl DataSetIdentification {
             Ok(v) => v,
             Err(e) => {
                 eprintln!("Failed to decode NW longitude string.");
-                eprintln!("Encountered: {e}");
-                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(nw_long_str.clone().try_into().unwrap())))
+                eprintln!("Encountered: {e:?}");
+                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(nw_long_str.try_into().unwrap())))
             }
         };
 
@@ -215,8 +216,8 @@ impl DataSetIdentification {
             Ok(v) => v,
             Err(e) => {
                 eprintln!("Failed to decode NE latitude string.");
-                eprintln!("Encountered: {e}");
-                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(ne_lat_str.clone().try_into().unwrap())))
+                eprintln!("Encountered: {e:?}");
+                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(ne_lat_str.try_into().unwrap())))
             }
         };
         let ne_long_str = &buffer[241..249];
@@ -224,8 +225,8 @@ impl DataSetIdentification {
             Ok(v) => v,
             Err(e) => {
                 eprintln!("Failed to decode NE longitude string.");
-                eprintln!("Encountered: {e}");
-                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(ne_long_str.clone().try_into().unwrap())))
+                eprintln!("Encountered: {e:?}");
+                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(ne_long_str.try_into().unwrap())))
             }
         };
 
@@ -234,8 +235,8 @@ impl DataSetIdentification {
             Ok(v) => v,
             Err(e) => {
                 eprintln!("Failed to decode SE latitude string.");
-                eprintln!("Encountered: {e}");
-                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(se_lat_str.clone().try_into().unwrap())))
+                eprintln!("Encountered: {e:?}");
+                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(se_lat_str.try_into().unwrap())))
             }
         };
         let se_long_str = &buffer[256..264];
@@ -244,7 +245,7 @@ impl DataSetIdentification {
             Err(e) => {
                 eprintln!("Failed to decode SE longitude string.");
                 eprintln!("Encountered: {e}");
-                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(se_long_str.clone().try_into().unwrap())))
+                return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(se_long_str.try_into().unwrap())))
             }
         };
 
