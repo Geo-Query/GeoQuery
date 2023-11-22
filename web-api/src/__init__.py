@@ -78,9 +78,8 @@ def get_coordinates():
     except ValueError as e:
         return jsonify({'success': 'false', 'message': str(e)}), 400
 
-<<<<<<< web-api/src/__init__.py
-# This function can be called in order to send a specific amount of requests to the data parser, with a specific message
 
+# This function can be called in order to send a specific amount of requests to the data parser, with a specific message
 def data_parser_io(request_amount, message_to_send):
     context = zmq.Context()
 
@@ -152,6 +151,3 @@ def file_names_decoder(message):
     file_names = struct.unpack(fm, content)
 
     return file_names
-=======
-        
->>>>>>> web-api/src/__init__.py
