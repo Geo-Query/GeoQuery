@@ -1,11 +1,8 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
-use std::thread::sleep;
-use std::time::Duration;
 use crate::spatial::{Coordinate, Region};
 use json_event_parser::{JsonReader, JsonEvent};
-use proj::Coord;
 
 pub fn get_boundaries(coordinates: Vec<[f64; 2]>) -> (Coordinate, Coordinate) {
     let mut min_x: f64 = coordinates[0][0];

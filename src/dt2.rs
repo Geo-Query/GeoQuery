@@ -24,32 +24,32 @@ pub enum DSIErrorState {
     InvalidDDDMMSSH([u8; 8])
 }
 
-fn parse_dddmmssh(data: &[u8]) -> Result<f64, &'static str> {
+fn parse_dddmmssh(data: &[u8]) -> Result<f64, DT2ErrorState> {
     if data.len() != 8 {
-        return Err("Invalid length of data");
+        return Err(DT2ErrorState::DSIError(DSIErrorState::InvalidDDDMMSSH(data.try_into().unwrap())));
     }
 
     let degrees = String::from_utf8(data[0..3].to_vec())
-        .map_err(|_| "Invalid degrees")?
+        .map_err(|_| DT2ErrorState::DSIError(DSIErrorState::InvalidDDDMMSSH(data.try_into().unwrap())))?
         .parse::<f64>()
-        .map_err(|_| "Invalid degrees")?;
+        .map_err(|_| DT2ErrorState::DSIError(DSIErrorState::InvalidDDDMMSSH(data.try_into().unwrap())))?;
 
     let minutes = String::from_utf8(data[3..5].to_vec())
-        .map_err(|_| "Invalid minutes")?
+        .map_err(|_| DT2ErrorState::DSIError(DSIErrorState::InvalidDDDMMSSH(data.try_into().unwrap())))?
         .parse::<f64>()
-        .map_err(|_| "Invalid minutes")?;
+        .map_err(|_| DT2ErrorState::DSIError(DSIErrorState::InvalidDDDMMSSH(data.try_into().unwrap())))?;
 
     let seconds = String::from_utf8(data[5..7].to_vec())
-        .map_err(|_| "Invalid seconds")?
+        .map_err(|_| DT2ErrorState::DSIError(DSIErrorState::InvalidDDDMMSSH(data.try_into().unwrap())))?
         .parse::<f64>()
-        .map_err(|_| "Invalid seconds")?;
+        .map_err(|_| DT2ErrorState::DSIError(DSIErrorState::InvalidDDDMMSSH(data.try_into().unwrap())))?;
 
     let hemisphere = data[7] as char;
     if hemisphere != 'N' && hemisphere != 'S' && hemisphere != 'W' && hemisphere != 'E' {
-        return Err("Invalid hemisphere");
+        return Err(DT2ErrorState::DSIError(DSIErrorState::InvalidDDDMMSSH(data.try_into().unwrap())));
     }
 
-    let sign = if (hemisphere == 'S' || hemisphere == 'W') { -1.0 } else { 1.0 };
+    let sign = if hemisphere == 'S' || hemisphere == 'W' { -1.0 } else { 1.0 };
     let longitude = sign * (degrees + minutes / 60.0 + seconds / 3600.0);
 
     Ok(longitude)
@@ -79,7 +79,7 @@ fn parse_ddmmssh(data: &[u8]) -> Result<f64, DT2ErrorState> {
         return Err(DT2ErrorState::DSIError(DSIErrorState::InvalidDDMMSSH(data.try_into().unwrap())));
     }
 
-    let sign = if (hemisphere == 'S' || hemisphere == 'W') { -1.0 } else { 1.0 };
+    let sign = if hemisphere == 'S' || hemisphere == 'W' { -1.0 } else { 1.0 };
     let longitude = sign * (degrees + minutes / 60.0 + seconds / 3600.0);
 
     Ok(longitude)
@@ -120,7 +120,7 @@ pub struct UserHeaderLabel {
 
 impl UserHeaderLabel {
     pub fn from_bytes(buffer: &[u8]) -> Result<UserHeaderLabel, DT2ErrorState> {
-        if (buffer.len() != 80) {
+        if buffer.len() != 80 {
             return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidLength(buffer.len())));
         }
         let sentinel = &buffer[0..4];
@@ -135,7 +135,7 @@ impl UserHeaderLabel {
             Ok(v) => v,
             Err(e) => {
                 eprintln!("Failed to decode origin longitude string.");
-                eprintln!("Encountered: {e}");
+                eprintln!("Encountered: {e:?}");
                 return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(longitude_str.try_into().unwrap())))
             }
         };
@@ -144,7 +144,7 @@ impl UserHeaderLabel {
             Ok(v) => v,
             Err(e) => {
                 eprintln!("Failed to decode origin latitude string.");
-                eprintln!("Encountered: {e}");
+                eprintln!("Encountered: {e:?}");
                 return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(latitude_str.try_into().unwrap())))
             }
         };
@@ -244,7 +244,7 @@ impl DataSetIdentification {
             Ok(v) => v,
             Err(e) => {
                 eprintln!("Failed to decode SE longitude string.");
-                eprintln!("Encountered: {e}");
+                eprintln!("Encountered: {e:?}");
                 return Err(DT2ErrorState::UHLError(UHLErrorState::InvalidDDMMSSH(se_long_str.try_into().unwrap())))
             }
         };
@@ -263,7 +263,7 @@ impl DataSetIdentification {
 
 pub fn parse_dt2(reader: &mut BufReader<File>) -> Result<Box<DT2Region>, DT2ErrorState> {
     let mut uhl_buf = [0u8; 80];
-    let uhl = match reader.read_exact(&mut uhl_buf) {
+    let _uhl = match reader.read_exact(&mut uhl_buf) {
         Ok(_) => UserHeaderLabel::from_bytes(&uhl_buf)?,
         Err(e) => {
             return Err(DT2ErrorState::UnexpectedFormat(format!("Failed to read bytes: {e:?}").to_string()));

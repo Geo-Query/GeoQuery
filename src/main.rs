@@ -10,7 +10,7 @@ mod geojson;
 
 use geotiff::{parse_tiff, TIFFErrorState, HeaderErrorState, IFDEntryErrorState, GeoKeyDirectoryErrorState};
 use crate::dt2::{DSIErrorState, DT2ErrorState, parse_dt2, UHLErrorState};
-use crate::geojson::{GeoJSONErrorState, GeoJSONRegion, parse_geojson};
+use crate::geojson::{GeoJSONErrorState, parse_geojson};
 use crate::kml::{KMLErrorState, parse_kml};
 use crate::spatial::Region;
 
