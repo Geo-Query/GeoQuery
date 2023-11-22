@@ -1,10 +1,12 @@
-from flask import Flask,render_template,request, abort
+from flask import Flask, render_template, request, abort, jsonify
+from flask_cors import CORS
 from urllib import parse
 import messageClasses
 import struct
 import zmq
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route("/")
 def home():
@@ -55,7 +57,28 @@ def search():
     
     return "Validated successfully"
 
+@app.route('/api/post-coordinates', methods=['POST'])
+def get_coordinates():
+    try:
+        data = request.json
+        
+        if 'topRight' not in data or 'bottomLeft' not in data:
+            raise ValueError("Invalid structure: 'topRight' and 'bottomRight' required")
 
+        top_right = data['topRight']
+        bottom_left = data['bottomLeft']
+
+        if not all(key in top_right for key in ['lat', 'lng']) or not all(key in bottom_left for key in ['lat', 'lng']):
+            raise ValueError("Invalid structure: 'lat' and 'lng' required for 'topRight' and 'bottomLeft'")
+
+        ne_lat, ne_lng = float(top_right['lat']), float(top_right['lng'])
+        sw_lat, sw_lng = float(bottom_left['lat']), float(bottom_left['lng'])
+
+        return jsonify({'success': 'true', 'message': 'Coordinates received'})
+    except ValueError as e:
+        return jsonify({'success': 'false', 'message': str(e)}), 400
+
+<<<<<<< web-api/src/__init__.py
 # This function can be called in order to send a specific amount of requests to the data parser, with a specific message
 
 def data_parser_io(request_amount, message_to_send):
@@ -129,3 +152,6 @@ def file_names_decoder(message):
     file_names = struct.unpack(fm, content)
 
     return file_names
+=======
+        
+>>>>>>> web-api/src/__init__.py
