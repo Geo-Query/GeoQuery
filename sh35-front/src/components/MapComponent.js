@@ -96,23 +96,24 @@ const MapComponent = ({ setBoundingBox, boundingBox }) => {
         const layer = e.layer;
         if (e.layerType === 'rectangle') {
           const bounds = layer.getBounds();
-<<<<<<< 240efb52af7b18abe9b092df2bdef277e401c839
-          const southWest = bounds.getSouthWest();
-          const northEast = bounds.getNorthEast();
+          // const southWest = bounds.getSouthWest();
+          // const northEast = bounds.getNorthEast();
+
+          // setBoundingBox(newBoundingBox);
+          // captureMap(map, newBoundingBox);
+
+          
+          const southWest = bounds.getSouthWest()// Bottom-left
+          const northEast = bounds.getNorthEast()// Top-right
+
           const newBoundingBox = {
-            bottomLeft: [southWest.lat, southWest.lng],
-            topRight: [northEast.lat, northEast.lng],
-          };
-          setBoundingBox(newBoundingBox);
-          captureMap(map, newBoundingBox);
-=======
-          const southWest = bounds.getSouthWest(); // Bottom-left
-          const northEast = bounds.getNorthEast(); // Top-right
-          setBoundingBox({
             bottomLeft: { lat: southWest.lat, lng: southWest.lng },
             topRight: { lat: northEast.lat, lng: northEast.lng },
-          });          
->>>>>>> 4faac3dbe6221c0e8ce3fb89d6d257d5725a421c
+          };
+          
+          setBoundingBox(newBoundingBox); 
+
+          captureMap(map, newBoundingBox);      
         }
       });
       
@@ -125,16 +126,21 @@ const MapComponent = ({ setBoundingBox, boundingBox }) => {
     return null;
   };
 
+  /*
+  Once box is drawn there is a small error in the accuracy of the coordinates. It is minimal (off by .0003) places. Fix after demo.
+  */
   const updateMousePositionStatic = (event) => {
     const rect = event.target.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
   
     if (boundingBox) {
-      const latRange = boundingBox.topRight[0] - boundingBox.bottomLeft[0];
-      const lngRange = boundingBox.topRight[1] - boundingBox.bottomLeft[1];
-      const lat = boundingBox.topRight[0] - (y / rect.height) * latRange;
-      const lng = boundingBox.bottomLeft[1] + (x / rect.width) * lngRange;
+      // const latRange = boundingBox.topRight.lat - boundingBox.bottomLeft.lng;
+      // const lngRange = boundingBox.topRight.lat - boundingBox.bottomLeft.lng;
+      const latRange = boundingBox.topRight.lat - boundingBox.bottomLeft.lat;
+      const lngRange = boundingBox.topRight.lng - boundingBox.bottomLeft.lng;
+      const lat = boundingBox.topRight.lat - (y / rect.height) * latRange;
+      const lng = boundingBox.bottomLeft.lng + (x / rect.width) * lngRange;
   
       setMousePosition({
         latlng: { lat, lng },
@@ -149,7 +155,6 @@ const MapComponent = ({ setBoundingBox, boundingBox }) => {
     <div style={{ position: "relative" }}>
       {staticImageUrl ? ( // Conditionally display static image or dynamic map
         <div>
-<<<<<<< 240efb52af7b18abe9b092df2bdef277e401c839
             <img
               src={staticImageUrl}
               alt="Static Map"
@@ -174,12 +179,10 @@ const MapComponent = ({ setBoundingBox, boundingBox }) => {
   
       {boundingBox && (
         <div className="bounding-box">
-          <p>Bottom Left: {boundingBox.bottomLeft.join(", ")}</p>
-          <p>Top Right: {boundingBox.topRight.join(", ")}</p>
-=======
+          {/* <p>Bottom Left: {boundingBox.bottomLeft.join(", ")}</p>
+          <p>Top Right: {boundingBox.topRight.join(", ")}</p> */}
           <p>Bottom Left: {boundingBox.bottomLeft.lat}, {boundingBox.bottomLeft.lng}</p>
           <p>Top Right: {boundingBox.topRight.lat}, {boundingBox.topRight.lng}</p>
->>>>>>> 4faac3dbe6221c0e8ce3fb89d6d257d5725a421c
         </div>
       )}
   
@@ -196,22 +199,6 @@ const MapComponent = ({ setBoundingBox, boundingBox }) => {
   </div>
 )}
 
-<<<<<<< 240efb52af7b18abe9b092df2bdef277e401c839
-=======
-
-      {mousePosition && (
-        <div
-          className="mouse-position-tooltip"
-          style={{
-            top: mousePosition.containerPoint.y,
-            left: mousePosition.containerPoint.x,
-          }}
-        >
-          Lat: {mousePosition.latlng.lat.toFixed(4)}, Lng:{" "}
-          {mousePosition.latlng.lng.toFixed(4)}
-        </div>
-      )}
->>>>>>> 4faac3dbe6221c0e8ce3fb89d6d257d5725a421c
     </div>
   );
 };
