@@ -6,9 +6,11 @@ mod kml;
 mod spatial;
 mod index;
 mod dt2;
+mod geojson;
 
 use geotiff::{parse_tiff, TIFFErrorState, HeaderErrorState, IFDEntryErrorState, GeoKeyDirectoryErrorState};
-use crate::dt2::parse_dt2;
+use crate::dt2::{DSIErrorState, DT2ErrorState, parse_dt2, UHLErrorState};
+use crate::geojson::{GeoJSONErrorState, parse_geojson};
 use crate::kml::{KMLErrorState, parse_kml};
 use crate::spatial::Region;
 
@@ -21,10 +23,11 @@ fn main() {
     //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/OpenMap Local/SU01NE.tif",
     //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/miniscale/MiniScale_(standard)_R23.tif",
     //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/OrdnanceSurveyOpenData/VectorMapDistrict/SU01.tif",
-    //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Aerial Imagery/ST9143.tif"
+    //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Aerial Imagery/ST9143.tif",
+    //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/terrain/DTED/PlanetDEM_1s__W4_N52.dt2"
     // ];
     let paths = vec![
-        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/terrain/DTED/PlanetDEM_1s__W4_N52.dt2"
+        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/dted/DTED-Checking/TCD_DTED119/DTED/E000/N42.DT1"
     ];
     // Convert raw strings to path buffers for opening.
     let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
@@ -37,7 +40,7 @@ fn main() {
             Some(ext) => { // Unwrap code to get OSStr -> str for comparison.
                 match ext.to_str() {
                     Some(ext) => match File::open(&path) {
-                        Ok(file) => match ext { // Once have extension, match against it.
+                        Ok(file) => match ext.to_ascii_lowercase().as_str() { // Once have extension, match against it.
                             "kml" => {
                                 let mut reader = BufReader::new(file);
                                 if let Some(region) = match parse_kml(&mut reader) {
@@ -140,14 +143,86 @@ fn main() {
                                     }
                                 } {regions.push(region)}
                             },
-                            "dt2" => {
+                            "dt2" | "dt1" => {
                                 let mut reader = BufReader::new(file);
                                 match parse_dt2(&mut reader) {
                                     Ok(v) => {
-                                        println!("{v:?}");
+                                        regions.push(v)
                                     },
-                                    Err(e) => {
-                                        println!("{e:?}");
+                                    Err(e) => match e {
+                                        DT2ErrorState::UnexpectedFormat(f) => {
+                                            eprintln!("Unexpected DT2 Format Error!");
+                                            eprintln!("Reason: {f}");
+                                            panic!();
+                                        }
+                                        DT2ErrorState::UHLError(e) => match e {
+                                            UHLErrorState::InvalidLength(l) => {
+                                                eprintln!("File: {:?}", path);
+                                                eprintln!("Failed to read User Header Label, was passed wrong length byte buffer: {l}");
+                                                eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                                panic!();
+                                            }
+                                            UHLErrorState::InvalidSentinel(s) => {
+                                                eprintln!("File: {:?}", path);
+                                                eprintln!("Failed to read User Header Label, Sentinel value was invalid, is this really a .dt2? {s:?}");
+                                                eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                                panic!();
+                                            }
+                                            UHLErrorState::InvalidDDMMSSH(ddmmssh) => {
+                                                eprintln!("File: {:?}", path);
+                                                eprintln!("Failed to read User Header Label, Encountered unparsable coordinate: {ddmmssh:?}");
+                                                eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                                panic!();
+                                            }
+                                        }
+                                        DT2ErrorState::DSIError(e) => match e {
+                                            DSIErrorState::InvalidLength(l) => {
+                                                eprintln!("File: {:?}", path);
+                                                eprintln!("Failed to read DSI, was passed wrong length byte buffer: {l}");
+                                                eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                                panic!();
+                                            }
+                                            DSIErrorState::InvalidSentinel(s) => {
+                                                eprintln!("File: {:?}", path);
+                                                eprintln!("Failed to read DSI, Sentinel value was invalid, is this really a .dt2? {s:?}");
+                                                eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                                panic!();
+                                            }
+                                            DSIErrorState::InvalidDDMMSSH(ddmmssh) => {
+                                                eprintln!("File: {:?}", path);
+                                                eprintln!("Failed to read DSI, Encountered unparsable coordinate: {ddmmssh:?}");
+                                                eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                                panic!();
+                                            },
+                                            DSIErrorState::InvalidDDDMMSSH(dddmmssh) => {
+                                                eprintln!("File: {:?}", path);
+                                                eprintln!("Failed to read DSI, Encountered unparsable coordinate: {dddmmssh:?}");
+                                                eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                                panic!();
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "geojson" => {
+                                let mut reader = BufReader::new(file);
+                                match parse_geojson(&mut reader) {
+                                    Ok(region) => {
+                                        regions.push(region);
+                                    }
+                                    Err(e) => match e {
+                                        GeoJSONErrorState::InvalidJSON(e) => {
+                                            eprintln!("File: {:?}", path);
+                                            eprintln!("Failed to parse, Invalid JSON, Error: {e:?}");
+                                            eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                            panic!();
+                                        }
+                                        GeoJSONErrorState::UnparsableCoordinate(c) => {
+                                            eprintln!("File: {:?}", path);
+                                            eprintln!("Failed to parse number, see value: {c:?}");
+                                            eprintln!("Panic! Please contact developer, this is a breaking issue."); // Panic as parsing error
+                                            panic!();
+                                        }
                                     }
                                 }
                             }
