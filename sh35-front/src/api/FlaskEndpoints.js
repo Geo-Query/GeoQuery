@@ -20,6 +20,7 @@ const MapBoundingBoxForm = ({ boundingBox }) => {
         boundingBox
       );
       console.log(response.data);
+
     } catch (error) {
       console.error("There was an error sending the coordinates", error);
     }

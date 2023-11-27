@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, abort, jsonify
 from flask_cors import CORS
 from urllib import parse
-import messageClasses
+from src import messageClasses
 import struct
 import zmq
 
@@ -54,8 +54,7 @@ def search():
         print(f"Error: {e}")
         abort(500)
 
-    
-    return "Validated successfully"
+    return "Validated Successfully"
 
 @app.route('/api/post-coordinates', methods=['POST'])
 def get_coordinates():
@@ -74,6 +73,19 @@ def get_coordinates():
         ne_lat, ne_lng = float(top_right['lat']), float(top_right['lng'])
         sw_lat, sw_lng = float(bottom_left['lat']), float(bottom_left['lng'])
 
+        # Code to send data to parser
+        msg = lat_long_builder(ne_lat, ne_lng, sw_lat, sw_lng)
+        ret = data_parser_io(1, msg)
+
+        if ret is None:
+            return "Failed"
+        else:
+            ret = file_names_decoder(ret)
+
+            print(ret)
+
+            return jsonify(ret)
+
         return jsonify({'success': 'true', 'message': 'Coordinates received'})
     except ValueError as e:
         return jsonify({'success': 'false', 'message': str(e)}), 400
@@ -83,20 +95,14 @@ def get_coordinates():
 def data_parser_io(request_amount, message_to_send):
     context = zmq.Context()
 
-    # Checks if message_to_send is a Message object
-    try:
-        assert(isinstance(message_to_send,messageClasses.Message))
-    except AssertionError:
-        raise AssertionError("Message to be sent must be an object of the Message Class")
-
     # Socket to talk to server
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://localhost:5555")
 
     # Sends request to server
     for r in range(request_amount):
-        print("Sending Request {r} ...")
-        socket.send(message_to_send)
+        print("Sending Request",r+1)
+        socket.send_string(message_to_send)
 
         # Checks if a return message has been sent, if it has, returns it
         message_received = socket.recv()
@@ -119,35 +125,13 @@ def lat_long_builder(lat1, long1, lat2, long2):
     except AssertionError:
         raise AssertionError("Lat. and Long. Arguments should be float")
 
-    float_array = [lat1, long1, lat2, long2]
-    float_array_bytes = struct.pack('f' * len(float_array), *float_array)
-
-    content = messageClasses.MessageContent(float_array_bytes)
-    message = messageClasses.Message(content, 0)
+    message = str(lat1) + ":" + str(long1) + ":" + str(lat2) + ":" + str(long2)
 
     return message
 
-
 # This function takes a message, checks if it is a FILE_NAMES message and then unpacks and returns it
 def file_names_decoder(message):
-
-    # Checks if message argument is a Message object
-    try:
-        assert(isinstance(message, messageClasses.Message))
-    except AssertionError:
-        raise AssertionError("Argument must be an object of the Message Class")
-
-    # Check if message type is FILE_NAMES
-    try:
-        assert(message.message_header.message_type == 1)
-    except AssertionError:
-        raise AssertionError("Message should be a FILE_NAMES message")
-
-    content = message.message_content.content
-    length = message.message_header.message_length
-
-    # Will probably need to alter when output from data parser is defined
-    fm = "{}s".format(length)
-    file_names = struct.unpack(fm, content)
+    file_names = message.decode()
+    file_names = file_names.split(":")
 
     return file_names
