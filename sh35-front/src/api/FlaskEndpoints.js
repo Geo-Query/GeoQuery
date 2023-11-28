@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Bottom Left: 55.830215663223996, -4.3157386779785165
 // Top Right: 55.88898321305664, -4.199352264404298
@@ -21,8 +23,13 @@ const MapBoundingBoxForm = ({ boundingBox }) => {
       );
       console.log(response.data);
 
+      const stringResponse = response.data.toString();
+
+      toast.success("Filenames: " + stringResponse);
+
     } catch (error) {
       console.error("There was an error sending the coordinates", error);
+      toast.error("There was an error sending the coordinates");
     }
   };
 

@@ -3,6 +3,9 @@ import "./App.css";
 import MapComponent from "./components/MapComponent";
 import MapBoundingBoxForm from "./api/FlaskEndpoints";
 import LongLatBoxes from "./components/InputBoxes";
+/* Added this stuff, might be scuffed - Anwar */
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   const [boundingBox, setBoundingBox] = useState(null);
@@ -37,6 +40,7 @@ function App() {
 
         <div className="w-full md:w-auto mt-4 md:mt-0">
           <MapBoundingBoxForm boundingBox={boundingBox} />
+          <ToastContainer />
         </div>
       </div>
 

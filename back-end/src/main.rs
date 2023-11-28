@@ -26,7 +26,7 @@ fn main() {
             println!("{}",val);
         }
 
-        //Sends two files back
+        //Sends some files back
         let file1 = String::from("m1.geotiff");
         let file2 = String::from("m2.dt2");
         let file3 = String::from("m3.geojson");

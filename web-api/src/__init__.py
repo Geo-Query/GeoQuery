@@ -84,7 +84,8 @@ def get_coordinates():
 
             print(ret)
 
-            return jsonify(ret)
+            # return jsonify(ret)
+            return ret
 
         return jsonify({'success': 'true', 'message': 'Coordinates received'})
     except ValueError as e:
