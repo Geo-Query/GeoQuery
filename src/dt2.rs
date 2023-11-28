@@ -252,10 +252,10 @@ impl DataSetIdentification {
 
 
         return Ok(DataSetIdentification {
-            sw_corner: (sw_lat, sw_long),
-            ne_corner: (ne_lat, ne_long),
-            nw_corner: (nw_lat, nw_long),
-            se_corner: (se_lat, se_long),
+            sw_corner: (sw_long, sw_lat),
+            ne_corner: (ne_long, ne_lat),
+            nw_corner: (nw_long, nw_lat),
+            se_corner: (se_long, se_lat),
         })
     }
 }

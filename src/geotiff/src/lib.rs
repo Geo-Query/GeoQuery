@@ -31,8 +31,8 @@ pub trait FileDescriptor {
 
 #[derive(Debug)]
 pub struct GeoTiffRegion {
+    pub top_left: (f64, f64),
     pub bottom_right: (f64, f64),
-    pub top_left: (f64, f64)
 }
 
 pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<Box<GeoTiffRegion>, TIFFErrorState> {

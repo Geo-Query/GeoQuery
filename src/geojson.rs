@@ -113,7 +113,6 @@ pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<Box<GeoJSONRegion>,
     }}
 
     let boundaries = get_boundaries(coordinate_pairs);
-    println!("Boundaries: {boundaries:?}");
     return Ok(Box::new(GeoJSONRegion {
         top_right: boundaries.1,
         bottom_left: boundaries.0,

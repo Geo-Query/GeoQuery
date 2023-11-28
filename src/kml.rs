@@ -29,8 +29,8 @@ pub fn get_boundaries(coordinates: Vec<Coordinate>) -> (Coordinate, Coordinate) 
 
 #[derive(Debug)]
 pub struct KMLRegion {
+    pub top_right: Coordinate,
     pub bottom_left: Coordinate,
-    pub top_right: Coordinate
 }
 
 impl Region for KMLRegion {

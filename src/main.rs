@@ -16,6 +16,15 @@ use crate::spatial::Region;
 
 
 fn main() {
+
+    let work = vec![
+        ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Sat Imagery/PlanetSAT_10_0s3_N54W004.tif", "TIFF, Expected Output: (-4.000000000000006, 54.00000000000005 : -2.000000000000086, 52.00000000000013)"),
+        ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/terrain/DTED/PlanetDEM_1s__W4_N52.dt2", "DT2, Expected Output: (-2.9997222222222222,53.0001388888888840 : -4.0002777777777778,51.9998611111111089"),
+        ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/dted/DTED-Checking/TCD_DTED119/DTED/E000/N42.DT1", "DT1, Expected Output: ( 1.0004166666666667,43.0004166666666663) : -0.0004166666666667,41.9995833333333337"),
+        ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Vector/Kml/luciad.kml", "KML, Expected Output: (4.7008238168676177,50.8788908580693970 : 4.6674176191402541,50.8644705370330996)"),
+        ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Vector/geojson/world.geojson", "GEOJSON, Expected Output: (179.9999970000000076,83.5333389999999980 : -179.9999990000000025,-89.9000209999999953\
+        )"),
+    ];
     // Set of test paths, will be gotten by a recursive directory search eventually.
     // let paths = vec![
     //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Sat Imagery/PlanetSAT_10_0s3_N54W004.tif",
@@ -26,16 +35,18 @@ fn main() {
     //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Aerial Imagery/ST9143.tif",
     //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/terrain/DTED/PlanetDEM_1s__W4_N52.dt2"
     // ];
-    let paths = vec![
-        "/home/ben/uni/psd/teamproj/sample_data/Sample map types/dted/DTED-Checking/TCD_DTED119/DTED/E000/N42.DT1"
-    ];
+    // let paths = vec![
+    //     "/home/ben/uni/psd/teamproj/sample_data/Sample map types/dted/DTED-Checking/TCD_DTED119/DTED/E000/N42.DT1"
+    // ];
     // Convert raw strings to path buffers for opening.
-    let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
+    let paths: Vec<(PathBuf, &str)> = work.into_iter().map(|x| (PathBuf::from(x.0), x.1)).collect();
 
     let mut regions: Vec<Box<dyn Region>> = Vec::with_capacity(paths.len());
     // Iterate over supplied files.
-    for path in paths {
+    for (path, text) in paths {
         // Get the file extension.
+        println!("----------------------------------------------");
+        println!("{}", text);
         match path.extension() {
             Some(ext) => { // Unwrap code to get OSStr -> str for comparison.
                 match ext.to_str() {
@@ -60,7 +71,10 @@ fn main() {
                                             None
                                         }
                                     }
-                                } { regions.push(region); }
+                                } {
+                                    println!("{region:?}");
+                                    regions.push(region);
+                                }
                             },
                             "tif" => {
                                 let mut reader = BufReader::new(file);
@@ -141,12 +155,16 @@ fn main() {
                                             panic!();
                                         }
                                     }
-                                } {regions.push(region)}
+                                } {
+                                    println!("{region:?}");
+                                    regions.push(region);
+                                }
                             },
                             "dt2" | "dt1" => {
                                 let mut reader = BufReader::new(file);
                                 match parse_dt2(&mut reader) {
                                     Ok(v) => {
+                                        println!("{v:?}");
                                         regions.push(v)
                                     },
                                     Err(e) => match e {
@@ -208,6 +226,7 @@ fn main() {
                                 let mut reader = BufReader::new(file);
                                 match parse_geojson(&mut reader) {
                                     Ok(region) => {
+                                        println!("{region:?}");
                                         regions.push(region);
                                     }
                                     Err(e) => match e {
@@ -253,6 +272,7 @@ fn main() {
                 eprintln!("Has no EXTENSION! Thus ignored!"); // Files without extensions are ignored, but a log is made.
             }
         }
+        println!("----------------------------------------------");
     }
     println!("Got regions: {regions:?}");
 
