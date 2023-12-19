@@ -1,7 +1,10 @@
 # SH35 Main Repository
 ------------------------
 
-Used to track issues, and store information (in wiki)
+Contains two subprojects...
+frontend & backend.
+
+As well as a basic Flask app to provide relay functionality from frontend to backend.
 
 Team Members:
 ------------------
@@ -17,14 +20,35 @@ Calum Robertson, 2665639r@student.gla.ac.uk, 07368119260
 
 Yangruizhe Jiang, 2665049j@student.gla.ac.uk, 07421723178
 
-
-# SH35 Web Api
+## Frontend
 -----------------
+Frontend in react, allows for queries to be made to backend.
 
-A repository for the WEB API
-# sh35-front-end
-Language: Rust
----------------------------------------------------------------------------------------------------
+Requirements:
+  - Select Bounding Box
+  - Convert Box to coordinates in Longitude & Latitude decimal format
+  - Allow direct inputs of various longitude/latitude formats, skipping the box step if user should so choose.
+  - Save this query to history.
+  - Send this query onwards to the backend. (Via REST API)
+  - Poll/Check for results in progress, and display them to the user.
+  - Upon full results, should be able to export to some predefined structure.
+
+## Backend
+-----------------
+Backend in Rust, allows for search/query of files based on geospatial criterion.
+
+Requirements:
+  - Should be able to take a directory and recursively explore it, indexing geospatial files based on 
+    their overall longitude/latitude decimal extent.
+    - Requires parsing of various formats, see <----------->
+    - Use of R* Tree enables quick indexing.
+    - Use of Serde will enable quick saving/loading of index.
+
+  - Receive coordinates in standard longitude/latitude decimal format
+  - From these coordinates, should be able to find all files which overlap the given area.
+  - Return these to the frontend in a standardized format, with enough information to fetch/export these files.
+
+
 Progression:
 - RStar Implementation [x]
 - Region Parsing: [ ]
@@ -32,8 +56,8 @@ Progression:
   - GEOTIFF w/o sidecar [x]
   - DTED [x]
   - GEOTIFF w/ sidecar [ ]
-  - GEOJSON [ ]
-  - GPKG [ ]
+  - GEOJSON [x]
+  - GPKG [ 
   - MBTILES [ ]
   - OSM/PBF [ ]
   - SHAPEFILE [ ]
@@ -62,5 +86,5 @@ Solutions:
 ## Implementation Notes:
 --------------------------
 Kinds of failure:
-    UnexpectedFormat - Should be displayed clearly to the user.
-    MissingRequiredData - Should be ignored, and a small warning. In the case of GeoTiff, should look for a sidecar?
+  - UnexpectedFormat - Should be displayed clearly to the user.
+  - MissingRequiredData - Should be ignored, and a small warning. ( In the case of GeoTiff, should look for a sidecar? )
