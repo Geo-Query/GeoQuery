@@ -1,22 +1,43 @@
 use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
+use axum;
 
-mod kml;
 mod spatial;
 mod index;
-mod dt2;
-mod geojson;
+mod parsing;
 
 use geotiff::{parse_tiff, TIFFErrorState, HeaderErrorState, IFDEntryErrorState, GeoKeyDirectoryErrorState};
-use crate::dt2::{DSIErrorState, DT2ErrorState, parse_dt2, UHLErrorState};
-use crate::geojson::{GeoJSONErrorState, parse_geojson};
-use crate::kml::{KMLErrorState, parse_kml};
+use crate::parsing::dt2::{DSIErrorState, DT2ErrorState, parse_dt2, UHLErrorState};
+use crate::parsing::geojson::{GeoJSONErrorState, parse_geojson};
+use crate::parsing::kml::{KMLErrorState, parse_kml};
 use crate::spatial::Region;
+use tokio;
+use serde::{Deserialize};
+
+const INDEX_ADDRESS: &str = "0.0.0.0:42069";
 
 
-fn main() {
+#[tokio::main]
+async fn main() {
 
+
+    let app = axum::Router::new()
+        .route("/", axum::routing::get(index));
+
+    // Open TCP Transport
+    let listener = match tokio::net::TcpListener::bind(INDEX_ADDRESS).await {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("Failed to open TCP Listener, reasion: {e:?}");
+            panic!();
+        }
+    };
+    axum::serve(listener, app).await.unwrap();
+
+
+    // What needs to happen:
+    // Receive web request.
     let work = vec![
         ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Sat Imagery/PlanetSAT_10_0s3_N54W004.tif", "TIFF, Expected Output: (-4.000000000000006, 54.00000000000005 : -2.000000000000086, 52.00000000000013)"),
         ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/terrain/DTED/PlanetDEM_1s__W4_N52.dt2", "DT2, Expected Output: (-2.9997222222222222,53.0001388888888840 : -4.0002777777777778,51.9998611111111089"),
@@ -276,4 +297,8 @@ fn main() {
     }
     println!("Got regions: {regions:?}");
 
+}
+
+async fn index() -> &'static str {
+    "INDEX ROOT"
 }

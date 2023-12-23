@@ -1,11 +1,11 @@
 [package]
-name = "sh35-data-parsing"
+name = "sh35-backend"
 version = "0.0.2"
 edition = "2021"
 
 [workspace]
 members = [
-    "src/geotiff",
+    "src/parsing/geotiff",
 ]
 
 [dependencies]
@@ -14,6 +14,7 @@ rstar = "0.11.0"
 xml-rs = "0.8.19"
 proj = "0.27.2"
 json-event-parser = "0.1.1"
-geotiff = { path= "src/geotiff" }
-tokio = "1.34.0"
+geotiff = { path= "src/parsing/geotiff" }
+tokio = { version = "1.34.0", features = ["rt", "rt-multi-thread", "macros"] }
 axum = "0.7.1"
+serde = { version = "1.0.193", features = ["derive"] }

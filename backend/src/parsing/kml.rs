@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::str::FromStr;
 use xml::reader::{EventReader, XmlEvent};
-use crate::kml::KMLErrorState::{NotEnoughGeoData, UnexpectedFormat};
+use crate::parsing::kml::KMLErrorState::{NotEnoughGeoData, UnexpectedFormat};
 
 pub fn get_boundaries(coordinates: Vec<Coordinate>) -> (Coordinate, Coordinate) {
     let mut min_x: f64 = coordinates[0].0;

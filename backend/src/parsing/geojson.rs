@@ -108,7 +108,9 @@ pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<Box<GeoJSONRegion>,
                 }
 
             },
-            JsonEvent::Eof => break,
+            JsonEvent::Eof => {
+                break;
+            }
             _ => {}
     }}
 
