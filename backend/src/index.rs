@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use crate::spatial::{Region, Coordinate};
 use rstar::{RTreeObject, AABB};
 
@@ -5,7 +6,7 @@ use rstar::{RTreeObject, AABB};
 #[derive(Debug)]
 pub struct Node {
     pub region: Box<dyn Region>,
-    pub map_data_index: i32
+    pub path: PathBuf
 }
 
 // Implement RTreeObject on Node.
