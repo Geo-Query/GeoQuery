@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
+use std::sync::Arc;
 use axum;
 use rstar::RTree;
 mod spatial;
@@ -16,6 +17,7 @@ use crate::parsing::kml::{KMLErrorState, parse_kml};
 use crate::spatial::Region;
 use tokio;
 use serde::{Deserialize};
+use tokio::sync::Mutex;
 use crate::index::Node;
 
 const INDEX_ADDRESS: &str = "0.0.0.0:42069";
@@ -47,7 +49,7 @@ pub fn parse(path: PathBuf) -> Box<dyn Region> {
                                 }
                             } {
                                 println!("{region:?}");
-                                return Box::new(region);
+                                return region;
                             }
                         },
                         "tif" => {
@@ -131,7 +133,7 @@ pub fn parse(path: PathBuf) -> Box<dyn Region> {
                                 }
                             } {
                                 println!("{region:?}");
-                                return Box::new(region);
+                                return region;
                             }
                         },
                         "dt2" | "dt1" => {
@@ -139,7 +141,7 @@ pub fn parse(path: PathBuf) -> Box<dyn Region> {
                             match parse_dt2(&mut reader) {
                                 Ok(v) => {
                                     println!("{v:?}");
-                                    return Box::new(v);
+                                    return v;
                                 },
                                 Err(e) => match e {
                                     DT2ErrorState::UnexpectedFormat(f) => {
@@ -201,7 +203,7 @@ pub fn parse(path: PathBuf) -> Box<dyn Region> {
                             match parse_geojson(&mut reader) {
                                 Ok(region) => {
                                     println!("{region:?}");
-                                    return Box::new(region);
+                                    return region;
                                 }
                                 Err(e) => match e {
                                     GeoJSONErrorState::InvalidJSON(e) => {
@@ -251,10 +253,10 @@ pub fn parse(path: PathBuf) -> Box<dyn Region> {
     panic!();
 }
 
+#[derive(Clone)]
 struct Index {
-    i: RTree<dyn Region>
+    i: Mutex<RTree<Node>>
 }
-
 
 #[tokio::main]
 async fn main() {
@@ -277,8 +279,8 @@ async fn main() {
         };
         i.insert(node);
     }
-    let state = Index {
-        i
+    let mut state = Index {
+        i: Mutex::new(i)
     };
 
 
