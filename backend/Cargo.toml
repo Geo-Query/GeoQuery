@@ -10,11 +10,12 @@ members = [
 
 [dependencies]
 anyhow = "1.0.75"
-rstar = "0.11.0"
+rstar = { version="0.11.0" , features = ["serde"]}
 xml-rs = "0.8.19"
 proj = "0.27.2"
 json-event-parser = "0.1.1"
 geotiff = { path= "src/parsing/geotiff" }
 tokio = { version = "1.34.0", features = ["rt", "rt-multi-thread", "macros"] }
-axum = "0.7.1"
+axum = { version="0.7.1", features = ["macros"]}
 serde = { version = "1.0.193", features = ["derive"] }
+uuid = { version = "1.6.1", features = ["v4", "serde"] }

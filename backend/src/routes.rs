@@ -1,38 +1,75 @@
 use std::fmt::Debug;
-use axum::extract::{Query, State};
+use std::sync::Arc;
+use axum::{debug_handler, Extension, Json};
+use axum::extract::{Query};
+use axum::http::StatusCode;
 use rstar::{Envelope, Point, RTreeObject, RTree, AABB};
+use serde::{Deserialize, Serialize};
+use tokio::sync::RwLock;
+use uuid::Uuid;
+use crate::{State, worker::QueryState};
 use crate::spatial::{Coordinate, Region};
-use crate::Index;
-use crate::index::Node;
+use crate::worker::QueryTask;
 
 enum QueryErrorKind {
     FooError
 }
-#[derive(Debug)]
-struct QueryRegion {
-    top_left: Coordinate,
-    bottom_right: Coordinate
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SearchQueryResponse {
+    token: Uuid
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PaginatedQueryResponse {
+    pagination: Pagination,
+    results: Vec<QueryState>
 }
 
 
-#[derive(Debug)]
-struct PaginatedQueryResponse {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Pagination {
     count: usize,
-    results: Vec<Node>
+    current_page: usize,
+    per_page: usize
 }
 
-impl Region for QueryRegion {
-    fn bottom_left(&self) -> Coordinate { (self.top_left.0, self.bottom_right.1) }
-    fn bottom_right(&self) -> Coordinate { self.bottom_right }
-    fn top_left(&self) -> Coordinate { self.top_left }
-    fn top_right(&self) -> Coordinate { (self.bottom_right.0, self.top_left.1) }
+#[derive(Debug, Serialize, Deserialize)]
+pub struct QueryRegion {
+    top_left_long: f64,
+    top_left_lat: f64,
+    bottom_right_long: f64,
+    bottom_right_lat: f64
+}
+
+impl From<QueryRegion> for Region {
+    fn from(value: QueryRegion) -> Self {
+        Region {
+            top_left: (value.top_left_long, value.top_left_lat),
+            bottom_right: (value.bottom_right_long, value.bottom_right_lat)
+        }
+    }
+}
+pub async fn index() -> &'static str {
+    "INDEX ROOT"
 }
 
 
-pub async fn search(State(mut state): State<Index>, Query(query): Query<QueryRegion>) -> Result<PaginatedQueryResponse, QueryErrorKind> {
-    let x = state.i.get_mut().drain_in_envelope(AABB::from_corners(query.bottom_right, query.top_left));
-    return Ok(PaginatedQueryResponse {
-        count: 10,
-        results: x.take(10).collect()
-    });
+#[debug_handler]
+pub async fn search(Extension(state): Extension<Arc<State>>, Query(query): Query<QueryRegion>) -> Result<Json<SearchQueryResponse>, (StatusCode, String)> {
+    let _uuid = Uuid::new_v4();
+    return match state.tx.send(QueryTask {
+        uuid: _uuid,
+        state: QueryState::Waiting,
+        region: query.into(),
+        results: None
+    }) {
+        
+        Ok(_) => {
+            return Ok(Json(SearchQueryResponse {
+                token: _uuid
+            }));
+        },
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, format!("{:?}", e)))
+    };
 }
