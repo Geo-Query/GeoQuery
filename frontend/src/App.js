@@ -3,6 +3,7 @@ import "./App.css";
 import MapComponent from "./components/MapComponent";
 import MapBoundingBoxForm from "./api/FlaskEndpoints";
 import LongLatBoxes from "./components/InputBoxes";
+import QueryHistory from "./components/QueryHistory"
 
 function App() {
   const [boundingBox, setBoundingBox] = useState(null);
@@ -46,6 +47,10 @@ function App() {
           setBoundingBox={setBoundingBox}
           boundingBox={boundingBox}
         />
+      </div>
+
+      {/* Query History */}
+    <div className="flex-grow p-6 border-2 border-white rounded-xl mx-6 my-4">        <QueryHistory />
       </div>
     </div>
   );
