@@ -1,4 +1,5 @@
 use std::collections::{HashMap, VecDeque};
+use std::future::IntoFuture;
 use std::hash::Hash;
 use std::path::PathBuf;
 use std::sync::{Arc};
@@ -16,8 +17,8 @@ use serde::{Deserialize};
 use tokio::sync::{Mutex, mpsc, RwLock};
 use uuid::Uuid;
 use crate::index::{Node, parse};
-use crate::routes::{index, search};
-use crate::worker::{QueryState, QueryTask};
+use crate::routes::{index, results, search};
+use crate::worker::{QueryState, QueryTask, worker};
 
 const INDEX_ADDRESS: &str = "0.0.0.0:42069";
 
@@ -67,6 +68,7 @@ async fn main() {
     let app = axum::Router::new()
         .route("/", axum::routing::get(index))
         .route("/search", axum::routing::get(search))
+        .route("/results", axum::routing::get(results))
         .layer(axum::Extension(state));
 
 
@@ -81,5 +83,5 @@ async fn main() {
 
 
     let axum_task = axum::serve(listener, app);
-    axum_task.await;
+    let t = futures::join!(axum_task.into_future(), worker(shared_state));
 }

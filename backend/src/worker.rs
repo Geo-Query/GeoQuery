@@ -25,12 +25,14 @@ pub struct QueryTask {
 }
 
 pub async fn worker(state: Arc<State>) {
+    println!("FOO");
     loop {
         let mut task = {
             let mut rx_lck = state.rx.lock().await;
             let Some(task) = rx_lck.recv().await else {
                 break;
             };
+            println!("Task: {:?}", task.uuid);
             task
         };
 

@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use std::ops::{Deref, Range};
 use std::sync::Arc;
 use axum::{debug_handler, Extension, Json};
 use axum::extract::{Query};
@@ -8,9 +9,12 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use uuid::Uuid;
 use crate::{State, worker::QueryState};
+use crate::index::Node;
 use crate::spatial::{Coordinate, Region};
+use crate::worker::QueryState::Complete;
 use crate::worker::QueryTask;
 
+const PER_PAGE: i32 = 50;
 enum QueryErrorKind {
     FooError
 }
@@ -22,8 +26,9 @@ pub struct SearchQueryResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PaginatedQueryResponse {
-    pagination: Pagination,
-    results: Vec<QueryState>
+    status: QueryState,
+    pagination: Option<Pagination>,
+    results: Option<Vec<Node>>
 }
 
 
@@ -40,6 +45,12 @@ pub struct QueryRegion {
     top_left_lat: f64,
     bottom_right_long: f64,
     bottom_right_lat: f64
+}
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ResultQuery {
+    uuid: Uuid
 }
 
 impl From<QueryRegion> for Region {
@@ -72,4 +83,57 @@ pub async fn search(Extension(state): Extension<Arc<State>>, Query(query): Query
         },
         Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, format!("{:?}", e)))
     };
+}
+
+pub async fn results(Extension(state): Extension<Arc<State>>, Query(query): Query<ResultQuery>) -> Result<Json<PaginatedQueryResponse>, (StatusCode, String)> {
+    let mut j_lck = state.j.read().await;
+    let task = match j_lck.get(&query.uuid) {
+            Some(t) => t,
+            None => return Err((StatusCode::NOT_FOUND, "Task not found".to_string()))
+    };
+    let Some(results) = &task.results else {
+        println!("Encountered complete task without results!");
+        return Ok(Json(PaginatedQueryResponse {
+            status: QueryState::Complete,
+            pagination: Some(Pagination {
+                count: 0,
+                current_page: 0,
+                per_page: 0,
+            }),
+            results: None,
+        }));
+    };
+
+    match task.state {
+        QueryState::Waiting => {
+            return Ok(Json::from(PaginatedQueryResponse {
+                status: QueryState::Waiting,
+                pagination: None,
+                results: None,
+            }));
+        },
+        QueryState::Processing => {
+            return Ok(Json::from(PaginatedQueryResponse {
+                status: QueryState::Processing,
+                pagination: Some(Pagination {
+                    count: 0,
+                    current_page: 0,
+                    per_page: PER_PAGE as usize,
+                }),
+                results: Some(results.to_vec())
+            }))
+        },
+        QueryState::Complete => {
+            return Ok(Json::from(PaginatedQueryResponse {
+                status: QueryState::Complete,
+                pagination: Some(Pagination {
+                    count: results.len(),
+                    current_page: 0,
+                    per_page: PER_PAGE as usize,
+                }),
+                results: Some(results.to_vec())
+            }))
+        }
+
+    }
 }
