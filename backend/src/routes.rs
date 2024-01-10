@@ -1,23 +1,16 @@
 use std::fmt::Debug;
-use std::ops::{Deref, Range};
 use std::sync::Arc;
-use axum::{debug_handler, Extension, Json};
+use axum::{Extension, Json};
 use axum::extract::{Query};
 use axum::http::StatusCode;
-use rstar::{Envelope, Point, RTreeObject, RTree, AABB};
 use serde::{Deserialize, Serialize};
-use tokio::sync::RwLock;
 use uuid::Uuid;
 use crate::{State, worker::QueryState};
 use crate::index::Node;
-use crate::spatial::{Coordinate, Region};
-use crate::worker::QueryState::Complete;
+use crate::spatial::Region;
 use crate::worker::QueryTask;
 
 const PER_PAGE: i32 = 50;
-enum QueryErrorKind {
-    FooError
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SearchQueryResponse {
@@ -65,8 +58,6 @@ pub async fn index() -> &'static str {
     "INDEX ROOT"
 }
 
-
-#[debug_handler]
 pub async fn search(Extension(state): Extension<Arc<State>>, Query(query): Query<QueryRegion>) -> Result<Json<SearchQueryResponse>, (StatusCode, String)> {
     let _uuid = Uuid::new_v4();
     return match state.tx.send(QueryTask {
@@ -86,7 +77,7 @@ pub async fn search(Extension(state): Extension<Arc<State>>, Query(query): Query
 }
 
 pub async fn results(Extension(state): Extension<Arc<State>>, Query(query): Query<ResultQuery>) -> Result<Json<PaginatedQueryResponse>, (StatusCode, String)> {
-    let mut j_lck = state.j.read().await;
+    let j_lck = state.j.read().await;
     let task = match j_lck.get(&query.uuid) {
             Some(t) => t,
             None => return Err((StatusCode::NOT_FOUND, "Task not found".to_string()))

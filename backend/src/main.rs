@@ -1,24 +1,21 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 use std::future::IntoFuture;
-use std::hash::Hash;
 use std::path::PathBuf;
 use std::sync::{Arc};
 use axum;
 use rstar::RTree;
+use tokio;
+use tokio::sync::{Mutex, mpsc, RwLock};
+use uuid::Uuid;
+use crate::index::{Node, parse};
+use crate::routes::{index, results, search};
+use crate::worker::{QueryTask, worker};
+
 mod spatial;
 mod index;
 mod parsing;
 mod routes;
 mod worker;
-
-use crate::spatial::Region;
-use tokio;
-use serde::{Deserialize};
-use tokio::sync::{Mutex, mpsc, RwLock};
-use uuid::Uuid;
-use crate::index::{Node, parse};
-use crate::routes::{index, results, search};
-use crate::worker::{QueryState, QueryTask, worker};
 
 const INDEX_ADDRESS: &str = "0.0.0.0:42069";
 
@@ -83,5 +80,5 @@ async fn main() {
 
 
     let axum_task = axum::serve(listener, app);
-    let t = futures::join!(axum_task.into_future(), worker(shared_state));
+    futures::join!(axum_task.into_future(), worker(shared_state));
 }

@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::{BufReader, Read};
-use crate::spatial::{Coordinate, Region};
+use crate::spatial::Coordinate;
 
 #[derive(Debug)]
 pub enum DT2ErrorState {

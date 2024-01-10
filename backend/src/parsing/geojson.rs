@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
-use crate::spatial::{Coordinate, Region};
+use crate::spatial::Coordinate;
 use json_event_parser::{JsonReader, JsonEvent};
 
 pub fn get_boundaries(coordinates: Vec<[f64; 2]>) -> (Coordinate, Coordinate) {

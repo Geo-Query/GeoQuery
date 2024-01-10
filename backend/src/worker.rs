@@ -7,8 +7,6 @@ use crate::spatial::Region;
 use crate::State;
 use crate::worker::QueryState::{Complete, Processing};
 
-pub type QueryResults = Vec<Node>;
-
 #[derive(Debug, Serialize, Deserialize)]
 pub enum QueryState {
     Waiting,
