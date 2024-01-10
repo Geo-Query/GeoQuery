@@ -77,12 +77,15 @@ pub async fn search(Extension(state): Extension<Arc<State>>, Query(query): Query
 }
 
 pub async fn results(Extension(state): Extension<Arc<State>>, Query(query): Query<ResultQuery>) -> Result<Json<PaginatedQueryResponse>, (StatusCode, String)> {
+    // Lock results table
     let j_lck = state.j.read().await;
     let task = match j_lck.get(&query.uuid) {
             Some(t) => t,
             None => return Err((StatusCode::NOT_FOUND, "Task not found".to_string()))
     };
+    // Get the task.
     let Some(results) = &task.results else {
+        // Handle event where no results for complete task.
         println!("Encountered complete task without results!");
         return Ok(Json(PaginatedQueryResponse {
             status: QueryState::Complete,

@@ -50,8 +50,10 @@ async fn main() {
         i.insert(node);
     }
 
-
+    // Open channel between Axum and Worker
     let (tx, rx) = mpsc::unbounded_channel();
+
+    // Build state. This will be shared between threads.
     let state = Arc::new(State {
         i: RwLock::new(i),
         tx,
@@ -59,14 +61,15 @@ async fn main() {
         rx: Mutex::new(rx),
     });
 
+    // Clone arc for use in worker.2
     let shared_state = state.clone();
 
-
+    // Define Axum app.
     let app = axum::Router::new()
         .route("/", axum::routing::get(index))
         .route("/search", axum::routing::get(search))
         .route("/results", axum::routing::get(results))
-        .layer(axum::Extension(state));
+        .layer(axum::Extension(state)); // Pass state through to methods (le middleware)
 
 
     // Open TCP Transport
@@ -78,7 +81,7 @@ async fn main() {
         }
     };
 
-
+    // Dispatch tasks.
     let axum_task = axum::serve(listener, app);
     futures::join!(axum_task.into_future(), worker(shared_state));
 }

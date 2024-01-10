@@ -23,7 +23,6 @@ pub struct QueryTask {
 }
 
 pub async fn worker(state: Arc<State>) {
-    println!("FOO");
     loop {
         let mut task = {
             let mut rx_lck = state.rx.lock().await;
@@ -35,6 +34,7 @@ pub async fn worker(state: Arc<State>) {
         };
 
         task.state = Processing;
+        // Do lookup
         let results: Vec<Node> = state.i.read().await.locate_in_envelope(&AABB::from_corners(task.region.top_left(), task.region.bottom_right())).map(|x| x.clone()).collect();
         task.state = Complete;
         task.results = Some(results);

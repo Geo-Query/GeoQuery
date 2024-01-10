@@ -15,6 +15,7 @@ pub struct Region {
     pub bottom_right: Coordinate
 }
 
+// Conversions of myriad format specific region types into std unit type.
 impl Region {
     pub fn bottom_left(&self) -> Coordinate {
         (self.top_left.0, self.bottom_right.1)
