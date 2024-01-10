@@ -35,7 +35,7 @@ pub struct GeoTiffRegion {
     pub bottom_right: (f64, f64),
 }
 
-pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<Box<GeoTiffRegion>, TIFFErrorState> {
+pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffRegion, TIFFErrorState> {
     // Parse the file header.
     // First, seek to the start of the file, and validate.
     // Then read into an 8 byte buffer, and validate.
@@ -165,7 +165,7 @@ pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<Box<GeoTiffRegion>, TI
 
     let region = calculate_extent(top_left, scale, (x,y), projection)?;
 
-    return Ok(Box::new(region));
+    return Ok(region);
 }
 
 fn calculate_extent(

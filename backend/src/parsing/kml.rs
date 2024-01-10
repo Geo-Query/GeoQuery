@@ -1,9 +1,9 @@
-use crate::spatial::{Coordinate, Region};
+use crate::spatial::Coordinate;
 use std::fs::File;
 use std::io::BufReader;
 use std::str::FromStr;
 use xml::reader::{EventReader, XmlEvent};
-use crate::kml::KMLErrorState::{NotEnoughGeoData, UnexpectedFormat};
+use crate::parsing::kml::KMLErrorState::{NotEnoughGeoData, UnexpectedFormat};
 
 pub fn get_boundaries(coordinates: Vec<Coordinate>) -> (Coordinate, Coordinate) {
     let mut min_x: f64 = coordinates[0].0;
@@ -33,30 +33,12 @@ pub struct KMLRegion {
     pub bottom_left: Coordinate,
 }
 
-impl Region for KMLRegion {
-    fn bottom_left(&self) -> Coordinate {
-        self.bottom_left
-    }
-
-    fn bottom_right(&self) -> Coordinate {
-        (self.top_right.0, self.bottom_left.1)
-    }
-
-    fn top_left(&self) -> Coordinate {
-        (self.bottom_left.0, self.top_right.1)
-    }
-
-    fn top_right(&self) -> Coordinate {
-        self.top_right
-    }
-}
-
 pub enum KMLErrorState {
     UnexpectedFormat(String),
     NotEnoughGeoData
 }
 
-pub fn parse_kml(reader: &mut BufReader<File>) -> Result<Box<KMLRegion>, KMLErrorState> {
+pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLRegion, KMLErrorState> {
     // Initialise Event iterator, as well as coordinate buffer.
     let mut reader = EventReader::new(reader).into_iter();
     let mut coordinates: Vec<(f64, f64)> = vec![];
@@ -104,8 +86,8 @@ pub fn parse_kml(reader: &mut BufReader<File>) -> Result<Box<KMLRegion>, KMLErro
     }
 
     let (bottom_left, top_right) = get_boundaries(coordinates); // Draw a bounding box around given coords
-    return Ok(Box::new(KMLRegion {
+    return Ok(KMLRegion {
         bottom_left,
         top_right
-    })); // Return region defined by file.
+    }); // Return region defined by file.
 }

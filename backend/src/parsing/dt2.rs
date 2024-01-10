@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::{BufReader, Read};
-use crate::spatial::{Coordinate, Region};
+use crate::spatial::Coordinate;
 
 #[derive(Debug)]
 pub enum DT2ErrorState {
@@ -89,28 +89,10 @@ fn parse_ddmmssh(data: &[u8]) -> Result<f64, DT2ErrorState> {
 
 #[derive(Debug)]
 pub struct DT2Region {
-    top_left: Coordinate,
-    top_right: Coordinate,
-    bottom_right: Coordinate,
-    bottom_left: Coordinate
-}
-
-impl Region for DT2Region {
-    fn bottom_left(&self) -> Coordinate {
-        self.bottom_left
-    }
-
-    fn bottom_right(&self) -> Coordinate {
-        self.bottom_right
-    }
-
-    fn top_left(&self) -> Coordinate {
-        self.top_left
-    }
-
-    fn top_right(&self) -> Coordinate {
-        self.top_right
-    }
+    pub top_left: Coordinate,
+    pub top_right: Coordinate,
+    pub bottom_right: Coordinate,
+    pub bottom_left: Coordinate
 }
 
 #[derive(Debug)]
@@ -261,7 +243,7 @@ impl DataSetIdentification {
 }
 
 
-pub fn parse_dt2(reader: &mut BufReader<File>) -> Result<Box<DT2Region>, DT2ErrorState> {
+pub fn parse_dt2(reader: &mut BufReader<File>) -> Result<DT2Region, DT2ErrorState> {
     let mut uhl_buf = [0u8; 80];
     let _uhl = match reader.read_exact(&mut uhl_buf) {
         Ok(_) => UserHeaderLabel::from_bytes(&uhl_buf)?,
@@ -277,10 +259,10 @@ pub fn parse_dt2(reader: &mut BufReader<File>) -> Result<Box<DT2Region>, DT2Erro
         }
     };
 
-    return Ok(Box::new(DT2Region {
+    return Ok(DT2Region {
         top_left: dsi.nw_corner,
         top_right: dsi.ne_corner,
         bottom_right: dsi.se_corner,
         bottom_left: dsi.sw_corner,
-    }))
+    })
 }

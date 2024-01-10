@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
-use crate::spatial::{Coordinate, Region};
+use crate::spatial::Coordinate;
 use json_event_parser::{JsonReader, JsonEvent};
 
 pub fn get_boundaries(coordinates: Vec<[f64; 2]>) -> (Coordinate, Coordinate) {
@@ -34,29 +34,11 @@ pub enum GeoJSONErrorState {
 
 #[derive(Debug)]
 pub struct GeoJSONRegion {
-    top_right: Coordinate,
-    bottom_left: Coordinate
+    pub top_right: Coordinate,
+    pub bottom_left: Coordinate
 }
 
-impl Region for GeoJSONRegion {
-    fn bottom_left(&self) -> Coordinate {
-        self.bottom_left
-    }
-
-    fn bottom_right(&self) -> Coordinate {
-        (self.top_right.0, self.bottom_left.1)
-    }
-
-    fn top_left(&self) -> Coordinate {
-        (self.bottom_left.0, self.top_right.1)
-    }
-
-    fn top_right(&self) -> Coordinate {
-        self.top_right
-    }
-}
-
-pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<Box<GeoJSONRegion>, GeoJSONErrorState> {
+pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<GeoJSONRegion, GeoJSONErrorState> {
     let mut json_reader = JsonReader::from_reader(reader);
     let mut buffer = Vec::new();
     let mut coordinate_pairs: Vec<[f64; 2]> = Vec::new();
@@ -108,13 +90,15 @@ pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<Box<GeoJSONRegion>,
                 }
 
             },
-            JsonEvent::Eof => break,
+            JsonEvent::Eof => {
+                break;
+            }
             _ => {}
     }}
 
     let boundaries = get_boundaries(coordinate_pairs);
-    return Ok(Box::new(GeoJSONRegion {
+    return Ok(GeoJSONRegion {
         top_right: boundaries.1,
         bottom_left: boundaries.0,
-    }))
+    })
 }
