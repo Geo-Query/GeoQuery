@@ -20,3 +20,6 @@ axum = { version="0.7.1", features = ["macros"]}
 serde = { version = "1.0.193", features = ["derive"] }
 uuid = { version = "1.6.1", features = ["v4", "serde"] }
 futures = "0.3.30"
+tower = "0.4.13"
+http = "1.0.0"
+tower-http = { version = "0.5.0", features = [ "cors" ] }

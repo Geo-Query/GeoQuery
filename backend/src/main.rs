@@ -10,6 +10,10 @@ use uuid::Uuid;
 use crate::index::{Node, parse};
 use crate::routes::{index, results, search};
 use crate::worker::{QueryTask, worker};
+use tower::{ServiceBuilder, ServiceExt, Service};
+use tower_http::cors::{Any, CorsLayer};
+use http::{Request, Response, Method, header};
+use crate::spatial::Region;
 
 mod spatial;
 mod index;
@@ -32,12 +36,12 @@ struct State {
 async fn main() {
 
     // Build inputs
-    let inputs = HashMap::from([
-        ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Sat Imagery/PlanetSAT_10_0s3_N54W004.tif", parse(PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Sat Imagery/PlanetSAT_10_0s3_N54W004.tif"))),
-        ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/terrain/DTED/PlanetDEM_1s__W4_N52.dt2", parse(PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/terrain/DTED/PlanetDEM_1s__W4_N52.dt2"))),
-        ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/dted/DTED-Checking/TCD_DTED119/DTED/E000/N42.DT1", parse(PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/dted/DTED-Checking/TCD_DTED119/DTED/E000/N42.DT1"))),
-        ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Vector/Kml/luciad.kml", parse(PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Vector/Kml/luciad.kml"))),
-        ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Vector/geojson/world.geojson", parse(PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Vector/geojson/world.geojson")))
+    let inputs: HashMap<String, Region> = HashMap::from([
+        // ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Sat Imagery/PlanetSAT_10_0s3_N54W004.tif", parse(PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Sat Imagery/PlanetSAT_10_0s3_N54W004.tif"))),
+        // ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/terrain/DTED/PlanetDEM_1s__W4_N52.dt2", parse(PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/terrain/DTED/PlanetDEM_1s__W4_N52.dt2"))),
+        // ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/dted/DTED-Checking/TCD_DTED119/DTED/E000/N42.DT1", parse(PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/dted/DTED-Checking/TCD_DTED119/DTED/E000/N42.DT1"))),
+        // ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Vector/Kml/luciad.kml", parse(PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Vector/Kml/luciad.kml"))),
+        // ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Vector/geojson/world.geojson", parse(PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Vector/geojson/world.geojson")))
     ]);
 
     // Build index.
@@ -65,10 +69,19 @@ async fn main() {
     let shared_state = state.clone();
 
     // Define Axum app.
+    let cors = CorsLayer::new()
+        // allow `GET` and `POST` when accessing the resource
+        .allow_methods([Method::GET, Method::POST])
+        // allow requests from any origin
+        .allow_origin(Any);
+    let svc_bld = ServiceBuilder::new()
+        .layer(cors);
+
     let app = axum::Router::new()
         .route("/", axum::routing::get(index))
         .route("/search", axum::routing::get(search))
         .route("/results", axum::routing::get(results))
+        .layer(svc_bld)
         .layer(axum::Extension(state)); // Pass state through to methods (le middleware)
 
 
