@@ -10,6 +10,7 @@ function App() {
 
   return (
     <div className="App bg-thales-dark min-h-screen flex flex-col">
+
       {/* Toolbar */}
       <div className="toolbar flex flex-wrap justify-between items-center py-4 px-6">
         <span className="py-2 text-white font-bold text-xl md:text-4xl">
@@ -50,8 +51,10 @@ function App() {
       </div>
 
       {/* Query History */}
-    <div className="flex-grow p-6 border-2 border-white rounded-xl mx-6 my-4">        <QueryHistory />
+      <div className="flex-grow p-6 border-2 border-white rounded-xl mx-6 my-4">
+        <QueryHistory />
       </div>
+
     </div>
   );
 }
