@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import "./QueryHistory.css";
 
 const QueryHistory = () => {
   const [coordinates, setCoordinates] = useState([]);
@@ -25,15 +26,15 @@ const QueryHistory = () => {
   };
 
   return (
-    <div>
+    <div className= "log">
       <h2>Query Log</h2>
       <ul>
         {coordinates.map((coord, index) => (
           <li key={index}>
-            SWLatitude: {coord.SWlatitude.toFixed(4)},
-            SWLongitude: {coord.SWlongitude.toFixed(4)},
-            NELatitude: {coord.NElatitude.toFixed(4)},
-            NELongitude: {coord.NElongitude.toFixed(4)}
+            SWLat: {coord.SWlatitude.toFixed(4)},
+            SWLng: {coord.SWlongitude.toFixed(4)},
+            NELat: {coord.NElatitude.toFixed(4)},
+            NELng: {coord.NElongitude.toFixed(4)}
           </li>
         ))}
       </ul>
