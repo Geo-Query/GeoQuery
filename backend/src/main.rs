@@ -68,20 +68,19 @@ async fn main() {
     // Clone arc for use in worker.2
     let shared_state = state.clone();
 
-    let cors = CorsLayer::new()
-    // allow `GET` and `POST` when accessing the resource
-    .allow_methods([Method::GET, Method::POST])
-    // allow requests from any origin
-    .allow_origin(Any);
-    let svc_bld = ServiceBuilder::new()
-    .layer(cors);
-
     // Define Axum app.
+    let cors = CorsLayer::new()
+        // allow `GET` and `POST` when accessing the resource
+        .allow_methods([Method::GET, Method::POST])
+        // allow requests from any origin
+        .allow_origin(Any)
+        .allow_headers(Any);
+
     let app = axum::Router::new()
         .route("/", axum::routing::get(index))
         .route("/search", axum::routing::get(search))
         .route("/results", axum::routing::get(results))
-        .layer(svc_bld)
+        .layer(cors)
         .layer(axum::Extension(state)); // Pass state through to methods (le middleware)
 
 

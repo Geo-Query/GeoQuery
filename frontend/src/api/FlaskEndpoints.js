@@ -53,9 +53,9 @@ const MapBoundingBoxForm = ({ boundingBox }) => {
     }
 
     try {
-      const response = await axios.post(
+      const response = await axios.get(
         RUST_BACKEND_URL + "search",
-        validationResult.data
+          {params: validationResult.data}
       );
       console.log(response.data);
     } catch (error) {
