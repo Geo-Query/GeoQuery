@@ -20,6 +20,7 @@ mod index;
 mod parsing;
 mod routes;
 mod worker;
+mod io;
 
 const INDEX_ADDRESS: &str = "0.0.0.0:42069";
 

@@ -1,6 +1,7 @@
 use std::fmt::{Debug};
 use serde::{Deserialize, Serialize};
 use geotiff::GeoTiffRegion;
+use crate::io::QueryRegion;
 use crate::parsing::dt2::DT2Region;
 use crate::parsing::geojson::GeoJSONRegion;
 use crate::parsing::kml::KMLRegion;
@@ -9,6 +10,7 @@ use crate::parsing::kml::KMLRegion;
 pub type Coordinate = (f64, f64);
 
 
+// Region unit type. All region types should implement From.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Region {
     pub top_left: Coordinate,
@@ -66,6 +68,15 @@ impl From<DT2Region> for Region {
         Region {
             top_left: t.top_left,
             bottom_right: t.bottom_right
+        }
+    }
+}
+
+impl From<QueryRegion> for Region {
+    fn from(value: QueryRegion) -> Self {
+        Region {
+            top_left: (value.top_left_long, value.top_left_lat),
+            bottom_right: (value.bottom_right_long, value.bottom_right_lat)
         }
     }
 }

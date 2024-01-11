@@ -1,59 +1,13 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 use axum::{Extension, Json};
-use axum::extract::{Query};
+use axum::extract::Query;
 use axum::http::StatusCode;
-use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::{State, worker::QueryState};
-use crate::index::Node;
-use crate::spatial::Region;
+use crate::io::{PaginatedQueryResponse, Pagination, PER_PAGE, QueryRegion, ResultQuery, SearchQueryResponse};
 use crate::worker::QueryTask;
 
-const PER_PAGE: i32 = 50;
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SearchQueryResponse {
-    token: Uuid
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct PaginatedQueryResponse {
-    status: QueryState,
-    pagination: Option<Pagination>,
-    results: Option<Vec<Node>>
-}
-
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Pagination {
-    count: usize,
-    current_page: usize,
-    per_page: usize
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct QueryRegion {
-    top_left_long: f64,
-    top_left_lat: f64,
-    bottom_right_long: f64,
-    bottom_right_lat: f64
-}
-
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ResultQuery {
-    uuid: Uuid
-}
-
-impl From<QueryRegion> for Region {
-    fn from(value: QueryRegion) -> Self {
-        Region {
-            top_left: (value.top_left_long, value.top_left_lat),
-            bottom_right: (value.bottom_right_long, value.bottom_right_lat)
-        }
-    }
-}
 pub async fn index() -> &'static str {
     "INDEX ROOT"
 }
