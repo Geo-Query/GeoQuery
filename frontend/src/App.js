@@ -20,7 +20,7 @@ function App() {
         <div className="flex flex-wrap items-center space-x-2 md:space-x-4 mt-4 md:mt-0">
           <LongLatBoxes />
           <div className="bg-blue-600 text-white font-bold py-2 px-4 rounded-xl border-2 border-white min-w-full md:min-w-0 md:min-w-200px">
-            <span className="font-bold">SW:</span>
+            <span className="font-bold">NW:</span>
             {boundingBox
               ? `${boundingBox.bottomLeft.lat.toFixed(
                   4
@@ -28,7 +28,7 @@ function App() {
               : "Lat, Lng"}
           </div>
           <div className="bg-blue-600 text-white font-bold py-2 px-4 rounded-xl border-2 border-white min-w-full md:min-w-0 md:min-w-200px">
-            <span className="font-bold">NE:</span>
+            <span className="font-bold">SE:</span>
             {boundingBox
               ? `${boundingBox.topRight.lat.toFixed(
                   4
@@ -52,7 +52,12 @@ function App() {
 
       {/* Query History */}
       <div className="flex-grow p-6 border-2 border-white rounded-xl mx-6 my-4">
-        <QueryHistory />
+          <div className="bg-blue-600 text-white font-bold py-2 px-4 rounded-xl border-2 border-white min-w-full md:min-w-0 md:min-w-200px">
+              <span className="font-bold">Query History</span>
+          </div>
+          <QueryHistory/>
+
+
       </div>
 
     </div>
