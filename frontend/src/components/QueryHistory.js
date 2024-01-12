@@ -5,6 +5,9 @@ const QueryHistory = () => {
   const [coordinates, setCoordinates] = useState([]);
 
   // adds a random set of coordinates to the list
+
+    //TODO: Link to the bounding box instead of the random data
+
   const addCoordinates = () => {
     const newCoordinates = {
       // SW
@@ -30,10 +33,10 @@ const QueryHistory = () => {
       <ul>
         {coordinates.map((coord, index) => (
           <li key={index}>
-            NWLat: {coord.SWlatitude.toFixed(4)},
-            NWLng: {coord.SWlongitude.toFixed(4)},
-            SELat: {coord.NElatitude.toFixed(4)},
-            SELng: {coord.NElongitude.toFixed(4)}
+            NWLat: {coord.NWlatitude.toFixed(4)},
+            NWLng: {coord.NWlongitude.toFixed(4)},
+            SELat: {coord.SElatitude.toFixed(4)},
+            SELng: {coord.SElongitude.toFixed(4)}
           </li>
         ))}
       </ul>
