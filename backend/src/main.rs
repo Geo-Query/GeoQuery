@@ -10,10 +10,10 @@ use uuid::Uuid;
 use crate::index::{Node, parse};
 use crate::routes::{index, results, search};
 use crate::worker::{QueryTask, worker};
-use tower::{ServiceBuilder, ServiceExt, Service};
+use tower::{ServiceBuilder};
 use tower_http::cors::{Any, CorsLayer};
-use http::{Request, Response, Method, header};
-use crate::spatial::Region;
+use http::Method;
+use serde::{Deserialize, Serialize};
 
 mod spatial;
 mod index;
@@ -27,32 +27,28 @@ const INDEX_ADDRESS: &str = "0.0.0.0:42069";
 
 struct State {
     i: RwLock<RTree<Node>>,
-    j: RwLock<HashMap<Uuid, QueryTask>>,
-    tx: mpsc::UnboundedSender<QueryTask>,
-    rx: Mutex<mpsc::UnboundedReceiver<QueryTask>>
+    j: RwLock<HashMap<Uuid, Arc<RwLock<QueryTask>>>>,
+    tx: mpsc::UnboundedSender<Arc<RwLock<QueryTask>>>,
+    rx: Mutex<mpsc::UnboundedReceiver<Arc<RwLock<QueryTask>>>>
 }
 
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FileMeta {
+    pub path: PathBuf
+}
+
 #[tokio::main]
 async fn main() {
+    let files: Vec<Arc<FileMeta>> = vec![]; // Build and place in Arc here!
+    let mut idx: RTree<Node> = RTree::new();
 
-    // Build inputs
-    let inputs: HashMap<String, Region> = HashMap::from([
-        // ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Sat Imagery/PlanetSAT_10_0s3_N54W004.tif", parse(PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/Sat Imagery/PlanetSAT_10_0s3_N54W004.tif"))),
-        // ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/terrain/DTED/PlanetDEM_1s__W4_N52.dt2", parse(PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Raster/terrain/DTED/PlanetDEM_1s__W4_N52.dt2"))),
-        // ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/dted/DTED-Checking/TCD_DTED119/DTED/E000/N42.DT1", parse(PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/dted/DTED-Checking/TCD_DTED119/DTED/E000/N42.DT1"))),
-        // ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Vector/Kml/luciad.kml", parse(PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Vector/Kml/luciad.kml"))),
-        // ("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Vector/geojson/world.geojson", parse(PathBuf::from("/home/ben/uni/psd/teamproj/sample_data/Sample map types/Vector/geojson/world.geojson")))
-    ]);
-
-    // Build index.
-    let mut i = RTree::new();
-    for (path, region) in inputs {
-        let node = Node {
-            region,
-            path: PathBuf::from(path)
-        };
-        i.insert(node);
+    for (i, file) in files.iter().enumerate() {
+        println!("Inserted {i}/{} into index.", files.len());
+        idx.insert(Node {
+            region: parse(file.path.clone()),
+            file: file.clone()
+        });
     }
 
     // Open channel between Axum and Worker
@@ -60,7 +56,7 @@ async fn main() {
 
     // Build state. This will be shared between threads.
     let state = Arc::new(State {
-        i: RwLock::new(i),
+        i: RwLock::new(idx),
         tx,
         j: RwLock::new(HashMap::new()),
         rx: Mutex::new(rx),
@@ -75,6 +71,7 @@ async fn main() {
         .allow_methods([Method::GET, Method::POST])
         // allow requests from any origin
         .allow_origin(Any);
+
     let svc_bld = ServiceBuilder::new()
         .layer(cors);
 

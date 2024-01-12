@@ -1,10 +1,12 @@
+use std::io::{BufReader};
 use std::fs::File;
-use std::io::BufReader;
 use std::path::PathBuf;
+use std::sync::Arc;
 use crate::spatial::{Region, Coordinate};
 use rstar::{RTreeObject, AABB};
 use serde::{Deserialize, Serialize};
 use geotiff::{GeoKeyDirectoryErrorState, HeaderErrorState, IFDEntryErrorState, parse_tiff, TIFFErrorState};
+use crate::FileMeta;
 use crate::parsing::dt2::{DSIErrorState, DT2ErrorState, parse_dt2, UHLErrorState};
 use crate::parsing::geojson::{GeoJSONErrorState, parse_geojson};
 use crate::parsing::kml::{KMLErrorState, parse_kml};
@@ -13,7 +15,7 @@ use crate::parsing::kml::{KMLErrorState, parse_kml};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Node {
     pub region: Region,
-    pub path: PathBuf
+    pub file: Arc<FileMeta>
 }
 
 // Implement RTreeObject on Node.
