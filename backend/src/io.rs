@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::index::Node;
-use crate::spatial::Region;
 use crate::worker::QueryState;
 
 pub const PER_PAGE: i32 = 50;

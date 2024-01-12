@@ -10,9 +10,9 @@ use uuid::Uuid;
 use crate::index::{Node, parse};
 use crate::routes::{index, results, search};
 use crate::worker::{QueryTask, worker};
-use tower::{ServiceBuilder, ServiceExt, Service};
+use tower::{ServiceBuilder};
 use tower_http::cors::{Any, CorsLayer};
-use http::{Request, Response, Method, header};
+use http::Method;
 use serde::{Deserialize, Serialize};
 
 mod spatial;
@@ -40,10 +40,11 @@ pub struct FileMeta {
 
 #[tokio::main]
 async fn main() {
-    let mut files: Vec<Arc<FileMeta>> = vec![]; // Build and place in Arc here!
+    let files: Vec<Arc<FileMeta>> = vec![]; // Build and place in Arc here!
     let mut idx: RTree<Node> = RTree::new();
 
     for (i, file) in files.iter().enumerate() {
+        println!("Inserted {i}/{} into index.", files.len());
         idx.insert(Node {
             region: parse(file.path.clone()),
             file: file.clone()

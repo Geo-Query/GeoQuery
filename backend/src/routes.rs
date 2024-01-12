@@ -1,11 +1,10 @@
-use std::fmt::Debug;
 use std::sync::Arc;
 use axum::{Extension, Json};
 use axum::extract::Query;
 use axum::http::StatusCode;
 use tokio::sync::RwLock;
 use uuid::Uuid;
-use crate::{State, worker::QueryState};
+use crate::State;
 use crate::index::Node;
 use crate::io::{PaginatedQueryResponse, Pagination, PER_PAGE, QueryRegion, ResultQuery, SearchQueryResponse};
 use crate::worker::QueryState::Waiting;

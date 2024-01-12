@@ -3,11 +3,9 @@ use rstar::AABB;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::index::Node;
-use crate::routes::results;
 use crate::spatial::Region;
 use crate::State;
 use crate::worker::QueryState::{Complete, Processing};
-use tokio::sync::RwLock;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum QueryState {
@@ -26,7 +24,7 @@ pub struct QueryTask {
 
 pub async fn worker(state: Arc<State>) {
     loop { // Loop forever, exit via break.
-        let mut task = {
+        let task = {
             let mut rx_lck = state.rx.lock().await; // Get next task.
             let Some(task) = rx_lck.recv().await else {
                 break; // If returns None means link closed. Hence break worker.
