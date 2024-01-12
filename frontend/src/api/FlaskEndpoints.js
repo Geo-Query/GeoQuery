@@ -1,9 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from "axios";
 import { RUST_BACKEND_URL } from '../config'; // Adjust the path as necessary
 
 const MapBoundingBoxForm = ({ boundingBox }) => {
   const [errorMessage, setErrorMessage] = useState("");
+  const [pollingIntervalId, setPollingIntervalId] = useState(null);
+
+  const fetchResults = async (currentToken, intervalId) => {
+    try {
+      const response = await axios.get(`${RUST_BACKEND_URL}/results`, { params: { uuid: currentToken } });
+      console.log(response.data);
+
+      if (response.data.status === "Waiting") {
+        console.log("Query waiting to begin")
+      }
+      if (response.data.status === "Processing") {
+        console.log("Query in process")
+        console.log("Results:", response.data.results);
+
+      }
+      if (response.data.status === "Complete") {
+        clearInterval(intervalId); // Stop polling
+        console.log("Query complete")
+        console.log("Results:", response.data.results);
+      }
+    } catch (error) {
+      console.error("There was an error fetching the results", error);
+      clearInterval(intervalId); // Stop polling on error
+      setErrorMessage("Failed to fetch results: " + error.message);
+    }
+  };
+
+  const startPolling = (currentToken) => {
+    const intervalId = setInterval(() => fetchResults(currentToken, intervalId), 1000);
+    setPollingIntervalId(intervalId);
+  };
+
+  const sendCoordinates = async (data) => {
+    try {
+      const response = await axios.get(
+        `${RUST_BACKEND_URL}/search`, { params: data }
+      );
+      console.log(response.data);
+
+      if (response.data && response.data.token) {
+        console.log("Token has been set");
+        startPolling(response.data.token); // Pass the token directly
+        console.log("Polling started");
+      }
+
+    } catch (error) {
+      console.error("There was an error sending the coordinates", error);
+      setErrorMessage("Failed to send coordinates: " + error.message);
+    }
+  };
 
   const validateAndSanitizeData = (box) => {
     // Check if the box object is provided and not empty
@@ -45,23 +95,26 @@ const MapBoundingBoxForm = ({ boundingBox }) => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setErrorMessage(""); // Reset error message
-    console.log(boundingBox);
     const validationResult = validateAndSanitizeData(boundingBox);
+
     if (!validationResult.valid) {
       setErrorMessage(validationResult.message); // Set error message
       return;
     }
 
-    try {
-      const response = await axios.get(
-        RUST_BACKEND_URL + "search",
-          {params: validationResult.data}
-      );
-      console.log(response.data);
-    } catch (error) {
-      console.error("There was an error sending the coordinates", error);
-    }
+    await sendCoordinates(validationResult.data);
   };
+
+
+  useEffect(() => {
+    // This function will be called when the component unmounts
+    return () => {
+      if (pollingIntervalId) {
+        clearInterval(pollingIntervalId);
+      }
+    };
+  }, [pollingIntervalId]); // The effect depends on pollingIntervalId
+
 
   return (
     <form onSubmit={handleSubmit} className="flex items-center">
@@ -79,6 +132,8 @@ const MapBoundingBoxForm = ({ boundingBox }) => {
     </form>
 
   );
+
+
 };
 
 export default MapBoundingBoxForm;
