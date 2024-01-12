@@ -3,11 +3,13 @@ use rstar::AABB;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::index::Node;
+use crate::routes::results;
 use crate::spatial::Region;
 use crate::State;
 use crate::worker::QueryState::{Complete, Processing};
+use tokio::sync::RwLock;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum QueryState {
     Waiting,
     Processing,
@@ -19,29 +21,25 @@ pub struct QueryTask {
     pub uuid: Uuid,
     pub state: QueryState,
     pub region: Region,
-    pub results: Option<Vec<Node>>
+    pub results: Vec<Node>
 }
 
 pub async fn worker(state: Arc<State>) {
-    loop {
+    loop { // Loop forever, exit via break.
         let mut task = {
-            let mut rx_lck = state.rx.lock().await;
+            let mut rx_lck = state.rx.lock().await; // Get next task.
             let Some(task) = rx_lck.recv().await else {
-                break;
+                break; // If returns None means link closed. Hence break worker.
             };
-            println!("Task: {:?}", task.uuid);
-            task
+            task // Return task.
         };
 
-        task.state = Processing;
-        // Do lookup
-        let results: Vec<Node> = state.i.read().await.locate_in_envelope(&AABB::from_corners(task.region.top_left(), task.region.bottom_right())).map(|x| x.clone()).collect();
-        task.state = Complete;
-        task.results = Some(results);
-        {
-            let mut j_lck = state.j.write().await;
-            j_lck.insert(task.uuid, task);
+        task.write().await.state = Processing;
+        for v in state.i.read().await.locate_in_envelope_intersecting(&AABB::from_corners(task.read().await.region.top_left, task.read().await.region.bottom_right)) {
+            let n = v.clone();
+            task.write().await.results.push(n);
         }
-        println!("Completed Query and added results.");
+
+        task.write().await.state = Complete;
     }
 }

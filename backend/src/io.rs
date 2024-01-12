@@ -14,8 +14,8 @@ pub struct SearchQueryResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PaginatedQueryResponse {
     pub status: QueryState,
-    pub pagination: Option<Pagination>,
-    pub results: Option<Vec<Node>>
+    pub pagination: Pagination,
+    pub results: Vec<Node>
 }
 
 
