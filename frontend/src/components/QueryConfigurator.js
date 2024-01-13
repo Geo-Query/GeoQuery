@@ -1,7 +1,7 @@
 import React from "react";
 import MapBoundingBoxForm from "../api/FlaskEndpoints";
 
-const QueryConfigurator = ({boundingBox, setBoundingBox, redraw}) => {
+const QueryConfigurator = ({boundingBox, setBoundingBox, redraw, queryHistory, setQueryHistory}) => {
 
   const handleManualInput = (n, v) => {
     switch (n) {
@@ -80,7 +80,7 @@ const QueryConfigurator = ({boundingBox, setBoundingBox, redraw}) => {
             />
           </div>
         </div>
-        <MapBoundingBoxForm boundingBox={boundingBox}/>
+        <MapBoundingBoxForm boundingBox={boundingBox} queryHistory={queryHistory} setQueryHistory={setQueryHistory}/>
       </div>
     </div>
   );

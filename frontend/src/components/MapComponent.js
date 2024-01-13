@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, {useRef, useEffect, useState} from "react";
 import L from "leaflet";
 import "leaflet-draw";
 import "leaflet/dist/leaflet.css";
@@ -11,6 +11,7 @@ import QueryConfigurator from "./QueryConfigurator";
 const MapComponent2 = React.memo(({boundingBox, setBoundingBox}) => {
   let mapRef = useRef(null);
   let drawLayerRef = useRef(null);
+  let [queryHistory, setQueryHistory] = useState([]);
 
   const redraw = () => {
     if (drawLayerRef.current && boundingBox.southEast.lat && boundingBox.southEast.lng && boundingBox.northWest.lat && boundingBox.northWest.lng) {
@@ -76,8 +77,8 @@ const MapComponent2 = React.memo(({boundingBox, setBoundingBox}) => {
       </div>
       {/* Query History */}
       <div className="flex flex-wrap justify-between items-start">
-        <QueryHistory/>
-        <QueryConfigurator boundingBox={boundingBox} setBoundingBox={setBoundingBox} redraw={redraw}/>
+        <QueryHistory queryHistory={queryHistory} setQueryHistory={setQueryHistory}/>
+        <QueryConfigurator boundingBox={boundingBox} setBoundingBox={setBoundingBox} redraw={redraw} queryHistory={queryHistory} setQueryHistory={setQueryHistory}/>
       </div>
 
     </div>

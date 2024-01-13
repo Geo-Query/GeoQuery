@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from "axios";
 import { RUST_BACKEND_URL } from '../config'; // Adjust the path as necessary
 
-const MapBoundingBoxForm = ({ boundingBox }) => {
+const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
   const [errorMessage, setErrorMessage] = useState("");
   const [pollingIntervalId, setPollingIntervalId] = useState(null);
 
@@ -101,6 +101,7 @@ const MapBoundingBoxForm = ({ boundingBox }) => {
       return;
     }
 
+    setQueryHistory(queryHistory.concat([boundingBox]))
     await sendCoordinates(validationResult.data);
   };
 
