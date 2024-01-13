@@ -60,12 +60,11 @@ const MapBoundingBoxForm = ({ boundingBox }) => {
     if (!box || Object.keys(box).length === 0) {
       return { valid: false, message: "No bounding box provided" };
     }
-
-    // Validate and sanitize longitude and latitude
-    const topLeftLong = parseFloat(box.bottomLeft.lng);
-    const topLeftLat = parseFloat(box.topRight.lat);
-    const bottomRightLong = parseFloat(box.topRight.lng);
-    const bottomRightLat = parseFloat(box.bottomLeft.lat);
+    console.log(box);
+    let topLeftLong = parseFloat(box.northWest.lng);
+    let topLeftLat = parseFloat(box.northWest.lat);
+    let bottomRightLong = parseFloat(box.southEast.lng);
+    let bottomRightLat = parseFloat(box.southEast.lat);
   
     if ([topLeftLong, topLeftLat, bottomRightLong, bottomRightLat].some(isNaN)) {
       console.log(topLeftLong, topLeftLat, bottomRightLong, bottomRightLat);

@@ -29,20 +29,25 @@ const QueryHistory = () => {
   };
 
   return (
-    <div className= "log">
-      <ul>
-        {coordinates.map((coord, index) => (
-          <li key={index}>
-            NWLat: {coord.NWlatitude.toFixed(4)},
-            NWLng: {coord.NWlongitude.toFixed(4)},
-            SELat: {coord.SElatitude.toFixed(4)},
-            SELng: {coord.SElongitude.toFixed(4)}
-          </li>
-        ))}
-      </ul>
+    <div className="flex-grow p-6 border-2 border-white rounded-xl mx-6 my-2">
+      <div className="bg-blue-600 text-white font-bold py-2 px-4 rounded-xl border-2 border-white min-w-full md:min-w-0 md:min-w-200px">
+        <span className="font-bold">Query History</span>
+      </div>
+      <div className= "log">
+        <ul>
+          {coordinates.map((coord, index) => (
+            <li key={index}>
+              NWLat: {coord.NWlatitude.toFixed(4)},
+              NWLng: {coord.NWlongitude.toFixed(4)},
+              SELat: {coord.SElatitude.toFixed(4)},
+              SELng: {coord.SElongitude.toFixed(4)}
+            </li>
+          ))}
+        </ul>
 
-      <button onClick={addCoordinates}>Add Coords</button>
-      <button onClick={clearCoordinates}>Clear List</button>
+        <button onClick={addCoordinates}>Add Coords</button>
+        <button onClick={clearCoordinates}>Clear List</button>
+      </div>
     </div>
   );
 };

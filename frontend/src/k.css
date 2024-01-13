@@ -1,0 +1,31 @@
+.swn {
+    display: flex;
+    position: fixed;
+    background-color: #282c34;
+    z-index: 1;
+    height: 100vh;
+    width: 100vw;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.swn {
+    animation: fadeInAnimation ease 4s;
+    animation-delay: 1.5s;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+}
+
+@keyframes fadeInAnimation {
+    0% {
+        opacity: 1;
+    }
+    80% {
+        pointer-events: none;
+    }
+    100% {
+        opacity: 0;
+        display: none;
+    }
+}
