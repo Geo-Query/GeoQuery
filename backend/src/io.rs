@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::index::Node;
-use crate::spatial::Region;
 use crate::worker::QueryState;
 
 pub const PER_PAGE: i32 = 50;
@@ -14,8 +13,8 @@ pub struct SearchQueryResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PaginatedQueryResponse {
     pub status: QueryState,
-    pub pagination: Option<Pagination>,
-    pub results: Option<Vec<Node>>
+    pub pagination: Pagination,
+    pub results: Vec<Node>
 }
 
 

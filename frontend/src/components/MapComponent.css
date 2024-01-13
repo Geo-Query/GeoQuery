@@ -6,6 +6,9 @@
     margin-top: 100px;
     cursor: crosshair;
 }
+.map {
+    z-index: 0;
+}
 
 .mouse-position-tooltip {
     position: absolute;
