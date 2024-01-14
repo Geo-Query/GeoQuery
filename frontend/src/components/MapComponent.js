@@ -89,7 +89,7 @@ const MapComponent2 = React.memo(({boundingBox, setBoundingBox}) => {
 
   return (
     <div id="map-container" className="foo">
-      <div className="flex-grow p-2 rounded-xl mx-6 my-2">
+      <div className="flex-grow rounded mx-6 my-2 mt-4 p-1">
         <div id="map" className="map" ref={mapRef} style={{height: "600px", width: "100%"}}></div>
       </div>
       {/* Query History */}
