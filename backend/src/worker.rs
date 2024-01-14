@@ -25,28 +25,29 @@ pub struct QueryTask {
 pub async fn worker(state: Arc<State>) {
     loop { // Loop forever, exit via break.
         let task = {
-            println!("Worker awaiting lock on receiver.");
+            // println!("Worker awaiting lock on receiver.");
             let mut rx_lck = state.rx.lock().await; // Get next task.
-            println!("Worker got lock on receiver!");
+            // println!("Worker got lock on receiver!");
             let Some(task) = rx_lck.recv().await else {
-                println!("Worker CLOSED!");
+                // println!("Worker CLOSED!");
                 break; // If returns None means link closed. Hence break worker.
             };
-            println!("Worker got TASK!");
+            // println!("Worker got TASK!");
             task // Return task.
         };
-        println!("Worker awaiting write to task state!");
+        // println!("Worker awaiting write to task state!");
         task.write().await.state = Processing;
-        println!("Worker wrote to task state!");
-        println!("Worker awaiting lock on index, task. Task lock remains in scope!");
-        for v in state.i.read().await.locate_in_envelope_intersecting(&AABB::from_corners(task.read().await.region.top_left.clone(), task.read().await.region.bottom_right.clone())) {
+        // println!("Worker wrote to task state!");
+        // println!("Worker awaiting lock on index, task. Task lock remains in scope!");
+        let envelope = AABB::from_corners(task.read().await.region.top_left, task.read().await.region.bottom_right);
+        for v in state.i.read().await.locate_in_envelope_intersecting(&envelope) {
             let n = v.clone();
-            println!("Worker awaiting lock on task!");
+            // println!("Worker awaiting lock on task!");
             task.write().await.results.push(n);
         }
-        println!("Worker awaiting write to task state 2!");
+        // println!("Worker awaiting write to task state 2!");
         task.write().await.state = Complete;
-        println!("Worker wrote to task state 2!");
+        // println!("Worker wrote to task state 2!");
 
     }
 }
