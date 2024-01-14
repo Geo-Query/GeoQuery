@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import axios from "axios";
 import { RUST_BACKEND_URL } from '../config'; // Adjust the path as necessary
+import Modal from '../components/Modal.js';
 
 const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
   const [errorMessage, setErrorMessage] = useState("");
   const [pollingIntervalId, setPollingIntervalId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState("");
 
   const fetchResults = async (currentToken, intervalId) => {
     try {
-      const response = await axios.get(`${RUST_BACKEND_URL}/results`, { params: { uuid: currentToken } });
-      console.log(response.data);
+      // const response = await axios.get(`${RUST_BACKEND_URL}/results`, { params: { uuid: currentToken } });
+      const response = await getMockResponse(); // Use mock response
+
+      console.log(response);
 
       if (response.data.status === "Waiting") {
         console.log("Query waiting to begin")
@@ -24,11 +29,52 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
         console.log("Query complete")
         console.log("Results:", response.data.results);
       }
+
+
+      const modalContent = generateModalContent(response);
+      setModalContent(modalContent);
+
     } catch (error) {
       console.error("There was an error fetching the results", error);
       clearInterval(intervalId); // Stop polling on error
       setErrorMessage("Failed to fetch results: " + error.message);
     }
+  };
+
+  // Tracks the current response index so we know what response to return
+  let currentResponseIndex = 0;
+  // Mock responses to show during demo and test modal functionality with
+  const mockResponses = [
+      {
+      status: "Waiting",
+      pagination: { count: 0, current_page: 0, per_page: 50 },
+      results: [],
+      },
+      {
+      status: "Processing",
+      pagination: { count: 2, current_page: 1, per_page: 50 },
+      results: ["Mock File 1", "Mock File 2"],
+      },
+      {
+      status: "Processing",
+      pagination: { count: 4, current_page: 1, per_page: 50 },
+      results: ["Mock File 1", "Mock File 2", "Mock File 3", "Mock File 4"],
+      },
+      {
+      status: "Complete",
+      pagination: { count: 5, current_page: 1, per_page: 50 },
+      results: ["Mock File 1", "Mock File 2", "Mock File 3", "Mock File 4", "Mock File 5"],
+      }
+    
+  ];
+
+  // Gets the mock response from above and returns it to the caller
+  const getMockResponse = () => {
+    return new Promise((resolve) => {
+      const response = mockResponses[currentResponseIndex];
+      currentResponseIndex = (currentResponseIndex + 1) % mockResponses.length; // Loop back to the start
+      resolve({ data: response });
+    });
   };
 
   const startPolling = (currentToken) => {
@@ -44,9 +90,9 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
       console.log(response.data);
 
       if (response.data && response.data.token) {
-        console.log("Token has been set");
         startPolling(response.data.token); // Pass the token directly
-        console.log("Polling started");
+        setIsModalOpen(true);
+        setModalContent("Sending coordinates and starting polling...");
       }
 
     } catch (error) {
@@ -55,8 +101,62 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
     }
   };
 
+
+  //Generates the modal content and populates it with the current status of search and results
+  const generateModalContent = (responseData) => {
+    if (!responseData) return <p>No data available.</p>;
+    console.log(responseData);
+    return (
+      <div>
+        <div className="flex items-center space-x-2">
+          <p>Status:</p>
+          <p>{responseData.data.status}</p>
+
+          {/* Shows a loading circle */}
+          {(responseData.data.status === "Processing" || responseData.data.status === "Waiting")  && (
+            
+          <div class="animate-spin inline-block w-6 h-6 border-[3px] border-current border-t-transparent text-green-500 rounded-full dark:text-green-500" role="status" aria-label="loading">
+            <span class="sr-only">Loading...</span>
+          </div>
+          )}
+          {/* Shows a green tick if complete */}
+          {responseData.data.status === "Complete" && (
+            <div>
+              <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="sr-only">Complete</span>
+            </div>
+          )}
+        </div>
+        <br></br>
+        
+        {/* Populates a list with the results as they come in - update in next sprint */}
+        {responseData.data.results && responseData.data.results.length > 0 ? (
+          <div>
+            <h3>Results:</h3>
+            <ul className="list-disc list-inside">
+              {responseData.data.results.map((result, index) => (
+                <li key={index} className="mb-1">{result}</li>
+              ))}
+            </ul>
+          </div>
+          
+        ) : (
+          <p>No results found.</p>
+        )}
+        
+      </div>
+    );
+  };
+  
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  // Checks constraints of long and lat verifying and returning in format for the rust server to understand
   const validateAndSanitizeData = (box) => {
-    // Check if the box object is provided and not empty
     if (!box || Object.keys(box).length === 0) {
       return { valid: false, message: "No bounding box provided" };
     }
@@ -117,6 +217,7 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
 
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="flex items-center">
       {errorMessage && (
         <div className="text-white font-bold py-2 px-4 mr-2">
@@ -129,11 +230,15 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
       >
         Send Coordinates
       </button>
-    </form>
+      </form>
 
+      <Modal isOpen={isModalOpen} onClose={closeModal}>
+        <div className="relative p-6 flex-auto">
+            {modalContent}
+        </div>
+      </Modal>
+    </>
   );
-
-
 };
 
 export default MapBoundingBoxForm;
