@@ -181,9 +181,9 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
 
   return (
     <>
-    <form onSubmit={handleSubmit} className="flex items-center">
+    <form onSubmit={handleSubmit} className="flex items-center mt-1">
       <button
-        className="bg-green-500 text-white active:bg-green-600 font-bold uppercase text-sm px-6 py-3 m-1 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+        className="bg-green-500 text-white active:bg-green-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
         type="submit"
       >
         Send Coordinates
