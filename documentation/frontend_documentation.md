@@ -69,5 +69,5 @@ This is a React-based frontend application providing a user interface for geogra
 
 
 ## Link to other documentation
-[Link to backtend File](./bakcend_documentation.md)
+[Link to backtend File](./backend_documentation.md)
 [Link to web-api File](./web-api_documentation.md)

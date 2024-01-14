@@ -19,7 +19,7 @@ This documentation outlines the API endpoints provided by a Rust web service usi
 ### 2. Search Endpoint
 
 - **URL**: `/search`
-- **Method**: `GET` or `POST` (depending on implementation)
+- **Method**: `GET`
 - **Query Parameters**:
   - **region**: The query region for the search. It should conform to the `QueryRegion` structure.
 - **Description**: Initiates a search task based on the provided query parameters.
@@ -119,5 +119,5 @@ This documentation outlines the API endpoints provided by a Rust web service usi
 
 
 ## Link to other documentation
-[Link to backtend File](./bakcend_documentation.md)
+[Link to backtend File](./backend_documentation.md)
 [Link to frontend File](./frontend_documentation.md)
