@@ -11,8 +11,7 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
 
   const fetchResults = async (currentToken, intervalId) => {
     try {
-      // const response = await axios.get(`${RUST_BACKEND_URL}/results`, { params: { uuid: currentToken } });
-      const response = await getMockResponse(); // Use mock response
+      const response = await axios.get(`${RUST_BACKEND_URL}/results`, { params: { uuid: currentToken } });
 
       console.log(response);
 
@@ -39,42 +38,6 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
       clearInterval(intervalId); // Stop polling on error
       setErrorMessage("Failed to fetch results: " + error.message);
     }
-  };
-
-  // Tracks the current response index so we know what response to return
-  let currentResponseIndex = 0;
-  // Mock responses to show during demo and test modal functionality with
-  const mockResponses = [
-      {
-      status: "Waiting",
-      pagination: { count: 0, current_page: 0, per_page: 50 },
-      results: [],
-      },
-      {
-      status: "Processing",
-      pagination: { count: 2, current_page: 1, per_page: 50 },
-      results: ["Mock File 1", "Mock File 2"],
-      },
-      {
-      status: "Processing",
-      pagination: { count: 4, current_page: 1, per_page: 50 },
-      results: ["Mock File 1", "Mock File 2", "Mock File 3", "Mock File 4"],
-      },
-      {
-      status: "Complete",
-      pagination: { count: 5, current_page: 1, per_page: 50 },
-      results: ["Mock File 1", "Mock File 2", "Mock File 3", "Mock File 4", "Mock File 5"],
-      }
-    
-  ];
-
-  // Gets the mock response from above and returns it to the caller
-  const getMockResponse = () => {
-    return new Promise((resolve) => {
-      const response = mockResponses[currentResponseIndex];
-      currentResponseIndex = (currentResponseIndex + 1) % mockResponses.length; // Loop back to the start
-      resolve({ data: response });
-    });
   };
 
   const startPolling = (currentToken) => {
@@ -116,7 +79,7 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
           {(responseData.data.status === "Processing" || responseData.data.status === "Waiting")  && (
             
           <div class="animate-spin inline-block w-6 h-6 border-[3px] border-current border-t-transparent text-green-500 rounded-full dark:text-green-500" role="status" aria-label="loading">
-            <span class="sr-only">Loading...</span>
+            <span className="sr-only">Loading...</span>
           </div>
           )}
           {/* Shows a green tick if complete */}
@@ -137,7 +100,7 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
             <h3>Results:</h3>
             <ul className="list-disc list-inside">
               {responseData.data.results.map((result, index) => (
-                <li key={index} className="mb-1">{result}</li>
+                <li key={index} className="mb-1">NW: {result.region.top_left[0]},{result.region.top_left[1]}; SE: {result.region.bottom_right[0]}, {result.region.bottom_right[1]} :: {result.file.path}</li>
               ))}
             </ul>
           </div>
