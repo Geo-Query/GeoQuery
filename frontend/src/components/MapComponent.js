@@ -11,7 +11,24 @@ import QueryConfigurator from "./QueryConfigurator";
 const MapComponent2 = React.memo(({boundingBox, setBoundingBox}) => {
   let mapRef = useRef(null);
   let drawLayerRef = useRef(null);
-  let [queryHistory, setQueryHistory] = useState([]);
+  let existingHistory = localStorage.getItem("queryHistory");
+  if (!existingHistory) {
+    existingHistory = [];
+  } else {
+    try {
+      existingHistory = JSON.parse(existingHistory);
+    } catch (e) {
+      console.log(e);
+      console.log("Could not parse history, hence resetting!");
+      existingHistory = [];
+    }
+  }
+  let [queryHistory, setQueryHistoryWrapped] = useState(existingHistory);
+  const setQueryHistory = (v) => {
+    localStorage.setItem("queryHistory", JSON.stringify(v));
+    setQueryHistoryWrapped(v);
+  }
+
 
   const redraw = () => {
     if (drawLayerRef.current && boundingBox.southEast.lat && boundingBox.southEast.lng && boundingBox.northWest.lat && boundingBox.northWest.lng) {
