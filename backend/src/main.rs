@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::ffi::OsStr;
+use std::fs::File;
 use std::future::IntoFuture;
 use std::path::PathBuf;
 use std::sync::{Arc};
@@ -10,10 +12,14 @@ use uuid::Uuid;
 use crate::index::{Node, parse};
 use crate::routes::{index, results, search};
 use crate::worker::{QueryTask, worker};
-use tower::{ServiceBuilder};
+use crate::config::Config;
 use tower_http::cors::{Any, CorsLayer};
 use http::Method;
 use serde::{Deserialize, Serialize};
+use std::io::BufReader;
+use axum::extract::Path;
+use rayon::prelude::*;
+use tower::Layer;
 
 mod spatial;
 mod index;
@@ -21,6 +27,7 @@ mod parsing;
 mod routes;
 mod worker;
 mod io;
+mod config;
 
 const INDEX_ADDRESS: &str = "0.0.0.0:42069";
 
@@ -38,15 +45,83 @@ pub struct FileMeta {
     pub path: PathBuf
 }
 
+fn traverse(p: PathBuf) -> Result<Vec<PathBuf>, String>{
+    let mut build = Vec::new();
+    if !p.is_dir() {
+        return Err("cfg.directory is not a directory!".to_string());
+    }
+    match p.read_dir() {
+        Ok(d) => {
+            for e in d.filter_map(Result::ok) {
+                if e.path().is_dir() {
+                    build.append(&mut traverse(e.path()).unwrap())
+                } else if e.path().is_file() {
+                    match e.path().extension().and_then(OsStr::to_str) {
+                        Some(ext) => match ext {
+                            "kml" | "tif" | "dt2" | "dt1" | "geojson"  => build.push(e.path()),
+                            _ => continue
+                        },
+                        None => continue
+                    }
+                }
+            }
+            return Ok(build);
+        }
+        Err(e) => {
+            return Err(format!("Failed to iterate over dir: {p:?}"));
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() {
-    let files: Vec<Arc<FileMeta>> = vec![]; // Build and place in Arc here!
+    // Load Config (Expect in WD)
+    let cfg = match std::env::current_dir() {
+        Ok(d) => match File::open(d.join("config.json")) {
+            Ok(f) => match serde_json::from_reader::<BufReader<File>, Config>(BufReader::new(f)) {
+                Ok(cfg) => cfg,
+                Err(e) => {
+                    eprintln!("Failed to parse config.json, reason: {e:?}");
+                    panic!();
+                }
+            },
+            Err(e) => {
+                eprintln!("Failed to open config.json in current wd, reason: {e:?}");
+                panic!();
+            }
+        },
+        Err(e) => {
+            eprintln!("Failed to read current wd, reason: {e:?}");
+            panic!();
+        }
+    };
+
+    if !cfg.directory.exists() {
+        eprintln!("Map Dir: {:?}", cfg.directory);
+        eprintln!("Does not exist!");
+        panic!();
+    }
+
+
+    let files: Vec<Arc<FileMeta>> = match traverse(cfg.directory) {
+        Ok(f) => f.iter().map(|z| Arc::new(FileMeta {path: z.clone()})).collect(),
+        Err(e) => {
+            eprintln!("Failed to traverse files to build index.");
+            eprintln!("Reason: {e:?}");
+            panic!();
+        }
+    };
+
     let mut idx: RTree<Node> = RTree::new();
 
-    for (i, file) in files.iter().enumerate() {
+    for (mut i, file) in files.iter().enumerate() {
+        i += 1;
         println!("Inserted {i}/{} into index.", files.len());
         idx.insert(Node {
-            region: parse(file.path.clone()),
+            region: match parse(file.path.clone()) {
+                Some(r) => r,
+                None => continue
+            },
             file: file.clone()
         });
     }
@@ -90,6 +165,7 @@ async fn main() {
         }
     };
 
+    println!("Starting Server!");
     // Dispatch tasks.
     let axum_task = axum::serve(listener, app);
     futures::join!(axum_task.into_future(), worker(shared_state));

@@ -8,7 +8,7 @@ use crate::State;
 use crate::index::Node;
 use crate::io::{PaginatedQueryResponse, Pagination, PER_PAGE, QueryRegion, ResultQuery, SearchQueryResponse};
 use crate::worker::QueryState::Waiting;
-use crate::worker::QueryTask;
+use crate::worker::{QueryState, QueryTask};
 
 pub async fn index() -> &'static str {
     "INDEX ROOT"
@@ -35,12 +35,15 @@ pub async fn search(Extension(state): Extension<Arc<State>>, Query(query): Query
 
 
 pub async fn results(Extension(state): Extension<Arc<State>>, Query(query): Query<ResultQuery>) -> Result<Json<PaginatedQueryResponse>, (StatusCode, String)> {
+    println!("Results queried!");
     // Lock results table
     match state.j.read().await.get(&query.uuid) {
         Some(v) => {
+            println!("Results got table lock!");
             let v = v.read().await;
+            println!("Results got Task lock!");
             let to_return: Vec<Node> = v.results.iter().cloned().take(PER_PAGE as usize).map(|x| x.clone()).collect();
-
+            println!("3");
             // Have results here
             return Ok(Json(PaginatedQueryResponse {
                 status: v.state.clone(),

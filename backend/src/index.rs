@@ -27,7 +27,7 @@ impl RTreeObject for Node {
     }
 }
 
-pub fn parse(path: PathBuf) -> Region {
+pub fn parse(path: PathBuf) -> Option<Region> {
     match path.extension() {
         Some(ext) => { // Unwrap code to get OSStr -> str for comparison.
             match ext.to_str() {
@@ -54,7 +54,7 @@ pub fn parse(path: PathBuf) -> Region {
                                 }
                             } {
                                 println!("{region:?}");
-                                return region.into();
+                                return Some(region.into());
                             }
                         },
                         "tif" => {
@@ -111,7 +111,7 @@ pub fn parse(path: PathBuf) -> Region {
                                     },
                                     TIFFErrorState::NotEnoughGeoData => {
                                         println!("Encountered tiff file without GeoData, ignoring as will be caught by sidecar if present.");
-                                        panic!();
+                                        return None;
                                     }
                                     TIFFErrorState::GeoKeyDirectoryError(geo_key_directory_error) => match geo_key_directory_error {
                                         GeoKeyDirectoryErrorState::ProjectionError(p) => {
@@ -138,7 +138,7 @@ pub fn parse(path: PathBuf) -> Region {
                                 }
                             } {
                                 println!("{region:?}");
-                                return region.into();
+                                return Some(region.into());
                             }
                         },
                         "dt2" | "dt1" => {
@@ -146,7 +146,7 @@ pub fn parse(path: PathBuf) -> Region {
                             match parse_dt2(&mut reader) {
                                 Ok(v) => {
                                     println!("{v:?}");
-                                    return v.into();
+                                    return Some(v.into());
                                 },
                                 Err(e) => match e {
                                     DT2ErrorState::UnexpectedFormat(f) => {
@@ -208,7 +208,7 @@ pub fn parse(path: PathBuf) -> Region {
                             match parse_geojson(&mut reader) {
                                 Ok(region) => {
                                     println!("{region:?}");
-                                    return region.into();
+                                    return Some(region.into());
                                 }
                                 Err(e) => match e {
                                     GeoJSONErrorState::InvalidJSON(e) => {
