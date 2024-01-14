@@ -1,7 +1,8 @@
 use std::fs::File;
-use std::io::BufReader;
+use std::io::{BufReader,Read};
 use crate::spatial::Coordinate;
 use rusqlite::{Connection, Result};
+use crate::parsing::mbtiles::MBTilesErrorState::{UnexpectedFormat,FailedQuery};
 
 #[derive(Debug)]
 pub struct MBTilesRegion {
@@ -11,19 +12,28 @@ pub struct MBTilesRegion {
 
 pub enum MBTilesErrorState {
     UnexpectedFormat(String),
+    FailedQuery
 }
 
 pub fn parse_mbtiles(reader: &mut BufReader<File>) -> Result<MBTilesRegion> {
     //Opens connection to MBTiles file(its just a sqlite db)
-    let conn = Connection::open(reader).unwrap();
+    let mut filename = String::new();
+    reader.read_to_string(&mut filename).expect("Cannot Read String");
+    let conn = Connection::open(filename).unwrap();
 
     //Prepares a query to return bounds of MBTiles using metadata table
-    let mut stmt = conn.prepare("SELECT * FROM metadata WHERE name = 'bounds'").unwrap();
+    let mut stmt_result = conn.prepare("SELECT * FROM metadata WHERE name = 'bounds'");
 
     //Add error handling here
+    let mut stmt = match stmt_result {
+        Ok(stmt) => stmt,
+        Err(error) => panic!("Problem Occurred when querying the DB: {:?}",error),
+        //Err(e) => return Err(FailedQuery),
+    };
 
     let mut rows = stmt.query([]).unwrap();
 
+    //Iterate through result rows of query
     while let Some(row) = rows.next().unwrap() {
         let value: String = row.get("value").unwrap();
 
