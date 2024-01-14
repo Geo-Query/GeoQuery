@@ -38,8 +38,8 @@ const QueryConfigurator = ({boundingBox, setBoundingBox, redraw, queryHistory, s
         <span className="font-bold">Query Configuration :: Click away from input to see preview.</span>
       </div>
       <div className="flex flex-col my-2 gap-2 text-white font-bold">
-        <div className="flex">
-          <h1>North West: </h1>
+        <div className="flex items-center">
+          <h1 style={{width: "15%"}}>North West: </h1>
           <div className="flex gap-1 w-full">
             <input
               type="text"
@@ -59,8 +59,9 @@ const QueryConfigurator = ({boundingBox, setBoundingBox, redraw, queryHistory, s
             />
           </div>
         </div>
-        <div className="flex">
-          <h1>South East: </h1>
+        <div className="flex items-center">
+          <h1 style={{width: "15%"}} >South East: </h1>
+
           <div className="flex gap-1 w-full">
             <input
               type="text"
