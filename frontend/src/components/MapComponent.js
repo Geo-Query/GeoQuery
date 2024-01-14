@@ -89,11 +89,11 @@ const MapComponent2 = React.memo(({boundingBox, setBoundingBox}) => {
 
   return (
     <div id="map-container" className="foo">
-      <div className="flex-grow p-2 border-2 border-white rounded-xl mx-6 my-2">
+      <div className="flex-grow p-2 rounded-xl mx-6 my-2">
         <div id="map" className="map" ref={mapRef} style={{height: "600px", width: "100%"}}></div>
       </div>
       {/* Query History */}
-      <div className="flex flex-wrap justify-between items-start">
+      <div className="flex flex-wrap justify-between items-stretch4">
         <QueryHistory queryHistory={queryHistory} setQueryHistory={setQueryHistory}/>
         <QueryConfigurator boundingBox={boundingBox} setBoundingBox={setBoundingBox} redraw={redraw} queryHistory={queryHistory} setQueryHistory={setQueryHistory}/>
       </div>
