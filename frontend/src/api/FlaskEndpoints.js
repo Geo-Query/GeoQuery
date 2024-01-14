@@ -182,17 +182,17 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
   return (
     <>
     <form onSubmit={handleSubmit} className="flex items-center">
-      {errorMessage && (
-        <div className="text-white font-bold py-2 px-4 mr-2">
-          {errorMessage}
-        </div>
-      )}
       <button
-        className="export-btn bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-xl border-2 border-white"
+        className="bg-green-500 text-white active:bg-green-600 font-bold uppercase text-sm px-6 py-3 m-1 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
         type="submit"
       >
         Send Coordinates
       </button>
+      {errorMessage && (
+        <div className="text-white font-bold py-2 px-4 mr-2">
+          Error: {errorMessage}
+        </div>
+      )}
       </form>
 
       <Modal isOpen={isModalOpen} onClose={closeModal}>
