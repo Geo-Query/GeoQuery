@@ -5,17 +5,22 @@ use rusqlite::{Connection, Result};
 
 #[derive(Debug)]
 pub struct MBTilesRegion {
-    pub bottom_left: Coordinate,
     pub top_right: Coordinate,
+    pub bottom_left: Coordinate,
+}
+
+pub enum MBTilesErrorState {
+    UnexpectedFormat(String),
 }
 
 pub fn parse_mbtiles(reader: &mut BufReader<File>) -> Result<MBTilesRegion> {
-    println!("{}",reader);
     //Opens connection to MBTiles file(its just a sqlite db)
     let conn = Connection::open(reader).unwrap();
 
     //Prepares a query to return bounds of MBTiles using metadata table
     let mut stmt = conn.prepare("SELECT * FROM metadata WHERE name = 'bounds'").unwrap();
+
+    //Add error handling here
 
     let mut rows = stmt.query([]).unwrap();
 
@@ -35,8 +40,8 @@ pub fn parse_mbtiles(reader: &mut BufReader<File>) -> Result<MBTilesRegion> {
 
 
     return Ok(MBTilesRegion {
+        top_right,
         bottom_left,
-        top_right
     });
 
 }
