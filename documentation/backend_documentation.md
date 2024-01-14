@@ -1,5 +1,8 @@
 # back-end Code Documentation
 
+## Project Overview
+This backend application, developed in Rust, is designed to handle various geospatial data formats and provide API endpoints for a frontend application. It focuses on processing spatial data, handling file inputs, and serving the processed data through structured APIs.
+
 ## APIs
 
 ### File: `index.rs`
@@ -60,7 +63,8 @@
 - **`get_projection(&self, target_epsg: &str) -> Result<Proj, TIFFErrorState>`**
   - Retrieves projection information for GeoTIFF files based on EPSG code.
 
-
+### File: `route.rs`
+- This file is related to the web API. We have created an additional documentation for the web API.[Link to web-api File](./web-api_documentation.md)
 
 ## Potential Error Outputs
 - **KMLErrorState**

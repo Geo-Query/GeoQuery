@@ -1,73 +1,73 @@
 # front-end Code Documentation
 
-## APIs
+## Project Overview
+This is a React-based frontend application providing a user interface for geographical information querying and display. The application interacts with a Flask backend service to offer rich data processing and visualization capabilities.
 
-### FlaskEndpoints.js
-- **POST Request to `/api/post-coordinates`**
-  - Description: Submits geographic boundary data to the server.
+## Components
 
-### MapComponent.js
-- **Uses `react-leaflet`**
-  - Description: Interacts with mapping service APIs for map rendering.
+### `App.js`
+- **Purpose**: The main application component integrating sub-components and managing routing.
+- **Interface**:
+  - **Props**: N/A (as it's likely the root component)
+  - **State**: Descriptions of any state variables.
 
-### InputBoxes.js
-- **Handles User Input**
-  - Description: Captures user input for geographic coordinates.
+### `App.css`
+- **Purpose**: Contains the global styling for the entire application.
+- **Details**:
+  - Defines styles that are common across various components, such as fonts, colors, and basic layout properties.
+  - Can also include CSS resets or global styles like body margins and padding.
 
-### App.js
-- **Integrates Components**
-  - Description: Potentially interacts with APIs through child components.
+### `index.js`
+- **Purpose**: Serves as the entry point of the React application.
+- **Interface**: N/A
+  - Primarily responsible for rendering the `App` component into the root DOM node.
+  - Might include setup for providers like Redux store, Context API, or Router if used.
 
-### Other Files (index.js, App.test.js, reportWebVitals.js, setupTests.js)
-- **Application Setup and Testing**
-  - Description: These files handle setup, testing, and performance metrics of the application.
+### `MapComponent.js` / `MapComponent.css`
+- **Purpose**: Provides map display functionalities.
+- **Interface**:
+  - **Props**: 
+    - `locationData`: Object containing data to be displayed on the map.
+  - **State**: 
+    - `mapZoom`: Number representing the zoom level of the map.
+    - `markers`: Array of marker objects to be displayed.
 
-### CSS Files (MapComponent.css, App.css, index.css)
-- **Styling**
-  - Description: CSS files for application styling; no API interactions.
+### `QueryConfigurator.js`
+- **Purpose**: Configures and submits queries.
+- **Interface**:
+  - **Props**: 
+    - `onSubmit`: Function to handle query submission.
+  - **State**: 
+    - `queryParams`: Object representing user input for query parameters.
+
+### `QueryHistory.js` / `QueryHistory.css`
+- **Purpose**: Displays the user's query history.
+- **Interface**:
+  - **Props**: 
+    - `historyData`: Array of objects representing past queries.
+  - **State**: N/A
+
+### `InputBoxes.js`
+- **Purpose**: Collects user's query parameters.
+- **Interface**:
+  - **Props**: 
+    - `onChange`: Function to handle changes in input fields.
+  - **State**: 
+    - `inputValue`: String representing user input.
+
+### `FlaskEndpoints.js`
+- **Purpose**: Manages interactions with the backend Flask API.
+- **Interface**: N/A (utility file)
+
+### `reportWebVitals.js`
+- **Purpose**: Monitors application performance.
+- **Interface**: N/A (utility file)
+
+### `setupTests.js` / `App.test.js`
+- **Purpose**: Sets up testing configuration and defines test cases.
+- **Interface**: N/A (testing file)
 
 
-## Potential Error Outputs
-
-### FlaskEndpoints.js
-- Network or HTTP request errors when sending data to the backend.
-
-### MapComponent.js
-- Errors in map rendering or data processing due to library functions or data issues.
-
-### InputBoxes.js
-- User input validation errors, especially if incorrect data formats are entered.
-
-### App.js
-- Component integration and state management errors, leading to UI inconsistencies.
-
-### index.js, App.test.js, reportWebVitals.js, setupTests.js
-- Errors related to application setup, testing configurations, and performance metric tracking.
-
-### CSS Files (MapComponent.css, App.css, index.css)
-- Styling inconsistencies or conflicts, impacting the visual layout.
-
----
-
-## Data Flow
-
-### FlaskEndpoints.js
-- Manages data transmission from the frontend to the backend server.
-
-### MapComponent.js
-- Handles the flow of geographic data for map rendering.
-
-### InputBoxes.js
-- Captures and transfers user input for further processing.
-
-### App.js
-- Central hub for managing and directing data flow between different components.
-
-### index.js, App.test.js, reportWebVitals.js, setupTests.js
-- Configures the overall application, sets up testing environments, and tracks app performance.
-
-### CSS Files (MapComponent.css, App.css, index.css)
-- No direct data flow impact; purely for styling purposes.
-
+## Link to other documentation
 [Link to backtend File](./bakcend_documentation.md)
 [Link to web-api File](./web-api_documentation.md)
