@@ -10,6 +10,7 @@ pub struct MBTilesRegion {
     pub bottom_left: Coordinate,
 }
 
+//Get this to work
 pub enum MBTilesErrorState {
     UnexpectedFormat(String),
     FailedQuery
