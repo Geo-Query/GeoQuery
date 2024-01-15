@@ -49,7 +49,7 @@ const Modal = ({ isOpen, onClose, children }) => {
               </div>
             </div>
           </div>
-          <div className="backdrop-blur-sm fixed inset-0 z-40 "></div>
+          <div className="backdrop-blur-sm fixed inset-0 z-40"></div>
     </>
   );
 };
