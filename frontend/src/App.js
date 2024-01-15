@@ -3,7 +3,7 @@ import "./k.css";
 import MapComponent2 from "./components/MapComponent";
 
 function App() {
-  const [boundingBox, setBoundingBox] = useState({
+  let [boundingBox, setBoundingBox] = useState({
     northWest: {lat: "", long: ""},
     southEast: {lat: "", long: ""}
   });

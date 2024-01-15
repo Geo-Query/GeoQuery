@@ -1,7 +1,7 @@
 import React from "react";
 import MapBoundingBoxForm from "../api/FlaskEndpoints";
 
-const QueryConfigurator = ({boundingBox, setBoundingBox, redraw, queryHistory, setQueryHistory}) => {
+const QueryConfigurator = ({boundingBox, setBoundingBox, queryHistory, setQueryHistory}) => {
 
   const handleManualInput = (n, v) => {
     switch (n) {
@@ -44,17 +44,16 @@ const QueryConfigurator = ({boundingBox, setBoundingBox, redraw, queryHistory, s
             <input
               type="text"
               placeholder="Latitude"
-              value={boundingBox.northWest.lat || ""}
+              value={boundingBox?.northWest?.lat ?? ""}
               onChange={(v) => handleManualInput(1, v)}
-              onBlur={() => {redraw()}}
+
               className="w-full px-4 py-2 text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
             <input
               type="text"
               placeholder="Longitude"
-              value={boundingBox.northWest.lng || ""}
+              value={boundingBox?.northWest?.lng ?? ""}
               onChange={(v) => handleManualInput(2, v)}
-              onBlur={redraw}
               className="w-full px-4 py-2 text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
@@ -66,17 +65,15 @@ const QueryConfigurator = ({boundingBox, setBoundingBox, redraw, queryHistory, s
             <input
               type="text"
               placeholder="Latitude"
-              value={boundingBox.southEast.lat || ""}
+              value={boundingBox?.southEast?.lat ?? ""}
               onChange={(v) => handleManualInput(3, v)}
-              onBlur={redraw}
               className="w-full px-4 py-2 text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
             <input
               type="text"
               placeholder="Longitude"
-              value={boundingBox.southEast.lng || ""}
+              value={boundingBox?.southEast?.lng ?? ""}
               onChange={(v) => handleManualInput(4, v)}
-              onBlur={redraw}
               className="w-full text-black px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
