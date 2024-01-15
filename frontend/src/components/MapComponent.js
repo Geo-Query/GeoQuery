@@ -8,9 +8,17 @@ import LongLatBoxes from "./InputBoxes";
 import QueryHistory from "./QueryHistory";
 import QueryConfigurator from "./QueryConfigurator";
 
-const MapComponent2 = React.memo(({boundingBox, setBoundingBox}) => {
+const MapComponent2 = React.memo(() => {
   let mapRef = useRef(null);
+  let mapContainerRef = useRef(null);
+  let [boundingBox, setBoundingBox] = useState(null);
+  useEffect(() => {draw(boundingBox)}, [boundingBox]);
+
+
+  // Init Draw Layer Reference!
   let drawLayerRef = useRef(null);
+
+  // Init Query History!
   let existingHistory = localStorage.getItem("queryHistory");
   if (!existingHistory) {
     existingHistory = [];
@@ -29,22 +37,33 @@ const MapComponent2 = React.memo(({boundingBox, setBoundingBox}) => {
     setQueryHistoryWrapped(v);
   }
 
-
-  const redraw = () => {
-    if (drawLayerRef.current && boundingBox.southEast.lat && boundingBox.southEast.lng && boundingBox.northWest.lat && boundingBox.northWest.lng) {
-      let rect = new L.Rectangle(
-        L.latLngBounds(
-          L.latLng(boundingBox.northWest.lat, boundingBox.northWest.lng),
-          L.latLng(boundingBox.southEast.lat, boundingBox.southEast.lng)
-        ), {color: "#3388ff", weight: 4, opacity: 0.5, fill_opacity: 0.2, fill: true, stroke: true}
-      );
+  const draw = (box) => {
+    if (drawLayerRef.current) {
       drawLayerRef.current.clearLayers();
-      drawLayerRef.current.addLayer(rect);
+      let bounds = L.latLngBounds(
+        L.latLng(boundingBox.northWest.lat, boundingBox.northWest.lng),
+        L.latLng(boundingBox.southEast.lat, boundingBox.southEast.lng)
+      );
+      drawLayerRef.current.addLayer(new L.Rectangle(
+        bounds, {color: "#3388ff", weight: 4, opacity: 0.5, fill_opacity: 0.2, fill: true, stroke: true}
+      ));
+      mapRef.current.fitBounds(bounds, {padding: [15, 15], animate: true});
+    } else {
+      console.log("Did not draw as no layer!");
     }
   }
+
   useEffect(() => {
-    if (mapRef.current) {
-      let drawLayer = new L.FeatureGroup();
+    if (mapContainerRef.current) {
+      // Init Map!
+      let map = L.map(mapContainerRef.current).setView([51.505, -0.09], 10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Init Draw Layer.
+      let drawLayer = new L.featureGroup();
       let drawControl = new L.Control.Draw({
         draw: {
           position: 'topleft',
@@ -61,41 +80,73 @@ const MapComponent2 = React.memo(({boundingBox, setBoundingBox}) => {
           edit: false,
           remove: false,
         }
-      });
-
-      let map = L.map(mapRef.current).setView([51.505, -0.09], 10);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(map);
+      })
       map.addLayer(drawLayer);
       map.addControl(drawControl);
-
-      map.on(L.Draw.Event.CREATED, (v) => {
-        console.log(v);
-        console.log(v.layer.getLatLngs()) // 0: [0: SW, 1: NW, 2: NE, 3: SE]
+      // Add drawLayer!
+      map.on(L.Draw.Event.CREATED, (event) => {
+        // Set bounding box (wrapped so as to not redraw)
         setBoundingBox({
-          northWest: v.layer.getLatLngs()[0][1],
-          southEast: v.layer.getLatLngs()[0][3]
+          northWest: event.layer.getLatLngs()[0][1],
+          southEast: event.layer.getLatLngs()[0][3]
         });
-        drawLayer.clearLayers();
-        console.log(v.layer);
-        drawLayer.addLayer(v.layer);
-      })
+      });
+
       drawLayerRef.current = drawLayer;
+      mapRef.current = map;
     }
   }, []);
+
+
+
+  //
+  // const redraw = () => {
+  //   if (drawLayerRef.current && boundingBox.southEast.lat && boundingBox.southEast.lng && boundingBox.northWest.lat && boundingBox.northWest.lng) {
+  //     let rect = ;
+  //     drawLayerRef.current.clearLayers();
+  //     drawLayerRef.current.addLayer(rect);
+  //   }
+  // }
+  // useEffect(() => {
+  //   if (mapRef.current) {
+  //     let drawLayer = new L.FeatureGroup();
+  //     let drawControl = new L.Control.Draw({
+  //
+  //     });
+  //
+  //     let map = L.map(mapRef.current).setView([51.505, -0.09], 10);
+  //     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  //       maxZoom: 19,
+  //       attribution: '© OpenStreetMap contributors'
+  //     }).addTo(map);
+  //     map.addLayer(drawLayer);
+  //     map.addControl(drawControl);
+  //
+  //     map.on(L.Draw.Event.CREATED, (v) => {
+  //       console.log(v);
+  //       console.log(v.layer.getLatLngs()) // 0: [0: SW, 1: NW, 2: NE, 3: SE]
+  //       setBoundingBox({
+  //         northWest: v.layer.getLatLngs()[0][1],
+  //         southEast: v.layer.getLatLngs()[0][3]
+  //       });
+  //       drawLayer.clearLayers();
+  //       console.log(v.layer);
+  //       drawLayer.addLayer(v.layer);
+  //     })
+  //     drawLayerRef.current = drawLayer;
+  //   }
+  // }, []);
 
 
   return (
     <div id="map-container" className="foo">
       <div className="flex-grow p-2 border-2 border-white rounded-xl mx-6 my-2">
-        <div id="map" className="map" ref={mapRef} style={{height: "600px", width: "100%"}}></div>
+        <div id="map" className="map" ref={mapContainerRef} style={{height: "600px", width: "100%"}}></div>
       </div>
       {/* Query History */}
       <div className="flex flex-wrap justify-between items-start">
-        <QueryHistory queryHistory={queryHistory} setQueryHistory={setQueryHistory}/>
-        <QueryConfigurator boundingBox={boundingBox} setBoundingBox={setBoundingBox} redraw={redraw} queryHistory={queryHistory} setQueryHistory={setQueryHistory}/>
+        <QueryHistory queryHistory={queryHistory} setQueryHistory={setQueryHistory} setBoundingBox={setBoundingBox}/>
+        <QueryConfigurator boundingBox={boundingBox} setBoundingBox={setBoundingBox} queryHistory={queryHistory} setQueryHistory={setQueryHistory}/>
       </div>
 
     </div>
