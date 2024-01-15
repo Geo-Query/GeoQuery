@@ -2,12 +2,13 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::PathBuf;
-use proj::{Proj, ProjError};
+use proj4rs::Proj;
 use crate::entry::{EntryValue, IFDEntry};
 pub use crate::geokeydirectory::GeoKeyDirectoryErrorState;
 pub use crate::header::HeaderErrorState;
 pub use crate::entry::IFDEntryErrorState;
 use crate::geokeydirectory::GeoKeyDirectory;
+use crate::TIFFErrorState::ProjectionError;
 use crate::util::FromBytes;
 
 mod util;
@@ -20,7 +21,7 @@ pub enum TIFFErrorState {
     IFDEntryError(IFDEntryErrorState),
     GeoKeyDirectoryError(GeoKeyDirectoryErrorState),
     UnexpectedFormat(String),
-    ProjectionError(ProjError),
+    ProjectionError(String),
     NotEnoughGeoData,
 }
 
@@ -172,24 +173,28 @@ fn calculate_extent(
     top_left: (f64, f64),
     scale: (f64, f64),
     image_dimensions: (u16, u16),
-    proj: Proj
+    from_proj: Proj
 ) -> Result<GeoTiffRegion, TIFFErrorState> {
     // Initialize the Proj struct with the known CRS (Coordinate Reference System)
+    let to_proj = Proj::from_proj_string(crs_definitions::EPSG_4326.proj4).expect("FAILED TO BUILD DEFAULT PROJ!");
 
+    let mut top_left = top_left.clone();
     // Calculate the bottom-right coordinates in the image's CRS
-    let bottom_right = (
+    let mut bottom_right = (
         top_left.0 + (scale.0 * image_dimensions.0 as f64),
         top_left.1 - (scale.1 * image_dimensions.1 as f64), // subtract because pixel scale is usually positive as you go down
     );
 
+    if let Err(e) = proj4rs::transform::transform(&from_proj, &to_proj, &mut top_left) {
+        return Err(ProjectionError(format!("Failed to apply tranformation for {from_proj:?} to {to_proj:?}, for points: {top_left:?}, with reason {e:?}")))
+    } else {};
+    if let Err(e) = proj4rs::transform::transform(&from_proj, &to_proj, &mut bottom_right) {
+        return Err(ProjectionError(format!("Failed to apply tranformation for {from_proj:?} to {to_proj:?}, for points: {bottom_right:?}, with reason {e:?}")))
+    } else {};
+
+
     return Ok(GeoTiffRegion {
-        top_left: match proj.convert(top_left) {
-            Ok(v) => v,
-            Err(e) => return Err(TIFFErrorState::ProjectionError(e))
-        },
-        bottom_right: match proj.convert(bottom_right) {
-            Ok(v) => v,
-            Err(e) => return Err(TIFFErrorState::ProjectionError(e))
-        }
+        top_left,
+        bottom_right
     });
 }
