@@ -2,7 +2,7 @@ import React from 'react';
 import "./QueryHistory.css";
 
 
-const QueryHistory = ({ queryHistory, setQueryHistory}) => {
+const QueryHistory = ({queryHistory, setQueryHistory, setBoundingBox}) => {
 
   // Function to clear the list of coordinates
   const clearCoordinates = () => {
@@ -11,8 +11,7 @@ const QueryHistory = ({ queryHistory, setQueryHistory}) => {
 
   // Function to query from the log
   const handleCoordinateClick = (query) => {
-    const { northWest, southEast } = query;
-    alert(`Clicked coordinates: NW(${northWest.lat.toFixed(4)}, ${northWest.lng.toFixed(4)}), SE(${southEast.lat.toFixed(4)}, ${southEast.lng.toFixed(4)})`);
+    setBoundingBox(query);
   }
 
   return (
