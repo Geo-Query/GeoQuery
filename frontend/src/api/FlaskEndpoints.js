@@ -71,7 +71,7 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
     console.log(responseData);
     return (
       <div>
-        <div className="flex items-center space-x-2">
+        <div className="flex bg-blue-600 py-2 px-4 rounded items-center space-x-2">
           <p>Status:</p>
           <p>{responseData.data.status}</p>
 
@@ -94,20 +94,39 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
         </div>
         <br></br>
         
-        {/* Populates a list with the results as they come in - update in next sprint */}
         {responseData.data.results && responseData.data.results.length > 0 ? (
-          <div>
-            <h3>Results:</h3>
-            <ul className="list-disc list-inside">
-              {responseData.data.results.map((result, index) => (
-                <li key={index} className="mb-1">NW: {result.region.top_left[0]},{result.region.top_left[1]}; SE: {result.region.bottom_right[0]}, {result.region.bottom_right[1]} :: {result.file.path}</li>
-              ))}
-            </ul>
+        <div>
+          <h3 className="text-lg font-bold text-white mb-4">Results:</h3>
+          <div className="grid grid-cols-1 gap-4 overflow-x max-h-40">
+            {responseData.data.results.map((result, index) => (
+              <div key={index} className="bg-[#525461] rounded-lg shadow-lg p-4 transition-transform duration-300 ease-in-out hover:scale-105 hover:bg-[#526071] hover:shadow-xl">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-mono text-sm text-white">
+                    {result.file.path}
+                  </span>
+                  <span className="text-xs font-semibold text-white">
+                    {result.type}
+                  </span>
+                </div>
+                <div className="border-t border- my-2"></div>
+                <div className="text-sm text-white">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold">NW:</span>
+                    <span className="font-mono">{result.region.top_left[1]}, {result.region.top_left[0]}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold">SE:</span>
+                    <span className="font-mono">{result.region.bottom_right[1]}, {result.region.bottom_right[0]} </span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-          
-        ) : (
-          <p>No results found.</p>
-        )}
+        </div>
+      ) : (
+        <p className="text-gray-200">No results found.</p>
+      )}
+
         
       </div>
     );

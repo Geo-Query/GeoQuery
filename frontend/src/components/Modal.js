@@ -24,7 +24,7 @@ const Modal = ({ isOpen, onClose, children }) => {
                     </button>
                 </div>
                 {/*body*/}
-                <div className="relative bg-[#525461] flex-auto my-2 mx-6 rounded">
+                <div className="relative flex-auto my-2 mx-6 rounded overflow-y-scroll">
                     {children}
                 </div>
                 {/*footer*/}
