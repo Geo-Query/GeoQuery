@@ -21,6 +21,7 @@ const MapComponent2 = React.memo(({boundingBox, setBoundingBox}) => {
       console.log(e);
       console.log("Could not parse history, hence resetting!");
       existingHistory = [];
+      localStorage.setItem("queryHistory", null);
     }
   }
   let [queryHistory, setQueryHistoryWrapped] = useState(existingHistory);
