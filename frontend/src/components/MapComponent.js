@@ -29,6 +29,7 @@ const MapComponent2 = React.memo(() => {
       console.log(e);
       console.log("Could not parse history, hence resetting!");
       existingHistory = [];
+      localStorage.setItem("queryHistory", null);
     }
   }
   let [queryHistory, setQueryHistoryWrapped] = useState(existingHistory);
@@ -140,11 +141,11 @@ const MapComponent2 = React.memo(() => {
 
   return (
     <div id="map-container" className="foo">
-      <div className="flex-grow p-2 border-2 border-white rounded-xl mx-6 my-2">
-        <div id="map" className="map" ref={mapContainerRef} style={{height: "600px", width: "100%"}}></div>
+      <div className="flex-grow rounded mx-6 my-2 mt-4 p-1">
+        <div id="map" className="map" ref={mapContainerRef}></div>
       </div>
       {/* Query History */}
-      <div className="flex flex-wrap justify-between items-start">
+      <div className="flex flex-wrap justify-between items-stretch">
         <QueryHistory queryHistory={queryHistory} setQueryHistory={setQueryHistory} setBoundingBox={setBoundingBox}/>
         <QueryConfigurator boundingBox={boundingBox} setBoundingBox={setBoundingBox} queryHistory={queryHistory} setQueryHistory={setQueryHistory}/>
       </div>

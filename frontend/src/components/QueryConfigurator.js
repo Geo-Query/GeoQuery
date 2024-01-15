@@ -33,14 +33,14 @@ const QueryConfigurator = ({boundingBox, setBoundingBox, queryHistory, setQueryH
   }
   return (
 
-    <div className="flex-grow p-6 border-2 border-white rounded-xl mx-6 my-2">
-      <div className="bg-blue-600 text-white font-bold py-2 px-4 rounded-xl border-2 border-white min-w-full md:min-w-0 md:min-w-200px">
+    <div className="flex-grow p-4 rounded mx-6 my-2 bg-[#353744]">
+      <div className="bg-blue-600 text-white font-bold py-2 px-4 rounded min-w-full md:min-w-0 md:min-w-200px mb-5">
         <span className="font-bold">Query Configuration :: Click away from input to see preview.</span>
       </div>
-      <div className="flex flex-col my-2 gap-2 text-white font-bold">
+      <div className="flex flex-col my-2 gap-2 text-white font-bold p-1 gap-4">
         <div className="flex items-center">
           <h1 style={{width: "15%"}}>North West: </h1>
-          <div className="flex gap-1 w-full">
+          <div className="flex gap-3 w-full">
             <input
               type="text"
               placeholder="Latitude"
@@ -61,7 +61,7 @@ const QueryConfigurator = ({boundingBox, setBoundingBox, queryHistory, setQueryH
         <div className="flex items-center">
           <h1 style={{width: "15%"}} >South East: </h1>
 
-          <div className="flex gap-1 w-full">
+          <div className="flex gap-3 w-full">
             <input
               type="text"
               placeholder="Latitude"

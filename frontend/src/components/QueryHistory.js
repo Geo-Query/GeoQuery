@@ -15,8 +15,8 @@ const QueryHistory = ({queryHistory, setQueryHistory, setBoundingBox}) => {
   }
 
   return (
-    <div className="flex-grow p-6 border-2 border-white rounded-xl mx-6 my-2">
-      <div className="bg-blue-600 text-white font-bold py-2 px-4 rounded-xl border-2 border-white min-w-full md:min-w-0 md:min-w-200px">
+    <div className="flex-grow p-4 rounded mx-6 my-2 bg-[#353744]">
+      <div className="bg-blue-600 text-white font-bold py-2 px-4 rounded min-w-full md:min-w-0 md:min-w-200px">
         <span className="font-bold">Query History</span>
       </div>
       <div className="log">
