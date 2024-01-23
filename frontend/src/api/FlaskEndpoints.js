@@ -21,7 +21,7 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
       if (response.data.status === "Processing") {
         console.log("Query in process")
         console.log("Results:", response.data.results);
-
+        
       }
       if (response.data.status === "Complete") {
         clearInterval(intervalId); // Stop polling
