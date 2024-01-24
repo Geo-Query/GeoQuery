@@ -10,7 +10,7 @@ const DirectoryPicker = ({ onDirectorySelect }) => {
     }
   };
 
-  return <button onClick={handleDirectorySelect}>Select Directory</button>;
+  return <button onClick={handleDirectorySelect} className="text-white">Select Directory</button>;
 };
 
 export default DirectoryPicker;
