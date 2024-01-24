@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from "axios";
-import { RUST_BACKEND_URL } from '../config'; // Adjust the path as necessary
+import { RUST_BACKEND_URL } from '../config.js'; // Adjust the path as necessary
 import Modal from '../components/Modal.js';
 
 const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {

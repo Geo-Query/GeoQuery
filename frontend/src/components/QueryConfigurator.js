@@ -1,5 +1,5 @@
 import React from "react";
-import MapBoundingBoxForm from "../api/FlaskEndpoints";
+import MapBoundingBoxForm from "../api/endpoints";
 
 const QueryConfigurator = ({boundingBox, setBoundingBox, queryHistory, setQueryHistory}) => {
 
