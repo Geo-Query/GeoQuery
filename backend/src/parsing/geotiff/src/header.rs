@@ -3,6 +3,7 @@ use crate::header::HeaderErrorState::UnexpectedMagicNumber;
 use crate::TIFFErrorState;
 use crate::util::{ByteOrder, FromBytes};
 
+#[derive(Debug)]
 pub enum HeaderErrorState {
     UnexpectedByteOrder([u8; 2]),
     UnexpectedMagicNumber([u8; 2]),

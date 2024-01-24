@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::BufReader;
 use crate::spatial::Coordinate;
@@ -32,13 +33,29 @@ pub enum GeoJSONErrorState {
     UnparsableCoordinate(String)
 }
 
-#[derive(Debug)]
+impl Display for GeoJSONErrorState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl Error for GeoJSONErrorState {
+    // TODO: Add error descriptions!
+}
+
+#[derive(Debug, Clone)]
 pub struct GeoJSONRegion {
     pub top_right: Coordinate,
     pub bottom_left: Coordinate
 }
 
-pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<GeoJSONRegion, GeoJSONErrorState> {
+#[derive(Debug, Clone)]
+pub struct GeoJSONMetaData {
+    pub region: GeoJSONRegion,
+    pub tags: Vec<String>
+}
+
+pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<GeoJSONMetaData, GeoJSONErrorState> {
     let mut json_reader = JsonReader::from_reader(reader);
     let mut buffer = Vec::new();
     let mut coordinate_pairs: Vec<[f64; 2]> = Vec::new();
@@ -97,8 +114,11 @@ pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<GeoJSONRegion, GeoJ
     }}
 
     let boundaries = get_boundaries(coordinate_pairs);
-    return Ok(GeoJSONRegion {
-        top_right: boundaries.1,
-        bottom_left: boundaries.0,
+    return Ok(GeoJSONMetaData {
+        region: GeoJSONRegion {
+            top_right: boundaries.1,
+            bottom_left: boundaries.0,
+        },
+        tags: vec!["Filetype: GEOJSON".to_string()]
     })
 }

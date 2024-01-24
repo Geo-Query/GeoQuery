@@ -112,11 +112,11 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
                 <div className="text-sm text-white">
                   <div className="flex justify-between items-center">
                     <span className="font-bold">NW:</span>
-                    <span className="font-mono">{result.region.top_left[1]}, {result.region.top_left[0]}</span>
+                    <span className="font-mono">{result.metadata.region.top_left[1]}, {result.metadata.region.top_left[0]}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="font-bold">SE:</span>
-                    <span className="font-mono">{result.region.bottom_right[1]}, {result.region.bottom_right[0]} </span>
+                    <span className="font-mono">{result.metadata.region.bottom_right[1]}, {result.metadata.region.bottom_right[0]} </span>
                   </div>
                 </div>
               </div>

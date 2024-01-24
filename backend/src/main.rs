@@ -33,6 +33,10 @@ mod config;
 
 const INDEX_ADDRESS: &str = "0.0.0.0:42069";
 
+// Tag list:
+// Filetype:
+//     KML
+
 
 
 
@@ -125,15 +129,19 @@ async fn main() {
     event!(Level::INFO, "Building Index");
     event!(Level::DEBUG, "Empty Index Initialised!");
     for (mut i, file) in files.iter().enumerate() {
+        println!("Parsing: {:?}", file.path);
         i += 1;
-        event!(Level::DEBUG, "Inserted {i}/{} into index.", files.len());
-        idx.insert(Node {
-            region: match parse(file.path.clone()) {
-                Some(r) => r,
-                None => continue
+        match parse(file.clone()) {
+            Ok(v) => match v {
+                None => {
+
+                }
+                Some(node) => {idx.insert(node)}
             },
-            file: file.clone()
-        });
+            Err(e) => {
+                event!(Level::ERROR, "{:?}", e);
+            }
+        }
     }
     event!(Level::DEBUG, "Added all found maps to index!");
     drop(_index_build_guard);

@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::error::Error;
+use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::PathBuf;
@@ -16,6 +18,8 @@ mod entry;
 mod header;
 mod geokeydirectory;
 
+
+#[derive(Debug)]
 pub enum TIFFErrorState {
     HeaderError(HeaderErrorState),
     IFDEntryError(IFDEntryErrorState),
@@ -25,18 +29,36 @@ pub enum TIFFErrorState {
     NotEnoughGeoData,
 }
 
+impl Display for TIFFErrorState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl Error for TIFFErrorState {
+    fn description(&self) -> &str {
+        "FOO"
+    }
+}
+
 pub trait FileDescriptor {
     fn get_path(&self) -> &PathBuf;
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GeoTiffRegion {
     pub top_left: (f64, f64),
     pub bottom_right: (f64, f64),
 }
 
-pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffRegion, TIFFErrorState> {
+#[derive(Debug, Clone)]
+pub struct GeoTiffMetaData {
+    pub region: GeoTiffRegion,
+    pub tags: Vec<String>
+}
+
+pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffMetaData, TIFFErrorState> {
     // Parse the file header.
     // First, seek to the start of the file, and validate.
     // Then read into an 8 byte buffer, and validate.
@@ -166,7 +188,10 @@ pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffRegion, TIFFErr
 
     let region = calculate_extent(top_left, scale, (x,y), projection)?;
 
-    return Ok(region);
+    return Ok(GeoTiffMetaData {
+        region,
+        tags: vec!["Filetype: TIFF".to_string()]
+    });
 }
 
 fn calculate_extent(
