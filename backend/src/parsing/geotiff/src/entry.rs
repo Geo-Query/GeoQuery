@@ -37,6 +37,7 @@ pub struct IFDEntry {
     value: Option<EntryValue>
 }
 
+#[derive(Debug)]
 pub enum IFDEntryErrorState {
     UnexpectedEntryType(u16),
     MissingAssociatedValue(u16),
