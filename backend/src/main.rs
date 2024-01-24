@@ -2,9 +2,11 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::future::IntoFuture;
+use tracing::{event, span, Level};
 use std::path::PathBuf;
 use std::sync::{Arc};
 use axum;
+use tracing_subscriber;
 use rstar::RTree;
 use tokio;
 use tokio::sync::{Mutex, mpsc, RwLock};
@@ -32,6 +34,9 @@ mod config;
 const INDEX_ADDRESS: &str = "0.0.0.0:42069";
 
 
+
+
+#[derive(Debug)]
 struct State {
     i: RwLock<RTree<Node>>,
     j: RwLock<HashMap<Uuid, Arc<RwLock<QueryTask>>>>,
@@ -75,48 +80,53 @@ fn traverse(p: PathBuf) -> Result<Vec<PathBuf>, String>{
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt::init();
     // Load Config (Expect in WD)
     let cfg = match std::env::current_dir() {
         Ok(d) => match File::open(d.join("config.json")) {
             Ok(f) => match serde_json::from_reader::<BufReader<File>, Config>(BufReader::new(f)) {
                 Ok(cfg) => cfg,
                 Err(e) => {
-                    eprintln!("Failed to parse config.json, reason: {e:?}");
+                    event!(Level::ERROR, "Failed to parse config.json, reason: {e:?}");
                     panic!();
                 }
             },
             Err(e) => {
-                eprintln!("Failed to open config.json in current wd, reason: {e:?}");
+                event!(Level::ERROR, "Failed to open config.json in current wd, reason: {e:?}");
                 panic!();
             }
         },
         Err(e) => {
-            eprintln!("Failed to read current wd, reason: {e:?}");
+            event!(Level::ERROR, "Failed to read current wd, reason: {e:?}");
             panic!();
         }
     };
+    event!(Level::INFO, "config.json Loaded from current working directory!");
 
     if !cfg.directory.exists() {
-        eprintln!("Map Dir: {:?}", cfg.directory);
-        eprintln!("Does not exist!");
+        event!(Level::ERROR, "Map Directory: {:?}", cfg.directory);
+        event!(Level::ERROR, "Does not exist! Please edit in config.json!");
         panic!();
     }
 
-
+    event!(Level::INFO, "Discovering Map Files in directory!");
     let files: Vec<Arc<FileMeta>> = match traverse(cfg.directory) {
         Ok(f) => f.iter().map(|z| Arc::new(FileMeta {path: z.clone()})).collect(),
         Err(e) => {
-            eprintln!("Failed to traverse files to build index.");
-            eprintln!("Reason: {e:?}");
+            event!(Level::ERROR, "Failed to traverse files to build index.");
+            event!(Level::ERROR, "Reason: {e:?}");
             panic!();
         }
     };
+    let index_building = span!(Level::INFO, "Indexing");
+    let _index_build_guard = index_building.enter();
 
     let mut idx: RTree<Node> = RTree::new();
-
+    event!(Level::INFO, "Building Index");
+    event!(Level::DEBUG, "Empty Index Initialised!");
     for (mut i, file) in files.iter().enumerate() {
         i += 1;
-        println!("Inserted {i}/{} into index.", files.len());
+        event!(Level::DEBUG, "Inserted {i}/{} into index.", files.len());
         idx.insert(Node {
             region: match parse(file.path.clone()) {
                 Some(r) => r,
@@ -125,10 +135,13 @@ async fn main() {
             file: file.clone()
         });
     }
+    event!(Level::DEBUG, "Added all found maps to index!");
+    drop(_index_build_guard);
 
     // Open channel between Axum and Worker
     let (tx, rx) = mpsc::unbounded_channel();
 
+    event!(Level::DEBUG, "Building Shared State (For Multithreading)");
     // Build state. This will be shared between threads.
     let state = Arc::new(State {
         i: RwLock::new(idx),
@@ -137,9 +150,10 @@ async fn main() {
         rx: Mutex::new(rx),
     });
 
-    // Clone arc for use in worker.2
+    // Clone arc for use in worker.
     let shared_state = state.clone();
 
+    event!(Level::INFO, "Initializing Axum Web Server.");
     // Define Axum app.
     let cors = CorsLayer::new()
         // allow `GET` and `POST` when accessing the resource
@@ -148,6 +162,8 @@ async fn main() {
         .allow_origin(Any)
         .allow_headers(Any);
 
+    event!(Level::WARN, "CORS currently set to allow all! Potential vulnerability, please fix!");
+
     let app = axum::Router::new()
         .route("/", axum::routing::get(index))
         .route("/search", axum::routing::get(search))
@@ -155,18 +171,19 @@ async fn main() {
         .layer(cors)
         .layer(axum::Extension(state)); // Pass state through to methods (le middleware)
 
-
+    event!(Level::INFO, "Initialising TCP Socket for Web Server.");
     // Open TCP Transport
     let listener = match tokio::net::TcpListener::bind(INDEX_ADDRESS).await {
         Ok(t) => t,
         Err(e) => {
-            eprintln!("Failed to open TCP Listener, reasion: {e:?}");
+            event!(Level::ERROR, "Failed to open TCP Listener, reasion: {e:?}");
             panic!();
         }
     };
 
-    println!("Starting Server!");
     // Dispatch tasks.
     let axum_task = axum::serve(listener, app);
+
+    event!(Level::INFO, "Starting Web Server & Parallel Worker!");
     futures::join!(axum_task.into_future(), worker(shared_state));
 }

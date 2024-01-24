@@ -7,26 +7,26 @@ const QueryConfigurator = ({boundingBox, setBoundingBox, queryHistory, setQueryH
     switch (n) {
       case 1:
         setBoundingBox({
-          northWest: {lat: v.target.value, lng: boundingBox.northWest.lng},
+          northWest: {lat: parseFloat(v.target.value), lng: boundingBox.northWest.lng},
           southEast: boundingBox.southEast
         });
         break;
       case 2:
         setBoundingBox({
-          northWest: {lat: boundingBox.northWest.lat, lng: v.target.value},
+          northWest: {lat: boundingBox.northWest.lat, lng: parseFloat(v.target.value)},
           southEast: boundingBox.southEast
         });
         break;
       case 3:
         setBoundingBox({
           northWest: boundingBox.northWest,
-          southEast: {lat: v.target.value, lng: boundingBox.southEast.lng}
+          southEast: {lat: parseFloat(v.target.value), lng: boundingBox.southEast.lng}
         });
         break;
       case 4:
         setBoundingBox({
           northWest: boundingBox.northWest,
-          southEast: {lat: boundingBox.southEast.lat, lng: v.target.value}
+          southEast: {lat: boundingBox.southEast.lat, lng: parseFloat(v.target.value)}
         });
         break;
     }
