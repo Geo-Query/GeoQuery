@@ -1,8 +1,9 @@
+use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use util::ByteOrder;
-use crate::{TIFFErrorState, util};
-use crate::entry::IFDEntryErrorState::MissingAssociatedValue;
+use crate::util;
+use crate::error::{IFDEntryErrorState, TIFFErrorState};
 use crate::util::FromBytes;
 
 
@@ -37,12 +38,6 @@ pub struct IFDEntry {
     value: Option<EntryValue>
 }
 
-#[derive(Debug)]
-pub enum IFDEntryErrorState {
-    UnexpectedEntryType(u16),
-    MissingAssociatedValue(u16),
-    InvalidLength(usize)
-}
 
 impl IFDEntry {
     pub fn new(entry_buf: &[u8], byte_order: &ByteOrder) -> Result<IFDEntry, TIFFErrorState> {
@@ -95,13 +90,13 @@ impl IFDEntry {
                                 },
                                 Err(e) => {
                                     eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                    return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                                    return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                                 }
                             }
                         },
                         Err(e) => {
                             eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                            return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                         }
                     }
                 }),
@@ -110,7 +105,7 @@ impl IFDEntry {
                         Ok(s) => vec![s],
                         Err(e) => {
                             eprintln!("Failed to parse string from bytes for tag: {}, Error: {:?}", self.tag, e);
-                            return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)));
+                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)));
                         }
                     }
                 } else {
@@ -125,18 +120,18 @@ impl IFDEntry {
                                     Ok(s) => vec![s],
                                     Err(e) => {
                                         eprintln!("Failed to parse string from bytes for tag: {}, Error: {:?}", self.tag, e);
-                                        return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)));
+                                        return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)));
                                     }
                                 },
                                 Err(e) => {
                                     eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                    return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                                    return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                                 }
                             }
                         },
                         Err(e) => {
                                 eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                                return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                                return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                         }
                     }
                 }),
@@ -161,14 +156,14 @@ impl IFDEntry {
                                         },
                                         Err(e) => {
                                             eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                            return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))                                        }
+                                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))                                        }
                                     }
                                 }
                                 EntryValue::SHORT(values)
                             },
                             Err(e) => {
                                 eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                                return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                                return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                             }
                         }
                     }
@@ -192,14 +187,14 @@ impl IFDEntry {
                                         },
                                         Err(e) => {
                                             eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                            return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))                                                    }
+                                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))                                                    }
                                     }
                                 }
                                 EntryValue::LONG(values)
                             },
                             Err(e) => {
                                 eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                                return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                                return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                             }
                         }
                     }
@@ -220,7 +215,7 @@ impl IFDEntry {
                                     },
                                     Err(e) => {
                                         eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                        return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                                        return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                                     }
                                 }
                             };
@@ -229,7 +224,7 @@ impl IFDEntry {
                         },
                         Err(e) => {
                             eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                            return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                         }
                     }
                 }
@@ -248,7 +243,7 @@ impl IFDEntry {
                                     },
                                     Err(e) => {
                                         eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                        return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                                        return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                                     }
                                 }
                             };
@@ -257,7 +252,7 @@ impl IFDEntry {
                         },
                         Err(e) => {
                             eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                            return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                         }
                     }
                 },
@@ -274,13 +269,13 @@ impl IFDEntry {
                                 },
                                 Err(e) => {
                                     eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                    return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                                    return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                                 }
                             }
                         },
                         Err(e) => {
                             eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                            return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                         }
                     }
                 })

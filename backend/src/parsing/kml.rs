@@ -49,17 +49,13 @@ pub enum KMLErrorState {
 
 impl Display for KMLErrorState {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{}", match self {
+            UnexpectedFormat(s) => format!("UnexpectedFormatError: {s}"),
+            NotEnoughGeoData => "Not enough geographic data within the file to establish a boundary!".to_string()
+        })
     }
 }
-impl Error for KMLErrorState {
-    fn description(&self) -> &str {
-        match self {
-            UnexpectedFormat(s) => s.as_str(),
-            NotEnoughGeoData => "Not enough geographic data within the file to establish a boundary!"
-        }
-    }
-}
+impl Error for KMLErrorState {}
 
 
 pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLMetadata, KMLErrorState> {
@@ -80,18 +76,18 @@ pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLMetadata, KMLErrorSt
                             for coordinate_pair in coordinate_pairs {
                                 let coordinate_strs: Vec<&str> = coordinate_pair.split(",").collect();
                                 if coordinate_strs.len() < 2 {
-                                    return Err(UnexpectedFormat(String::from(format!("Expected coordinate pair of len 2, got: {:?}", coordinate_strs))));
+                                    return Err(UnexpectedFormat(format!("Expected coordinate pair of len 2, got: {:?}", coordinate_strs)));
                                 }
                                 coordinates.push((
                                     match f64::from_str(coordinate_strs[0]) {
                                         Ok(v) => v,
                                         Err(e) => {
-                                            return Err(UnexpectedFormat(String::from(format!("Failed to parse floating point coord: {} with err: {:?}", coordinate_strs[0], e))));
+                                            return Err(UnexpectedFormat(format!("Failed to parse floating point coord: {} with err: {:?}", coordinate_strs[0], e)));
                                         }
                                     }, match f64::from_str(coordinate_strs[1]) {
                                         Ok(v) => v,
                                         Err(e) => {
-                                            return Err(UnexpectedFormat(String::from(format!("Failed to parse floating point coord: {} with err: {:?}", coordinate_strs[1], e))));
+                                            return Err(UnexpectedFormat(format!("Failed to parse floating point coord: {} with err: {:?}", coordinate_strs[1], e)));
                                         }
                                     }
                                 ));

@@ -1,45 +1,24 @@
 use std::collections::HashMap;
 use std::error::Error;
-use std::fmt::{Display, Formatter};
+use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::PathBuf;
 use proj4rs::Proj;
+use error::TIFFErrorState;
 use crate::entry::{EntryValue, IFDEntry};
-pub use crate::geokeydirectory::GeoKeyDirectoryErrorState;
-pub use crate::header::HeaderErrorState;
-pub use crate::entry::IFDEntryErrorState;
+pub use error::GeoKeyDirectoryErrorState;
+pub use error::HeaderErrorState;
+pub use error::IFDEntryErrorState;
 use crate::geokeydirectory::GeoKeyDirectory;
-use crate::TIFFErrorState::ProjectionError;
+use error::TIFFErrorState::ProjectionError;
 use crate::util::FromBytes;
 
 mod util;
 mod entry;
 mod header;
 mod geokeydirectory;
-
-
-#[derive(Debug)]
-pub enum TIFFErrorState {
-    HeaderError(HeaderErrorState),
-    IFDEntryError(IFDEntryErrorState),
-    GeoKeyDirectoryError(GeoKeyDirectoryErrorState),
-    UnexpectedFormat(String),
-    ProjectionError(String),
-    NotEnoughGeoData,
-}
-
-impl Display for TIFFErrorState {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl Error for TIFFErrorState {
-    fn description(&self) -> &str {
-        "FOO"
-    }
-}
+mod error;
 
 pub trait FileDescriptor {
     fn get_path(&self) -> &PathBuf;
