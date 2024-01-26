@@ -15,7 +15,7 @@ pub struct Node {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MetaData {
     pub region: Region,
-    pub tags: Vec<String>
+    pub tags: Vec<(String, String)>
 }
 
 

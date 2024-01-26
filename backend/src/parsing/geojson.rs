@@ -52,14 +52,14 @@ pub struct GeoJSONRegion {
 #[derive(Debug, Clone)]
 pub struct GeoJSONMetaData {
     pub region: GeoJSONRegion,
-    pub tags: Vec<String>
+    pub tags: Vec<(String, String)>
 }
 
 pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<GeoJSONMetaData, GeoJSONErrorState> {
     let mut json_reader = JsonReader::from_reader(reader);
     let mut buffer = Vec::new();
     let mut coordinate_pairs: Vec<[f64; 2]> = Vec::new();
-
+    let mut tags = vec![("Filetype".to_string(), "GEOJSON".to_string())];
 
 
     while let event = match json_reader.read_event(&mut buffer) {
@@ -119,6 +119,6 @@ pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<GeoJSONMetaData, Ge
             top_right: boundaries.1,
             bottom_left: boundaries.0,
         },
-        tags: vec!["Filetype: GEOJSON".to_string()]
+        tags
     })
 }

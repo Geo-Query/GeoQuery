@@ -34,10 +34,11 @@ pub struct GeoTiffRegion {
 #[derive(Debug, Clone)]
 pub struct GeoTiffMetaData {
     pub region: GeoTiffRegion,
-    pub tags: Vec<String>
+    pub tags: Vec<(String, String)>
 }
 
 pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffMetaData, TIFFErrorState> {
+    let mut tags = vec![("Filetype".to_string(), "TIFF".to_string())];
     // Parse the file header.
     // First, seek to the start of the file, and validate.
     // Then read into an 8 byte buffer, and validate.
@@ -169,7 +170,7 @@ pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffMetaData, TIFFE
 
     return Ok(GeoTiffMetaData {
         region,
-        tags: vec!["Filetype: TIFF".to_string()]
+        tags
     });
 }
 

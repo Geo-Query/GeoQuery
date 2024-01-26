@@ -38,7 +38,7 @@ pub struct KMLRegion {
 #[derive(Debug)]
 pub struct KMLMetadata {
     pub region: KMLRegion,
-    pub tags: Vec<String>
+    pub tags: Vec<(String, String)>
 }
 
 #[derive(Debug)]
@@ -61,7 +61,7 @@ impl Error for KMLErrorState {}
 pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLMetadata, KMLErrorState> {
     // Initialise Event iterator, as well as coordinate buffer.
     let mut reader = EventReader::new(reader).into_iter();
-    let mut tags = vec!["Filetype: KML".to_string()];
+    let mut tags = vec![("Filetype".to_string(), "KML".to_string())];
     let mut coordinates: Vec<(f64, f64)> = vec![];
 
     while let Some(Ok(event)) = reader.next() { // Capture events until file over.

@@ -110,7 +110,7 @@ pub struct DT2Region {
 #[derive(Debug)]
 pub struct DT2MetaData {
     pub region: DT2Region,
-    pub tags: Vec<String>
+    pub tags: Vec<(String, String)>
 }
 
 #[derive(Debug)]
@@ -262,6 +262,7 @@ impl DataSetIdentification {
 
 
 pub fn parse_dt2(reader: &mut BufReader<File>) -> Result<DT2MetaData, DT2ErrorState> {
+    let mut tags = vec![("Filetype".to_string(), "DTED".to_string())];
     let mut uhl_buf = [0u8; 80];
     let _uhl = match reader.read_exact(&mut uhl_buf) {
         Ok(_) => UserHeaderLabel::from_bytes(&uhl_buf)?,
@@ -284,6 +285,6 @@ pub fn parse_dt2(reader: &mut BufReader<File>) -> Result<DT2MetaData, DT2ErrorSt
             bottom_right: dsi.se_corner,
             bottom_left: dsi.sw_corner,
         },
-        tags: vec!["Filetype: DT2".to_string()]
+        tags
     })
 }
