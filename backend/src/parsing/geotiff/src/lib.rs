@@ -1,42 +1,44 @@
 use std::collections::HashMap;
+use std::error::Error;
+use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::PathBuf;
 use proj4rs::Proj;
+use error::TIFFErrorState;
 use crate::entry::{EntryValue, IFDEntry};
-pub use crate::geokeydirectory::GeoKeyDirectoryErrorState;
-pub use crate::header::HeaderErrorState;
-pub use crate::entry::IFDEntryErrorState;
+pub use error::GeoKeyDirectoryErrorState;
+pub use error::HeaderErrorState;
+pub use error::IFDEntryErrorState;
 use crate::geokeydirectory::GeoKeyDirectory;
-use crate::TIFFErrorState::ProjectionError;
+use error::TIFFErrorState::ProjectionError;
 use crate::util::FromBytes;
 
 mod util;
 mod entry;
 mod header;
 mod geokeydirectory;
-
-pub enum TIFFErrorState {
-    HeaderError(HeaderErrorState),
-    IFDEntryError(IFDEntryErrorState),
-    GeoKeyDirectoryError(GeoKeyDirectoryErrorState),
-    UnexpectedFormat(String),
-    ProjectionError(String),
-    NotEnoughGeoData,
-}
+mod error;
 
 pub trait FileDescriptor {
     fn get_path(&self) -> &PathBuf;
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GeoTiffRegion {
     pub top_left: (f64, f64),
     pub bottom_right: (f64, f64),
 }
 
-pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffRegion, TIFFErrorState> {
+#[derive(Debug, Clone)]
+pub struct GeoTiffMetaData {
+    pub region: GeoTiffRegion,
+    pub tags: Vec<(String, String)>
+}
+
+pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffMetaData, TIFFErrorState> {
+    let mut tags = vec![("Filetype".to_string(), "TIFF".to_string())];
     // Parse the file header.
     // First, seek to the start of the file, and validate.
     // Then read into an 8 byte buffer, and validate.
@@ -166,7 +168,10 @@ pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffRegion, TIFFErr
 
     let region = calculate_extent(top_left, scale, (x,y), projection)?;
 
-    return Ok(region);
+    return Ok(GeoTiffMetaData {
+        region,
+        tags
+    });
 }
 
 fn calculate_extent(

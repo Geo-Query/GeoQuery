@@ -2,16 +2,16 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::future::IntoFuture;
-use tracing::{event, span, Level};
+use tracing::{event, Level, span};
 use std::path::PathBuf;
-use std::sync::{Arc};
+use std::sync::Arc;
 use axum;
 use tracing_subscriber;
 use rstar::RTree;
 use tokio;
-use tokio::sync::{Mutex, mpsc, RwLock};
+use tokio::sync::{mpsc, Mutex, RwLock};
 use uuid::Uuid;
-use crate::index::{Node, parse};
+use crate::index::Node;
 use crate::routes::{index, results, search};
 use crate::worker::{QueryTask, worker};
 use crate::config::Config;
@@ -19,9 +19,9 @@ use tower_http::cors::{Any, CorsLayer};
 use http::Method;
 use serde::{Deserialize, Serialize};
 use std::io::BufReader;
-use axum::extract::Path;
 use rayon::prelude::*;
 use tower::Layer;
+use parsing::parse;
 
 mod spatial;
 mod index;
@@ -32,6 +32,10 @@ mod io;
 mod config;
 
 const INDEX_ADDRESS: &str = "0.0.0.0:42069";
+
+// Tag list:
+// Filetype:
+//     KML
 
 
 
@@ -125,15 +129,19 @@ async fn main() {
     event!(Level::INFO, "Building Index");
     event!(Level::DEBUG, "Empty Index Initialised!");
     for (mut i, file) in files.iter().enumerate() {
+        event!(Level::INFO, "Parsing: {:?}", file.path);
         i += 1;
-        event!(Level::DEBUG, "Inserted {i}/{} into index.", files.len());
-        idx.insert(Node {
-            region: match parse(file.path.clone()) {
-                Some(r) => r,
-                None => continue
+        match parse(file.clone()) {
+            Ok(v) => match v {
+                None => {
+
+                }
+                Some(node) => {idx.insert(node)}
             },
-            file: file.clone()
-        });
+            Err(e) => {
+                event!(Level::ERROR, "{:?}", e);
+            }
+        }
     }
     event!(Level::DEBUG, "Added all found maps to index!");
     drop(_index_build_guard);
