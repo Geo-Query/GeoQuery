@@ -4,6 +4,27 @@
   "version": "1.0.0",
   "description": "My Electron application description",
   "main": ".webpack/main",
+  "config": {
+    "plugins": [
+      [
+        "@electron-forge/plugin-webpack",
+        {
+          "devContentSecurityPolicy": "default-src * self blob: data: gap:; style-src * self 'unsafe-inline' blob: data: gap:; script-src * 'self' 'unsafe-eval' 'unsafe-inline' blob: data: gap:; object-src * 'self' blob: data: gap:; img-src * self 'unsafe-inline' blob: data: gap:; connect-src self * 'unsafe-inline' blob: data: gap:; frame-src * self blob: data: gap:;",
+          "mainConfig": "./webpack.main.config.js",
+          "renderer": {
+            "config": "./webpack.renderer.config.js",
+            "entryPoints": [
+              {
+                "html": "./src/index.html",
+                "js": "./src/renderer.js",
+                "name": "main_window"
+              }
+            ]
+          }
+        }
+      ]
+    ]
+  },
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
@@ -25,16 +46,19 @@
     "@electron-forge/maker-zip": "^7.2.0",
     "@electron-forge/plugin-auto-unpack-natives": "^7.2.0",
     "@electron-forge/plugin-webpack": "^7.2.0",
+    "@types/leaflet": "^1.9.8",
+    "@types/leaflet-draw": "^1.0.11",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "@vercel/webpack-asset-relocator-loader": "^1.7.3",
-    "css-loader": "^6.9.1",
+    "axios": "^1.6.7",
     "electron": "28.2.0",
     "eslint": "^8.56.0",
     "eslint-plugin-import": "^2.29.1",
     "fork-ts-checker-webpack-plugin": "^7.3.0",
+    "leaflet": "^1.9.4",
+    "leaflet-draw": "^1.0.4",
     "node-loader": "^2.0.0",
-    "style-loader": "^3.3.4",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
     "typescript": "~4.5.4"
