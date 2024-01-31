@@ -142,15 +142,16 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
 
     // Using Ruari's validation. May remove depending on the order of validation
     if (!box || Object.keys(box).length === 0) {
-      return { valid: false, message: "No bounding box provided" };
+      return {valid: false, message: "No bounding box provided"};
     }
 
     // testing with 1 coordinate, TODO expand to use 2 coordinates. NW & SE
-    let Lat = parseFloat(box.northWest.lng);
-    let Long = parseFloat(box.northWest.lat);
+    let Lat = box.northWest.lng;
+    let Long = box.northWest.lat;
 
-    // TODO regex here...
-
+    // Regex to ensure valid input
+    var DMS = /^(\d{2} \d{2}\.\d{4}) ([NESW])$/;
+    var DMDM = /^(\d{2} \d{2} \d{2}) ([NESW])$/;
   }
 
   // Checks constraints of long and lat verifying and returning in format for the rust server to understand
