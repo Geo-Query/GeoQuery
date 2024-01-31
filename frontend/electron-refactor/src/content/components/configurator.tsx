@@ -40,34 +40,45 @@ export default function Configurator(props: ConfiguratorProps) {
 
     return (
         <div className="configurator">
-            <input
-                type="number"
-                value={northWestLat || ''}
-                onChange={(e) => {
-                    setNWLat(validateAndConformCoordinate(e.target.value))
-                }}
-            />
-            <input
-                type="number"
-                value={northWestLong || ''}
-                onChange={(e) => {
-                    setNWLong(validateAndConformCoordinate(e.target.value))
-                }}
-            />
-            <input
-                type="number"
-                value={southEastLat || ''}
-                onChange={(e) => {
-                    setSELat(validateAndConformCoordinate(e.target.value))
-                }}
-            />
-            <input
-                type="number"
-                value={southEastLong || ''}
-                onChange={(e) => {
-                    setSELong(validateAndConformCoordinate(e.target.value))
-                }}
-            />
+            <div className="configurator-input-group">
+                <h1 style={{width: "15%"}}>North West: </h1>
+                <div className="configurator-input-group-spacing">
+                    <input
+                        type="number"
+                        value={northWestLat || ''}
+                        onChange={(e) => {
+                            setNWLat(validateAndConformCoordinate(e.target.value))
+                        }}
+                    />
+                    <input
+                        type="number"
+                        value={northWestLong || ''}
+                        onChange={(e) => {
+                            setNWLong(validateAndConformCoordinate(e.target.value))
+                        }}
+                    />
+                </div>
+            </div>
+            <div className="configurator-input-group">
+                <h1 style={{width: "15%"}}>South East: </h1>
+                <div className="configurator-input-group-spacing">
+
+                    <input
+                        type="number"
+                        value={southEastLat || ''}
+                        onChange={(e) => {
+                            setSELat(validateAndConformCoordinate(e.target.value))
+                        }}
+                    />
+                    <input
+                        type="number"
+                        value={southEastLong || ''}
+                        onChange={(e) => {
+                            setSELong(validateAndConformCoordinate(e.target.value))
+                        }}
+                    />
+                </div>
+            </div>
         </div>
     );
 }

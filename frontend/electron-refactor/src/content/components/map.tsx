@@ -1,33 +1,35 @@
-import React, {useRef, useEffect} from "react";
+import React, {useEffect, useRef} from "react";
 import L from "leaflet";
 import 'leaflet-draw';
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
 import SelectedRegion, {Region} from "../lib/region";
+import {QueryState} from "../lib/query";
 
 interface MapProps {
-    queryState: SelectedRegion,
-    setQueryState: React.Dispatch<React.SetStateAction<SelectedRegion>>
+    selectedRegion: SelectedRegion
+    setSelectedRegion: React.Dispatch<React.SetStateAction<SelectedRegion>>
 }
 
 export default function Map(props: MapProps) {
-    const mapRef = useRef(undefined);
-    const mapContainerRef = useRef(undefined);
+    const mapRef: React.MutableRefObject<L.Map> = useRef(undefined);
+    const mapContainerRef: React.MutableRefObject<HTMLDivElement> = useRef(undefined);
     const drawLayerRef = useRef(undefined);
 
     // Init map function!
     useEffect(() => {
-        const [map, drawLayer] = initialiseLeaflet(mapContainerRef, props.setQueryState);
+        const [map, drawLayer] = initialiseLeaflet(mapContainerRef);
+        map.on(L.Draw.Event.CREATED, (event) => handleDrawEvent(event, props.setSelectedRegion))
         mapRef.current = map;
         drawLayerRef.current = drawLayer;
     }, []);
 
     // Init draw function!
     useEffect(() => {
-        if (props.queryState.region) {
-            draw(props.queryState.region, drawLayerRef, mapRef);
+        if (props.selectedRegion.region) {
+            draw(props.selectedRegion.region, drawLayerRef, mapRef);
         }
-    }, [props.queryState]);
+    }, [props.selectedRegion]);
 
     return (
         <div className="map-container">
@@ -39,10 +41,10 @@ export default function Map(props: MapProps) {
 
 function handleDrawEvent(
     event: L.LeafletEvent,
-    setQueryState: React.Dispatch<React.SetStateAction<SelectedRegion>>
+    setSelectedRegion: React.Dispatch<React.SetStateAction<SelectedRegion>>,
 ) {
     const latlngs = event.layer.getLatLngs();
-    setQueryState(new SelectedRegion({
+    setSelectedRegion(new SelectedRegion({
         northWest: {
             lat: latlngs[0][1].lat,
             long: latlngs[0][1].lng
@@ -56,7 +58,6 @@ function handleDrawEvent(
 
 function initialiseLeaflet(
     mapContainerRef: React.MutableRefObject<HTMLDivElement>,
-    setQueryState: React.Dispatch<React.SetStateAction<SelectedRegion>>,
 ): [L.Map, L.FeatureGroup] {
     if (mapContainerRef.current) {
         const map = L.map(mapContainerRef.current);
@@ -83,7 +84,6 @@ function initialiseLeaflet(
         });
         map.addLayer(drawLayer);
         map.addControl(drawControls);
-        map.on(L.Draw.Event.CREATED, (event) => handleDrawEvent(event, setQueryState))
         return [map, drawLayer];
     }
 }

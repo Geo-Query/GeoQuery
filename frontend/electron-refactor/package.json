@@ -64,6 +64,10 @@
     "typescript": "~4.5.4"
   },
   "dependencies": {
-    "electron-squirrel-startup": "^1.0.0"
+    "@types/toastify-js": "^1.12.3",
+    "css-loader": "^6.10.0",
+    "electron-squirrel-startup": "^1.0.0",
+    "style-loader": "^3.3.4",
+    "toastify-js": "^1.12.0"
   }
 }

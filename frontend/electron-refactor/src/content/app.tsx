@@ -5,23 +5,30 @@ import Map from "./components/map";
 import "./css/main.css";
 import Configurator from "./components/configurator";
 import {loadQueryHistory} from "./lib/queryhistory";
-import Query from "./lib/query";
+import {QueryState} from "./lib/query";
+import Requestor from "./components/requestor";
 
 function App() {
     const [selectedRegion, setSelectedRegion] = useState(new SelectedRegion())
     const [queryHistory, setQueryHistory] = useState(loadQueryHistory());
-    const [query, setQuery] = useState(new Query());
+    const [queryState, setQueryState] = useState<QueryState>(QueryState.BUILDING);
 
     return (
         <div className="App">
-            <Map queryState={selectedRegion} setQueryState={setSelectedRegion}></Map>
-            <Configurator selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} queryHistory={queryHistory} setQueryHistory={setQueryHistory}/>
+            <Map selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion}/>
+            <div className="bottom">
+                <div className="history">
+                    Content Here Must Be Respected!
+                </div>
+                <div className="control">
+                    <div className="control-header"><span>Query Configuration</span></div>
+                    <Configurator selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} queryHistory={queryHistory} setQueryHistory={setQueryHistory}/>
 
+                    <Requestor selectedRegion={selectedRegion} queryState={queryState} setQueryState={setQueryState}/>
+                </div>
+            </div>
         </div>
     );
 }
 
-const rootElement = document.createElement('div');
-document.body.innerHTML = "";
-document.body.appendChild(rootElement);
-ReactDom.render(<App />, rootElement);
+ReactDom.render(<App />, document.body);
