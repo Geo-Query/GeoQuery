@@ -19,12 +19,12 @@ export default function Configurator(props: ConfiguratorProps) {
             props.setSelectedRegion({
                 region: {
                     northWest: {
-                      lat: northWestLat,
-                      long: northWestLong
+                      lat: validateAndConformCoordinate(northWestLat),
+                      long: validateAndConformCoordinate(northWestLong)
                     },
                     southEast: {
-                        lat: southEastLat,
-                        long: southEastLong
+                        lat: validateAndConformCoordinate(southEastLat),
+                        long: validateAndConformCoordinate(southEastLong)
                     }
                 }
             })

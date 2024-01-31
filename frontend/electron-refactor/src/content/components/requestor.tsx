@@ -5,6 +5,7 @@ import axios from 'axios';
 import Toastify from 'toastify-js';
 import "toastify-js/src/toastify.css";
 import Modal from "./modal";
+import QueryHistory from "../lib/queryhistory";
 
 const BACKEND_URL = "http://127.0.0.1:42069"
 const POLL_INTERVAL = 3000;
@@ -13,6 +14,8 @@ interface RequestorProps {
     selectedRegion: SelectedRegion
     queryState: QueryState,
     setQueryState: React.Dispatch<React.SetStateAction<QueryState>>
+    queryHistory: QueryHistory,
+    setQueryHistory: React.Dispatch<React.SetStateAction<QueryHistory>>
 }
 
 function arbitraryFailure() {
@@ -77,9 +80,13 @@ async function makeQuery(
     setQueryState: React.Dispatch<React.SetStateAction<QueryState>>,
     setQueryToken: React.Dispatch<React.SetStateAction<string>>,
     pollCount: number,
-    setPollCount: React.Dispatch<React.SetStateAction<number>>
+    setPollCount: React.Dispatch<React.SetStateAction<number>>,
+    queryHistory: QueryHistory,
+    setQueryHistory: React.Dispatch<React.SetStateAction<QueryHistory>>
 ) {
     if (selectedRegion.region) {
+        console.log(selectedRegion.region);
+        setQueryHistory(queryHistory.add(selectedRegion.region));
         const resp = await axios.get(`${BACKEND_URL}/search`, {
             params: {
                 top_left_lat: selectedRegion.region.northWest.lat,
@@ -130,7 +137,7 @@ export default function Requestor(props: RequestorProps) {
             <div className="flex flex-row justify-start">
                 <button
                     onClick={() => {
-                        makeQuery(props.selectedRegion, props.setQueryState, setQueryToken, pollCount, setPollCount
+                        makeQuery(props.selectedRegion, props.setQueryState, setQueryToken, pollCount, setPollCount, props.queryHistory, props.setQueryHistory
                     )}}
                     className="bg-green-500 text-white active:bg-green-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                 >
@@ -142,10 +149,7 @@ export default function Requestor(props: RequestorProps) {
         return (
             <div className="flex flex-row justify-start">
                 <button
-                    onClick={() => {
-                        makeQuery(props.selectedRegion, props.setQueryState, setQueryToken, pollCount, setPollCount
-                        )
-                    }}
+                    disabled={true}
                     className="bg-orange-500 text-white active:bg-green-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                 >
                     Make Request
