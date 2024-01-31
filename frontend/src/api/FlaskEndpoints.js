@@ -138,20 +138,22 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
   };
 
   // Validates that the provided input coordinates are in an acceptable form
-  const validateInputFormat = (box) => {
-
-    // Using Ruari's validation. May remove depending on the order of validation
-    if (!box || Object.keys(box).length === 0) {
-      return {valid: false, message: "No bounding box provided"};
-    }
-
+  const validateAndConvertFormat = (box) => {
     // testing with 1 coordinate, TODO expand to use 2 coordinates. NW & SE
     let Lat = box.northWest.lng;
     let Long = box.northWest.lat;
 
     // Regex to ensure valid input
-    var DMS = /^(\d{2} \d{2}\.\d{4}) ([NESW])$/;
-    var DMDM = /^(\d{2} \d{2} \d{2}) ([NESW])$/;
+    const DMS = /^(\d{2} \d{2}\.\d{4}) ([NESW])$/;
+    const DMDM = /^(\d{2} \d{2} \d{2}) ([NESW])$/;
+
+    if(DMS.test(Lat)){
+      // Call DMS-DD
+    } else if (DMDM.test(Lat)){
+      // Call DMDM
+    } else {
+      // Check valid DD
+    }
   }
 
   // Checks constraints of long and lat verifying and returning in format for the rust server to understand
@@ -194,7 +196,7 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
     event.preventDefault();
     setErrorMessage(""); // Reset error message
 
-    const formatValidation = validateInputFormat(boundingBox);
+    const formatValidation = validateAndConvertFormat(boundingBox);
     const validationResult = validateAndSanitizeData(boundingBox);
 
     if (!validationResult.valid) {
