@@ -12,3 +12,11 @@ function dmdmToDecimal(degrees, minutes, decimalMinutes, direction) {
 
   return decimalDegrees;
 }
+
+// Example of Latitude: 35° 15.4567' N, Longitude: 100° 30.6789' W
+const latitude = dmdmToDecimal(35, 15, 0.4567, 'N');
+const longitude = dmdmToDecimal(100, 30, 0.6789, 'W');
+
+// In the above example. Output should be Decimal Latitude: 35.2576, Decimal Longitude: -100.5113
+console.log('Latitude:', latitude.toString());
+console.log('Longitude:', longitude.toString());
