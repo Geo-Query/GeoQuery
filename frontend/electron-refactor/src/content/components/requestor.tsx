@@ -42,33 +42,40 @@ async function pollQuery(
     setPollCount: React.Dispatch<React.SetStateAction<number>>
 ) {
     if (queryToken) {
-        const resp = await axios.get(`${BACKEND_URL}/results`, {
-            params: {
-                uuid: queryToken
-            }
-        });
-        if (resp.status === 200 && resp.data?.results && resp.data?.status) {
-            const state = queryStateFromString(resp.data.status);
-
-            if (resp.data.results) {
-                const build = [];
-                for (const result of resp.data.results) {
-                    if (!seen.has(result.file.path)) {
-                        build.push(result);
-                        setSeen(seen.add(result.file.path));
-                    }
+        try {
+            const resp = await axios.get(`${BACKEND_URL}/results`, {
+                params: {
+                    uuid: queryToken
                 }
-                setResults([...build, ...results]);
+            });
+            if (resp.status === 200 && resp.data?.results && resp.data?.status) {
+                const state = queryStateFromString(resp.data.status);
+
+                if (resp.data.results) {
+                    const build = [];
+                    for (const result of resp.data.results) {
+                        if (!seen.has(result.file.path)) {
+                            build.push(result);
+                            setSeen(seen.add(result.file.path));
+                        }
+                    }
+                    setResults([...build, ...results]);
+                }
+                if (state !== queryState) {
+                    setQueryState(state);
+                }
+                if (state === QueryState.WAITING || state === QueryState.PROCESSING) {
+                    setPollCount(pollCount + 1);
+                }
+            } else {
+                console.log("Request failed; or unexpected response!");
+                console.log(resp);
+                arbitraryFailure();
+                setQueryState(QueryState.FAILED);
             }
-            if (state !== queryState) {
-                setQueryState(state);
-            }
-            if (state === QueryState.WAITING || state === QueryState.PROCESSING) {
-                setPollCount(pollCount + 1);
-            }
-        } else {
+        } catch (e) {
             console.log("Request failed; or unexpected response!");
-            console.log(resp);
+            console.log(e);
             arbitraryFailure();
             setQueryState(QueryState.FAILED);
         }
@@ -87,23 +94,29 @@ async function makeQuery(
     if (selectedRegion.region) {
         console.log(selectedRegion.region);
         setQueryHistory(queryHistory.add(selectedRegion.region));
-        const resp = await axios.get(`${BACKEND_URL}/search`, {
-            params: {
-                top_left_lat: selectedRegion.region.northWest.lat,
-                top_left_long: selectedRegion.region.northWest.long,
-                bottom_right_lat: selectedRegion.region.southEast.lat,
-                bottom_right_long: selectedRegion.region.southEast.long
+        try {
+            const resp = await axios.get(`${BACKEND_URL}/search`, {
+                params: {
+                    top_left_lat: selectedRegion.region.northWest.lat,
+                    top_left_long: selectedRegion.region.northWest.long,
+                    bottom_right_lat: selectedRegion.region.southEast.lat,
+                    bottom_right_long: selectedRegion.region.southEast.long
+                }
+            });
+            if (resp.status == 200 && resp.data?.token) {
+                setQueryToken(resp.data.token);
+                setQueryState(QueryState.WAITING);
+                setPollCount(pollCount + 1);
+            } else {
+                arbitraryFailure();
+                setQueryState(QueryState.FAILED);
             }
-        });
-        if (resp.status == 200 && resp.data?.token) {
-            setQueryToken(resp.data.token);
-            setQueryState(QueryState.WAITING);
-            setPollCount(pollCount + 1);
-        } else {
+        } catch (e) {
+            console.log("Request failed; or unexpected response!");
+            console.log(e);
             arbitraryFailure();
             setQueryState(QueryState.FAILED);
         }
-
     } else {
         Toastify({
             text: "No Region Selected!",
@@ -158,6 +171,4 @@ export default function Requestor(props: RequestorProps) {
             </div>
         )
     }
-
-
-};
+}
