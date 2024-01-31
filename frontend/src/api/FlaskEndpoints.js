@@ -137,19 +137,44 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
     setIsModalOpen(false);
   };
 
-  // Validates that the provided input coordinates are in an acceptable form
-  const validateAndConvertFormat = (box) => {
-    // testing with 1 coordinate, TODO expand to use 2 coordinates. NW & SE
-    let Lat = box.northWest.lng;
-    let Long = box.northWest.lat;
+  // Validates that DD formats are correct
+  const validateDD = (NWLat, NWLong, SELat, SELong) => {
 
     // Regex to ensure valid input
     const DDLat = /^[-]?(90(\.0+)?|[0-8]?\d(\.\d+)?)$/;
     const DDLong = /^[-]?(180(?:\.\d+)?|1[0-7]\d(?:\.\d+)?|\d{1,2}(?:\.\d+)?)$/;
 
+    if ((DDLat.test(NWLat) && DDLong.test(NWLong)) && (DDLat.test(SELat) && DDLong.test(SELong))) {
+      return true;
+    }
+
+  }
+
+  // Validates that the provided input coordinates are in an acceptable form
+  const convertCoordinateFormat = (box) => {
+
+    //NW Coordinates
+    let NWLat = box.northWest.lat;
+    let NWLong = box.northWest.lng;
+
+    //SE Coordinates
+    let SELat = box.southEast.lat;
+    let SELong = box.southEast.lng;
+
     const DMS = /^(\d{1,2} \d{1,2} \d{1,2}) ([NESW])$/;
     const DMDM = /^(\d{1,2} \d{1,2}\.\d{4}) ([NESW])$/;
 
+    // Check if DMS
+    if ((DMS.test(NWLat) && DMS.test(NWLong)) && (DMS.test(SELat) && DMS.test(SELong))) {
+      return true;
+      // TODO Call DMS conversion
+    }
+
+    // Check if DMDM
+    if ((DMDM.test(NWLat) && DMDM.test(NWLong)) && (DMDM.test(SELat) && DMDM.test(SELong))) {
+      return true;
+      // TODO Call DMDM conversion
+    }
   }
 
   // Checks constraints of long and lat verifying and returning in format for the rust server to understand
@@ -192,7 +217,7 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
     event.preventDefault();
     setErrorMessage(""); // Reset error message
 
-    const formatValidation = validateAndConvertFormat(boundingBox);
+    const formatConvertion = convertCoordinateFormat(boundingBox);
     const validationResult = validateAndSanitizeData(boundingBox);
 
     if (!validationResult.valid) {
