@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from "axios";
 import { RUST_BACKEND_URL } from '../config'; // Adjust the path as necessary
 import Modal from '../components/Modal.js';
+import dmsToDecimal from '../components/DMS-DD.js';
+import dmdmToDecimal from '../components/DMDM-DD';
+
 
 const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
   const [errorMessage, setErrorMessage] = useState("");
@@ -161,21 +164,20 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
     let SELat = box.southEast.lat;
     let SELong = box.southEast.lng;
 
+    const coords = [NWLat, NWLong, SELat, SELong];
+
     const DMS = /^(\d{1,2} \d{1,2} \d{1,2}) ([NESW])$/;
     const DMDM = /^(\d{1,2} \d{1,2}\.\d{4}) ([NESW])$/;
 
-    // Check if DMS
-    if ((DMS.test(NWLat) && DMS.test(NWLong)) && (DMS.test(SELat) && DMS.test(SELong))) {
-      return true;
-      // TODO Call DMS conversion
-    }
+    coords.forEach(coord => {
+      // Check if DMS
+      if (DMS.test(coord)) {
+        const values = coord.split(' ');
+        dmsToDecimal(values);
+      }
+    });
 
-    // Check if DMDM
-    if ((DMDM.test(NWLat) && DMDM.test(NWLong)) && (DMDM.test(SELat) && DMDM.test(SELong))) {
-      return true;
-      // TODO Call DMDM conversion
-    }
-  }
+  };
 
   // Checks constraints of long and lat verifying and returning in format for the rust server to understand
   const validateAndSanitizeData = (box) => {
