@@ -137,6 +137,22 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
     setIsModalOpen(false);
   };
 
+  // Validates that the provided input coordinates are in an acceptable form
+  const validateInputFormat = (box) => {
+
+    // Using Ruari's validation. May remove depending on the order of validation
+    if (!box || Object.keys(box).length === 0) {
+      return { valid: false, message: "No bounding box provided" };
+    }
+
+    // testing with 1 coordinate, TODO expand to use 2 coordinates. NW & SE
+    let Lat = parseFloat(box.northWest.lng);
+    let Long = parseFloat(box.northWest.lat);
+
+    // TODO regex here...
+
+  }
+
   // Checks constraints of long and lat verifying and returning in format for the rust server to understand
   const validateAndSanitizeData = (box) => {
     if (!box || Object.keys(box).length === 0) {
@@ -176,6 +192,8 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setErrorMessage(""); // Reset error message
+
+    const formatValidation = validateInputFormat(boundingBox);
     const validationResult = validateAndSanitizeData(boundingBox);
 
     if (!validationResult.valid) {
