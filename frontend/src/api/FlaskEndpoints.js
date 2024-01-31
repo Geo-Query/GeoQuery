@@ -144,16 +144,12 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
     let Long = box.northWest.lat;
 
     // Regex to ensure valid input
-    const DMS = /^(\d{2} \d{2}\.\d{4}) ([NESW])$/;
-    const DMDM = /^(\d{2} \d{2} \d{2}) ([NESW])$/;
+    const DDLat = /^[-]?(90(\.0+)?|[0-8]?\d(\.\d+)?)$/;
+    const DDLong = /^[-]?(180(?:\.\d+)?|1[0-7]\d(?:\.\d+)?|\d{1,2}(?:\.\d+)?)$/;
 
-    if(DMS.test(Lat)){
-      // Call DMS-DD
-    } else if (DMDM.test(Lat)){
-      // Call DMDM
-    } else {
-      // Check valid DD
-    }
+    const DMS = /^(\d{1,2} \d{1,2} \d{1,2}) ([NESW])$/;
+    const DMDM = /^(\d{1,2} \d{1,2}\.\d{4}) ([NESW])$/;
+
   }
 
   // Checks constraints of long and lat verifying and returning in format for the rust server to understand
