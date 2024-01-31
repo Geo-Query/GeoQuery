@@ -8,7 +8,8 @@ export interface QueryProps {
 }
 
 
-function clearHistory() {
+function clearHistory(setQueryHistory: React.Dispatch<React.SetStateAction<QueryHistory>>) {
+    setQueryHistory(new QueryHistory([]))
 }
 
 
@@ -21,7 +22,7 @@ export default function History(props: QueryProps) {
                 <button
                     className="text-gray-300 hover:bg-red-500 hover:text-white font-bold uppercase px-6 py-0 m-1 rounded text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                     type="button"
-                    onClick={clearHistory}
+                    onClick={() => clearHistory(props.setQueryHistory)}
                 >
                     Clear
                 </button>

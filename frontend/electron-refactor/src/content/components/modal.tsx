@@ -20,7 +20,7 @@ export default function Modal(props: ModalProps) {
                             className="p-1 ml-auto bg-transparent border-0 text-green-500 opacity-5 float-right text-3xl leading-none font-semibold outline-none focus:outline-none"
                         >
                         <span className="bg-transparent text-green-500 opacity-5 h-6 w-6 text-2xl block outline-none focus:outline-none">
-                            ×
+
                         </span>
                         </button>
                     </div>
