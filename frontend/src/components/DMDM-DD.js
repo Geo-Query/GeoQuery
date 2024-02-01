@@ -1,9 +1,8 @@
 const Decimal = require('decimal.js');
 
-function dmdmToDecimal(degrees, minutes, decimalMinutes, direction) {
+function dmdmToDecimal(degrees, minutes, direction) {
     const decimalDegrees = new Decimal(degrees)
         .plus(new Decimal(minutes).dividedBy(60))
-        .plus(new Decimal(decimalMinutes).dividedBy(60));
 
     // Adjust for the direction (N, S, E, W)
     if (direction === 'S' || direction === 'W') {
@@ -13,7 +12,7 @@ function dmdmToDecimal(degrees, minutes, decimalMinutes, direction) {
   return decimalDegrees;
 }
 
-export default dmdmToDecimal;
+// export default dmdmToDecimal;
 
 // Example of Latitude: 35° 15.4567' N, Longitude: 100° 30.6789' W
 // const latitude = dmdmToDecimal(35, 15, 0.4567, 'N');
@@ -24,11 +23,10 @@ export default dmdmToDecimal;
 // console.log('Longitude:', longitude.toString());
 
 const DMDM = /^(\d{1,2} \d{1,2}\.\d{4}) ([NESW])$/;
-const lat = "35 15.4567 N";
+let lat = "35 15.4567 N";
 
 console.log(DMDM.test(lat));
 
-let test = lat.replace(/\./g, ' .');
-
-const digits = test.split(' ');
+const digits = lat.split(' ');
 console.log(digits);
+console.log(dmdmToDecimal(digits[0], digits[1], digits[2]));
