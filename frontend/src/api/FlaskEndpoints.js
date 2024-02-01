@@ -141,39 +141,40 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
   };
 
   // Validates that DD formats are correct
-  const validateDD = (NWLat, NWLong, SELat, SELong) => {
+  const validateDD = (coord) => {
 
     // Regex to ensure valid input
     const DDLat = /^[-]?(90(\.0+)?|[0-8]?\d(\.\d+)?)$/;
     const DDLong = /^[-]?(180(?:\.\d+)?|1[0-7]\d(?:\.\d+)?|\d{1,2}(?:\.\d+)?)$/;
 
-    if ((DDLat.test(NWLat) && DDLong.test(NWLong)) && (DDLat.test(SELat) && DDLong.test(SELong))) {
-      return true;
-    }
-
+    // TODO: This function will need to take in an identifier
   }
 
   // Validates that the provided input coordinates are in an acceptable form
   const convertCoordinateFormat = (box) => {
 
-    //NW Coordinates
-    let NWLat = box.northWest.lat;
-    let NWLong = box.northWest.lng;
+    if (!box || Object.keys(box).length === 0) {
+      return { valid: false, message: "No bounding box provided" };
+    }
 
-    //SE Coordinates
-    let SELat = box.southEast.lat;
-    let SELong = box.southEast.lng;
+    const coords = [box.northWest.lat, box.northWest.lng, box.southEast.lat, box.southEast.lng];
 
-    const coords = [NWLat, NWLong, SELat, SELong];
-
+    // Regex for conversions
     const DMS = /^(\d{1,2} \d{1,2} \d{1,2}) ([NESW])$/;
     const DMDM = /^(\d{1,2} \d{1,2}\.\d{4}) ([NESW])$/;
 
     coords.forEach(coord => {
       // Check if DMS
       if (DMS.test(coord)) {
-        const values = coord.split(' ');
-        dmsToDecimal(values);
+        console.log("DMS Pass");
+        return dmsToDecimal(coord.split(' '));
+      } else if(DMDM.test(coord)){
+        console.log("DMDM Pass");
+        coord = coord.replace(/\./g, ' .');
+        return dmdmToDecimal(coord.split(' '));
+      }
+      else {
+        validateDD()
       }
     });
 
