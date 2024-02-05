@@ -39,7 +39,7 @@ export default function Configurator(props: ConfiguratorProps) {
     }, [props.selectedRegion]);
 
     return (
-        <div className="flex flex-col my-2 gap-2 text-white font-bold p-1 gap-4 text-left">
+        <div className="flex flex-col my-2 text-white font-bold p-1 gap-4 text-left">
             <div className="flex items-center text-left">
                 <h1 style={{width: "15%"}}>North West: </h1>
                 <div className="flex gap-3 w-full">

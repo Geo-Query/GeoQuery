@@ -52,15 +52,22 @@ async function pollQuery(
                 const state = queryStateFromString(resp.data.status);
 
                 if (resp.data.results) {
-                    const build = [];
-                    for (const result of resp.data.results) {
-                        if (!seen.has(result.file.path)) {
-                            build.push(result);
-                            setSeen(seen.add(result.file.path));
-                        }
-                    }
-                    setResults([...build, ...results]);
+                    const build: QueryResult[] = resp.data.results.map((node: any) => ({
+                        file: { path: node.file.path },
+                        type: node.metadata.tags.join(', '), // Assuming 'type' can be derived from 'tags'
+                        region: {
+                            top_left: node.metadata.region.top_left,
+                            bottom_right: node.metadata.region.bottom_right
+                        },
+                        tags: node.metadata.tags // Assuming 'tags' is a direct property of 'metadata'
+                    })).filter((result: QueryResult) => !seen.has(result.file.path));
+
+                    // Update seen paths
+                    build.forEach(result => setSeen(seen.add(result.file.path)));
+
+                    setResults(prevResults => [...build, ...prevResults]);
                 }
+                
                 if (state !== queryState) {
                     setQueryState(state);
                 }
@@ -156,7 +163,7 @@ export default function Requestor(props: RequestorProps) {
                 >
                     Make Request
                 </button>
-                <Modal queryState={props.queryState} results={results}></Modal>
+                {/* <Modal queryState={props.queryState} results={results}></Modal> */}
             </div>
         )
     } else {
@@ -169,6 +176,7 @@ export default function Requestor(props: RequestorProps) {
                     Make Request
                 </button>
                 <Modal queryState={props.queryState} results={results}></Modal>
+
             </div>
         )
     }
