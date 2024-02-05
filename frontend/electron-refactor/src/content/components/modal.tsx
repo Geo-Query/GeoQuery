@@ -1,28 +1,37 @@
 import React from "react";
 import {QueryResult, QueryState} from "../lib/query";
+import Query_progress from "./query_progress";
+import QueryProgress from "./query_progress";
 
 export interface ModalProps {
     queryState: QueryState,
     results: Array<QueryResult>,
 }
 export default function Modal(props: ModalProps) {
+    let progressBar;
+
+    if (props.queryState !== QueryState.COMPLETE) {
+        progressBar = <QueryProgress queryState={props.queryState}/>;
+    } else {
+        progressBar = <p className="text-red-300">THIS SHOULD NOT BE REACHABLE!</p>;
+    }
+
+
+
     return (
-        <div className="flex justify-center items-center bg-thales-dark bg-opacity-20 overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none">
+        <div className="flex justify-center items-center bg-thales-dark bg-opacity-20 overflow-x-hidden overflow-y-hidden fixed inset-0 z-50 outline-none focus:outline-none">
             <div className="relative mx-auto">
                 {/*content*/}
                 <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-thales-dark outline-none focus:outline-none min-w-[1000px] min-h-[800px]">
                     {/*header*/}
-                    <div className="flex items-start justify-between p-6  rounded-t">
-                        <h3 className="text-3xl font-semibold">
-                            Export Wizard
-                        </h3>
-                        <button
-                            className="p-1 ml-auto bg-transparent border-0 text-green-500 opacity-5 float-right text-3xl leading-none font-semibold outline-none focus:outline-none"
-                        >
-                        <span className="bg-transparent text-green-500 opacity-5 h-6 w-6 text-2xl block outline-none focus:outline-none">
-
-                        </span>
-                        </button>
+                    <div className="flex justify-between w-full items-center p-6 rounded-t">
+                        <div className="flex items-center">
+                            <h1 className="text-3xl font-semibold text-white">Export Wizard</h1>
+                        </div>
+                        {}
+                        <div className="flex justify-end items-center flex-grow p-6 rounded-t">
+                            {progressBar}
+                        </div>
                     </div>
                     {/*body*/}
                     <div className="relative flex-auto my-2 mx-6 rounded overflow-y-scroll">

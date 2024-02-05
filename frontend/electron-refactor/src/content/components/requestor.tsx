@@ -156,6 +156,7 @@ export default function Requestor(props: RequestorProps) {
                 >
                     Make Request
                 </button>
+                <Modal queryState={props.queryState} results={results}></Modal>
             </div>
         )
     } else {
