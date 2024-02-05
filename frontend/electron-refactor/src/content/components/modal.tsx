@@ -10,10 +10,14 @@ export interface ModalProps {
     results: Array<QueryResult>,
 }
 export default function Modal(props: ModalProps) {
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(true); // Initially open
   
     // Define an onClose handler
     const onClose = () => setIsOpen(false);
+    
+    if (!isOpen) {
+        return null; // Don't render the modal if isOpen is false
+    }
     
     let progressBar;
 
@@ -25,7 +29,7 @@ export default function Modal(props: ModalProps) {
     const renderContent = () => {
         switch (props.queryState) {
           case QueryState.WAITING:
-            return <p className="text-white">Waiting for results...</p>;
+            return <p className="text-white font-mono">Waiting for results...</p>;
             case QueryState.PROCESSING:
             case QueryState.COMPLETE: // Fall through from PROCESSING to COMPLETE
                 return <ResultCards {...props} />; // Pass props correctly
@@ -42,7 +46,7 @@ export default function Modal(props: ModalProps) {
             <div className="relative mx-auto">
             <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-thales-dark outline-none focus:outline-none min-w-[1200px] h-[800px] max-h-[800px]">
                 <div className="flex items-start justify-between p-6 rounded-t">
-                <h3 className="text-3xl text-white font-semibold">Export Wizard</h3>
+                <h3 className="text-3xl text-white font-mono font-semibold">Export Wizard</h3>
                 <button onClick={onClose} className="p-1 ml-auto bg-transparent border-0 text-green-500 opacity-5 float-right text-3xl leading-none font-semibold outline-none focus:outline-none">
                     <span className="bg-transparent text-green-500 opacity-5 h-6 w-6 text-2xl block outline-none focus:outline-none">×</span>
                 </button>
