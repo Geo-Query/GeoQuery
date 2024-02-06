@@ -144,7 +144,11 @@ export default function Requestor(props: RequestorProps) {
     const [seen, setSeen] = useState(new Set<string>());
     const [results, setResults] = useState(new Array<QueryResult>());
     const [pollCount, setPollCount] = useState(0);
+    const [isOpen, setIsOpen] = useState(false); // Control modal visibility
 
+    
+    const openModal = () => setIsOpen(true);
+    const closeModal = () => setIsOpen(false);
 
     useEffect(() => {
         setTimeout(() => {pollQuery(props.queryState, props.setQueryState, queryToken, seen, setSeen, results, setResults, pollCount, setPollCount)}, POLL_INTERVAL);
@@ -157,8 +161,9 @@ export default function Requestor(props: RequestorProps) {
             <div className="flex flex-row justify-start">
                 <button
                     onClick={() => {
-                        makeQuery(props.selectedRegion, props.setQueryState, setQueryToken, pollCount, setPollCount, props.queryHistory, props.setQueryHistory
-                    )}}
+                        makeQuery(props.selectedRegion, props.setQueryState, setQueryToken, pollCount, setPollCount, props.queryHistory, props.setQueryHistory);
+                        openModal();
+                    }}
                     className="bg-green-500 text-white active:bg-green-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                 >
                     Make Request
@@ -175,7 +180,7 @@ export default function Requestor(props: RequestorProps) {
                 >
                     Make Request
                 </button>
-                <Modal queryState={props.queryState} results={results}></Modal>
+                {isOpen && <Modal queryState={props.queryState} results={results} onClose={closeModal} />}
 
             </div>
         )

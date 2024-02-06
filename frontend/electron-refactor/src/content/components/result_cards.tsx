@@ -1,10 +1,42 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {QueryResult, QueryState, queryString} from "../lib/query";
 import { ModalProps } from "./modal";
 
 //populated result cards that will be take an array of results to go on into modal.tsx for the results
 
 export default function ResultCards(response: ModalProps) {
+  const [visibleResults, setVisibleResults] = useState<Array<QueryResult>>([]);
+  const [removedResults, setRemovedResults] = useState<Array<string>>([]); // Track removed results by unique identifier
+
+
+    // Update visibleResults when props.results changes
+  useEffect(() => {
+    // Filter out results that are already visible or have been removed
+    const newUniqueResults = response.results.filter(result => 
+        !visibleResults.some(visibleResult => visibleResult.file.path === result.file.path) &&
+        !removedResults.includes(result.file.path)
+    );
+    setVisibleResults(prevResults => [...prevResults, ...newUniqueResults]);
+  }, [response.results, removedResults]);
+    
+
+  const removeResult = (index: number) => {
+    const resultToRemove = visibleResults[index];
+    setRemovedResults(prevRemoved => [...prevRemoved, resultToRemove.file.path]);
+    setVisibleResults(prevResults => prevResults.filter((_, i) => i !== index));
+  };
+
+
+  const undoLastRemove = () => {
+    const lastRemovedPath = removedResults.pop();
+    if (lastRemovedPath) {
+        const resultToUndo = response.results.find(result => result.file.path === lastRemovedPath);
+        if (resultToUndo) {
+            setVisibleResults(prevResults => [...prevResults, resultToUndo]);
+            setRemovedResults([...removedResults]);
+        }
+    }
+  };
 
   const hasResults = response.results && response.results.length > 0;
 
@@ -32,11 +64,11 @@ export default function ResultCards(response: ModalProps) {
             )}
           </div>
           <br></br>
-          {hasResults ? (
+          {visibleResults.length > 0 ? (
           <div>
             <h3 className="text-lg font-bold text-white mb-4">Results:</h3>
             <div className="grid grid-cols-1 gap-4 overflow-x-auto">
-              {response.results.map((result, index) => (
+              {visibleResults.map((result, index) => (
                 <div key={index} className="bg-[#525461] rounded-lg shadow-lg p-4 transition-transform duration-300 ease-in-out hover:scale-105 hover:bg-[#526071] hover:shadow-xl">
                   <div className="flex justify-between items-center mb-2">
                     <span className="font-mono text-sm text-white">
@@ -45,6 +77,9 @@ export default function ResultCards(response: ModalProps) {
                     <span className="text-xs font-semibold text-white">
                       {result.type}
                     </span>
+                    <button onClick={() => removeResult(index)} className="text-red-500">
+                        Remove
+                    </button>
                   </div>
                   <div className="border-t border-gray-200 my-2"></div>
                   {result.region ? ( // Check if region is defined
@@ -64,6 +99,11 @@ export default function ResultCards(response: ModalProps) {
                 </div>
               ))}
             </div>
+            {removedResults.length > 0 && (
+                <button onClick={undoLastRemove} className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
+                    Undo Last Remove
+                </button>
+            )}
           </div>
         ) : (
           <p className="text-gray-200">No results found.</p>
