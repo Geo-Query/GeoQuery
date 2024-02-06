@@ -180,7 +180,7 @@ export default function Requestor(props: RequestorProps) {
                 >
                     Make Request
                 </button>
-                {isOpen && <Modal queryState={props.queryState} results={results} onClose={closeModal} />}
+                {isOpen && <Modal queryState={props.queryState} results={results} onClose={closeModal} setQueryState={props.setQueryState} />}
 
             </div>
         )

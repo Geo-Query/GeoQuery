@@ -4,11 +4,13 @@ import {QueryResult, QueryState} from "../lib/query";
 import Query_progress from "./query_progress";
 import QueryProgress from "./query_progress";
 import ResultCards from "./result_cards";
+import TemplateEditor from "./template_editor";
 
 export interface ModalProps {
     queryState: QueryState,
     results: Array<QueryResult>,
-    onClose: () => void
+    onClose: () => void,
+    setQueryState: React.Dispatch<React.SetStateAction<QueryState>>;
 }
 export default function Modal(props: ModalProps) {
      
@@ -23,9 +25,11 @@ export default function Modal(props: ModalProps) {
         switch (props.queryState) {
           case QueryState.WAITING:
             return <p className="text-white font-mono">Waiting for results...</p>;
-            case QueryState.PROCESSING:
-            case QueryState.COMPLETE: // Fall through from PROCESSING to COMPLETE
+          case QueryState.PROCESSING:
+          case QueryState.COMPLETE: // Fall through from PROCESSING to COMPLETE
                 return <ResultCards {...props} />; // Pass props correctly
+          case QueryState.EDITOR:
+            return <TemplateEditor />;
           case QueryState.FAILED:
             return <p>An error occurred.</p>;
           default:
@@ -48,6 +52,14 @@ export default function Modal(props: ModalProps) {
                 {renderContent()}
                 </div>
                 <div className="flex items-center justify-end p-6 rounded-b">
+                {props.queryState === QueryState.COMPLETE && (
+                    <button
+                        onClick={() => props.setQueryState(QueryState.EDITOR)}
+                        className="bg-blue-500 text-white active:bg-blue-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                    >
+                        Progress
+                    </button>
+                )}
                 <button onClick={props.onClose} className="bg-green-500 text-white active:bg-green-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150">Close</button>
                 </div>
             </div>
