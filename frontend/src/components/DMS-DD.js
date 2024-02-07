@@ -13,7 +13,7 @@ function dmsToDecimal(degrees, minutes, seconds, direction) {
   return decimalDegrees;
 }
 
-export default dmsToDecimal;
+// export default dmsToDecimal;
 
 // Example of Latitude: 40° 42' 51" N, Longitude: 74° 0' 21" W
 // const latitude = dmsToDecimal(40, 42, 51, 'N');
@@ -23,6 +23,7 @@ export default dmsToDecimal;
 // console.log('Latitude:', latitude.toString());
 // console.log('Longitude:', longitude.toString());
 
+// Regex and example to satisfy
 const DMS = /^(\d{1,2} \d{1,2} \d{1,2}) ([NESW])$/;
 const lat = "40 42 51 N";
 

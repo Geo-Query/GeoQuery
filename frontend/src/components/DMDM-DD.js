@@ -22,6 +22,7 @@ function dmdmToDecimal(degrees, minutes, direction) {
 // console.log('Latitude:', latitude.toString());
 // console.log('Longitude:', longitude.toString());
 
+// Regex and example to satisfy
 const DMDM = /^(\d{1,2} \d{1,2}\.\d{4}) ([NESW])$/;
 let lat = "35 15.4567 N";
 
