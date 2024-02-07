@@ -4,7 +4,7 @@ import {QueryResult, QueryState} from "../lib/query";
 import Query_progress from "./query_progress";
 import QueryProgress from "./query_progress";
 import ResultCards from "./result_cards";
-import TemplateEditor from "./template_editor";
+import FolderTemplate from "./folders_template";
 
 export interface ModalProps {
     queryState: QueryState,
@@ -29,7 +29,7 @@ export default function Modal(props: ModalProps) {
           case QueryState.COMPLETE: // Fall through from PROCESSING to COMPLETE
                 return <ResultCards {...props} />; // Pass props correctly
           case QueryState.EDITOR:
-            return <TemplateEditor />;
+            return <FolderTemplate />;
           case QueryState.FAILED:
             return <p>An error occurred.</p>;
           default:
@@ -60,7 +60,8 @@ export default function Modal(props: ModalProps) {
                         Progress
                     </button>
                 )}
-                <button onClick={props.onClose} className="bg-green-500 text-white active:bg-green-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150">Close</button>
+                
+                <button onClick={props.onClose} className="bg-red-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150">Close</button>
                 </div>
             </div>
             </div>
