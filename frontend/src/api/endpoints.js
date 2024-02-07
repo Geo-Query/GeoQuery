@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from "axios";
 import { RUST_BACKEND_URL } from '../config.js'; // Adjust the path as necessary
 import Modal from '../components/Modal.js';
+import dmsToDecimal from '../components/DMS-DD.js';
+import dmdmToDecimal from '../components/DMDM-DD';
+
 
 const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
   const [errorMessage, setErrorMessage] = useState("");
@@ -137,6 +140,46 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
     setIsModalOpen(false);
   };
 
+  // Validates that DD formats are correct
+  const validateDD = (coord) => {
+
+    // Regex to ensure valid input
+    const DDLat = /^[-]?(90(\.0+)?|[0-8]?\d(\.\d+)?)$/;
+    const DDLong = /^[-]?(180(?:\.\d+)?|1[0-7]\d(?:\.\d+)?|\d{1,2}(?:\.\d+)?)$/;
+
+    // TODO: This function will need to take in an identifier
+  }
+
+  // Validates that the provided input coordinates are in an acceptable form
+  const convertCoordinateFormat = (box) => {
+
+    if (!box || Object.keys(box).length === 0) {
+      return { valid: false, message: "No bounding box provided" };
+    }
+
+    const coords = [box.northWest.lat, box.northWest.lng, box.southEast.lat, box.southEast.lng];
+
+    // Regex for conversions
+    const DMS = /^(\d{1,2} \d{1,2} \d{1,2}) ([NESW])$/;
+    const DMDM = /^(\d{1,2} \d{1,2}\.\d{4}) ([NESW])$/;
+
+    coords.forEach(coord => {
+      // Check if DMS
+      if (DMS.test(coord)) {
+        console.log("DMS Pass");
+        return dmsToDecimal(coord.split(' '));
+      } else if(DMDM.test(coord)){
+        console.log("DMDM Pass");
+        coord = coord.replace(/\./g, ' .');
+        return dmdmToDecimal(coord.split(' '));
+      }
+      else {
+        validateDD()
+      }
+    });
+
+  };
+
   // Checks constraints of long and lat verifying and returning in format for the rust server to understand
   const validateAndSanitizeData = (box) => {
     if (!box || Object.keys(box).length === 0) {
@@ -176,6 +219,8 @@ const MapBoundingBoxForm = ({ boundingBox, queryHistory, setQueryHistory }) => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setErrorMessage(""); // Reset error message
+
+    const formatConvertion = convertCoordinateFormat(boundingBox);
     const validationResult = validateAndSanitizeData(boundingBox);
 
     if (!validationResult.valid) {
