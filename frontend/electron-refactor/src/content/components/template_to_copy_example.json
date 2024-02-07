@@ -1,0 +1,53 @@
+[
+    {
+      "id": 1,
+      "name": "Folder 1",
+      "tags": "FileType = 'tiff' AND Resolution >= '10x'",
+      "relativePath": "Folder 1",
+      "filesContained": [],
+      "children": [
+        {
+          "id": 2,
+          "name": "Folder 2",
+          "tags": "FileType = 'GPKG' AND Resolution >= '20x'",
+          "relativePath": "Folder 1/Folder 2",
+          "filesContained": [],
+          "children": []
+        },
+        {
+          "id": 3,
+          "name": "Folder 3",
+          "tags": "Resolution = '50x'",
+          "relativePath": "Folder 1/Folder 3",
+          "filesContained": [],
+          "children": [
+            {
+              "id": 4,
+              "name": "Folder 4",
+              "tags": "FileType = 'GEO'",
+              "relativePath": "Folder 1/Folder 3/Folder 4",
+              "filesContained": [],
+              "children": []
+            },
+            {
+              "id": 5,
+              "name": "Folder 5",
+              "tags": "FileType = 'GPKG'",
+              "relativePath": "Folder 1/Folder 3/Folder 5",
+              "filesContained": [],
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "name": "Folder 6",
+          "tags": "FileType = 'GPKG' AND Resolution < '20x'",
+          "relativePath": "Folder 1/Folder 6",
+          "filesContained": [],
+          "children": []
+        }
+      ]
+    }
+  ]
+  
