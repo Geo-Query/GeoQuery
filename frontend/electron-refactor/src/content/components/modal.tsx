@@ -1,7 +1,5 @@
-import { useState } from "react";
 import React from "react";
 import {QueryResult, QueryState} from "../lib/query";
-import Query_progress from "./query_progress";
 import QueryProgress from "./query_progress";
 import ResultCards from "./result_cards";
 import TemplateEditor from "./template_editor";
@@ -69,5 +67,5 @@ export default function Modal(props: ModalProps) {
         </>
 
       );
-    };
+    }
     

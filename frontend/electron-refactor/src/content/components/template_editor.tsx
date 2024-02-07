@@ -163,7 +163,7 @@ const renderFolderCards = (folders: Folder[], depth = 0): JSX.Element[] => {
 
   // Find the selected folder based on selectedFolderId
   const findFolderById = (folders: Folder[], id: number): Folder | undefined => {
-    for (let folder of folders) {
+    for (const folder of folders) {
       if (folder.id === id) {
         return folder;
       }

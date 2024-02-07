@@ -8,6 +8,7 @@ import QueryHistory, {loadQueryHistory} from "./lib/queryhistory";
 import {QueryState} from "./lib/query";
 import Requestor from "./components/requestor";
 import History from "./components/history";
+import TestFileCopy from "./components/TestFileCopy"; 
 
 function App() {
     const [selectedRegion, setSelectedRegion] = useState(new SelectedRegion())
@@ -29,6 +30,9 @@ function App() {
                     <Configurator selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} queryHistory={queryHistory} setQueryHistory={setQueryHistory}/>
                     <Requestor selectedRegion={selectedRegion} queryState={queryState} setQueryState={setQueryState} queryHistory={queryHistory} setQueryHistory={setQueryHistory}/>
                 </div>
+                <div className="flex justify-center p-4">
+                <TestFileCopy /> {/* Include your test component here */}
+            </div>
             </div>
         </div>
     );
