@@ -144,17 +144,24 @@ export default function Requestor(props: RequestorProps) {
     const [seen, setSeen] = useState(new Set<string>());
     const [results, setResults] = useState(new Array<QueryResult>());
     const [pollCount, setPollCount] = useState(0);
-    const [isOpen, setIsOpen] = useState(false); // Control modal visibility
 
-    
-    const openModal = () => setIsOpen(true);
-    const closeModal = () => setIsOpen(false);
+    console.log("RERENDER!");
+    console.log(results);
+    console.log(queryToken);
+
 
     useEffect(() => {
         setTimeout(() => {pollQuery(props.queryState, props.setQueryState, queryToken, seen, setSeen, results, setResults, pollCount, setPollCount)}, POLL_INTERVAL);
     }, [pollCount]);
 
-
+    useEffect(() => {
+        if (props.queryState === QueryState.BUILDING) {
+            setQueryToken(undefined);
+            setResults(new Array<QueryResult>());
+            setPollCount(0);
+            setSeen(new Set<string>())
+        }
+    }, [props.queryState]);
 
     if (props.queryState == QueryState.BUILDING) {
         return (
@@ -162,7 +169,6 @@ export default function Requestor(props: RequestorProps) {
                 <button
                     onClick={() => {
                         makeQuery(props.selectedRegion, props.setQueryState, setQueryToken, pollCount, setPollCount, props.queryHistory, props.setQueryHistory);
-                        openModal();
                     }}
                     className="bg-green-500 text-white active:bg-green-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                 >
@@ -180,7 +186,7 @@ export default function Requestor(props: RequestorProps) {
                 >
                     Make Request
                 </button>
-                {isOpen && <Modal queryState={props.queryState} results={results} onClose={closeModal} setQueryState={props.setQueryState} />}
+                <Modal queryState={props.queryState} results={results}  setQueryState={props.setQueryState} />
 
             </div>
         )

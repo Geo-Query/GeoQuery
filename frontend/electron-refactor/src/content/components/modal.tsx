@@ -9,10 +9,13 @@ import FolderTemplate from "./folders_template";
 export interface ModalProps {
     queryState: QueryState,
     results: Array<QueryResult>,
-    onClose: () => void,
     setQueryState: React.Dispatch<React.SetStateAction<QueryState>>;
 }
 export default function Modal(props: ModalProps) {
+
+    const handleClose = () => {
+        props.setQueryState(QueryState.BUILDING);
+    }
      
     let progressBar;
 
@@ -44,7 +47,7 @@ export default function Modal(props: ModalProps) {
             <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-thales-dark outline-none focus:outline-none min-w-[1200px] h-[800px] max-h-[800px]">
                 <div className="flex items-start justify-between p-6 rounded-t">
                 <h3 className="text-3xl text-white font-mono font-semibold">Export Wizard</h3>
-                <button onClick={props.onClose} className="p-1 ml-auto bg-transparent border-0 text-green-500 opacity-5 float-right text-3xl leading-none font-semibold outline-none focus:outline-none">
+                <button onClick={handleClose} className="p-1 ml-auto bg-transparent border-0 text-green-500 opacity-5 float-right text-3xl leading-none font-semibold outline-none focus:outline-none">
                     <span className="bg-transparent text-green-500 opacity-5 h-6 w-6 text-2xl block outline-none focus:outline-none">×</span>
                 </button>
                 </div>
@@ -56,12 +59,12 @@ export default function Modal(props: ModalProps) {
                     <button
                         onClick={() => props.setQueryState(QueryState.EDITOR)}
                         className="bg-blue-500 text-white active:bg-blue-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
-                    >
+                    >`
                         Progress
                     </button>
                 )}
                 
-                <button onClick={props.onClose} className="bg-red-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150">Close</button>
+                <button onClick={handleClose} className="bg-red-500 text-white active:bg-red-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150">Close</button>
                 </div>
             </div>
             </div>
@@ -70,5 +73,5 @@ export default function Modal(props: ModalProps) {
         </>
 
       );
-    };
+}
     
