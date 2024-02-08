@@ -162,6 +162,14 @@ export default function Requestor(props: RequestorProps) {
             setSeen(new Set<string>())
         }
     }, [props.queryState]);
+    useEffect(() => {
+        if (props.queryState === QueryState.BUILDING) {
+            setQueryToken(undefined);
+            setResults(new Array<QueryResult>());
+            setPollCount(0);
+            setSeen(new Set<string>())
+        }
+    }, [props.queryState]);
 
     if (props.queryState == QueryState.BUILDING) {
         return (
@@ -186,7 +194,7 @@ export default function Requestor(props: RequestorProps) {
                 >
                     Make Request
                 </button>
-                <Modal queryState={props.queryState} results={results}  setQueryState={props.setQueryState} />
+                <Modal queryState={props.queryState} results={results} setQueryState={props.setQueryState} />
 
             </div>
         )

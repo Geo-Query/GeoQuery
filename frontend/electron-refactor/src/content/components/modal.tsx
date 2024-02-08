@@ -24,21 +24,27 @@ export default function Modal(props: ModalProps) {
     } else {
         progressBar = <p className="text-red-300">THIS SHOULD NOT BE REACHABLE!</p>;
     }
-    const renderContent = () => {
-        switch (props.queryState) {
-          case QueryState.WAITING:
-            return <p className="text-white font-mono">Waiting for results...</p>;
-          case QueryState.PROCESSING:
-          case QueryState.COMPLETE: // Fall through from PROCESSING to COMPLETE
-                return <ResultCards {...props} />; // Pass props correctly
-          case QueryState.EDITOR:
-            return <FolderTemplate />;
-          case QueryState.FAILED:
-            return <p>An error occurred.</p>;
-          default:
-            return <p>Unexpected state: {props.queryState}</p>;
-        }
-      };
+
+    let content;
+
+    switch (props.queryState) {
+        case QueryState.WAITING:
+            content = <p className="text-white font-mono">Waiting for results...</p>;
+            break;
+        case QueryState.PROCESSING:
+        case QueryState.COMPLETE:
+            content = <ResultCards {...props} />;
+            break;
+        case QueryState.EDITOR:
+            content = <FolderTemplate />;
+            break;
+        case QueryState.FAILED:
+            content = <p>An error occurred.</p>;
+            break;
+        default:
+            content = <p>Unexpected state: {props.queryState}</p>;
+            break;
+    }
     
       return (
         <>
@@ -52,7 +58,7 @@ export default function Modal(props: ModalProps) {
                 </button>
                 </div>
                 <div className="flex-auto overflow-auto my-2 mx-6 rounded">
-                {renderContent()}
+                {content}
                 </div>
                 <div className="flex items-center justify-end p-6 rounded-b">
                 {props.queryState === QueryState.COMPLETE && (
