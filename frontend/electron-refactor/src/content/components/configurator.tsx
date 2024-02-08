@@ -40,7 +40,7 @@ export default function Configurator(props: ConfiguratorProps) {
 
     return (
         <div className="flex flex-col my-2 text-white font-bold p-1 gap-4 text-left">
-            <div className="flex items-center text-left">
+            <div className="flex items-center text-left gap-2">
                 <h1 style={{width: "15%"}}>North West: </h1>
                 <div className="flex gap-3 w-full">
                     <input
@@ -61,7 +61,7 @@ export default function Configurator(props: ConfiguratorProps) {
                     />
                 </div>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center text-left gap-2">
                 <h1 style={{width: "15%"}}>South East: </h1>
                 <div className="flex gap-3 w-full">
 
