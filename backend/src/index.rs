@@ -264,3 +264,71 @@ pub fn parse(path: PathBuf) -> Option<Region> {
     }
     panic!();
 }
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempfile;
+    use std::io::{Write, Seek, SeekFrom};
+    use std::io::BufReader;
+
+    #[test]
+    fn test_parse_kml_with_tempfile() {
+        // Create a mock KML file content that matches the expected format by parse_kml function
+        let kml_data = r#"
+            <kml>
+                <Document>
+                    <Placemark>
+                        <Point>
+                            <coordinates>-122.0822035425683,37.42228990140251</coordinates>
+                        </Point>
+                    </Placemark>
+                    <Placemark>
+                        <Point>
+                            <coordinates>-123.0822035425683,38.42228990140251</coordinates>
+                        </Point>
+                    </Placemark>
+                </Document>
+            </kml>
+        "#;
+
+        // Create a temporary file and write the KML data into it
+        let mut file = tempfile().unwrap();
+        write!(file, "{}", kml_data).unwrap();
+        file.flush().unwrap();
+        file.seek(SeekFrom::Start(0)).unwrap();
+
+        // Use BufReader to read the temporary file
+        let mut reader = BufReader::new(file);
+
+        // Call the parse_kml function
+        let result = parse_kml(&mut reader);
+        assert!(result.is_ok());
+
+        // Check if the parsed result matches the expected values
+        let kml_region = result.unwrap();
+        assert_eq!(kml_region.bottom_left, (-123.0822035425683, 37.42228990140251));
+        assert_eq!(kml_region.top_right, (-122.0822035425683, 38.42228990140251));
+    }
+
+    #[test]
+    fn test_empty_kml() {
+        // Create an empty KML file content
+        let kml_data = r#"<kml></kml>"#;
+
+        let mut file = tempfile().unwrap();
+        write!(file, "{}", kml_data).unwrap();
+        file.flush().unwrap();
+        file.seek(SeekFrom::Start(0)).unwrap();
+
+        let mut reader = BufReader::new(file);
+
+        // Attempt to parse the empty KML file
+        let result = parse_kml(&mut reader);
+
+        // Verify that the parsing fails due to lack of sufficient geodata
+        assert!(result.is_err());
+    }
+}
