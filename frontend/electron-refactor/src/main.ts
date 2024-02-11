@@ -3,8 +3,8 @@ import path from 'path';
 import fs from 'fs';
 import util from 'util';
 import { readFile } from 'fs/promises';
-import { createFolderStructure } from './content/lib/folderStructureService';
-import { copyFilesToStructure } from './content/lib/fileCopierService';
+import { createFolderStructure } from './content/services/folderStructureService';
+import { copyFilesToStructure } from './content/services/fileCopierService';
 
 const copyFile = util.promisify(fs.copyFile);
 
