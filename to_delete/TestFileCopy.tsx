@@ -1,5 +1,5 @@
 import React from 'react';
-const { ipcRenderer } = window.require('electron');
+// const { ipcRenderer } = window.require('electron');
 
 const TestFileCopy = () => {
   const handleTestFileCopy = async () => {

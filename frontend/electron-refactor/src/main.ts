@@ -2,6 +2,9 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import util from 'util';
+import { readFile } from 'fs/promises';
+import { createFolderStructure } from './content/lib/folderStructureService';
+import { copyFilesToStructure } from './content/lib/fileCopierService';
 
 const copyFile = util.promisify(fs.copyFile);
 
@@ -20,14 +23,8 @@ const createWindow = (): void => {
     width: 800,
     height: 600,
     webPreferences: {
-      // It's important to preload a script to have access to Node.js features
       preload: path.join(__dirname, 'preload.js'),
-      // Enable Node.js integration
-      nodeIntegration: true,
-      // Context Isolation is an Electron feature that protects against prototype pollution
-      // and bypasses other security measures. It should be kept as true for security purposes.
-      // If you need to disable it to use certain Electron APIs, be sure to understand the security implications.
-      contextIsolation: false, // Set to false if you need to disable it
+      contextIsolation: true,
     },
   });
 
@@ -53,6 +50,7 @@ ipcMain.handle('select-directory', async () => {
   }
 });
 
+
 // IPC event for copying files
 ipcMain.handle('copy-files', async (event, sourceFiles: string[], destination: string) => {
   try {
@@ -76,8 +74,26 @@ app.on('window-all-closed', () => {
   }
 });
 
-app.on('activate', () => {
-  if (mainWindow === null) {
-    createWindow();
+ipcMain.handle('read-template-file', async (event, jsonFilePath) => {
+  try {
+    const data = await readFile(jsonFilePath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Failed to read template file:', error);
+    throw error; // Rethrow to send error back to renderer
+  }
+});
+
+ipcMain.handle('execute-export', async (event, directory, template) => {
+  try {
+      // Assuming createFolderStructure and copyFilesToStructure are functions that you will define or import
+      await createFolderStructure(template, directory);
+      await copyFilesToStructure(template[0], directory).then(() => {
+        console.log('Export process completed.');
+      }).catch(console.error);
+      return { success: true, message: "Export completed successfully!" };
+  } catch (error) {
+      console.error("Export failed:", error);
+      return { success: false, message: `Export failed: ${error.message}` };
   }
 });

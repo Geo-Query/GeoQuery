@@ -1,73 +1,78 @@
-import React, { useState } from 'react';
-import Modal from './modal';
-import FileSelector from './FileSelector';
-import DirectoryPicker from './DirectoryPicker';
+// // Import necessary modules and components
+// import React, { useState} from 'react';
+// import { readTemplateFile } from '../lib/templateReader';
+// import { createFolderStructure} from '../lib/folderStructureService';
+// import { copyFilesToStructure } from '../lib/fileCopierService';
+// import UserFeedback from './ExportUserFeedback';
+// import { useExportState } from './ExportWizardState';
+// import { selectDirectory } from '../lib/ipcService';
 
-const { ipcRenderer } = window.require('electron');
+// // Update ExportWizardProps to include jsonFilePath
+// interface ExportWizardProps {
+//   isOpen: boolean;
+//   onClose: () => void;
+//   jsonFilePath: string; // Path to the JSON structure file
+// }
 
-interface FileHandle {
-  name: string;
-  path: string;
-}
+// const ExportWizard: React.FC<ExportWizardProps> = ({ onClose, jsonFilePath }) => {
+//   const { exportStatus, setExportStatus } = useExportState({
+//     isLoading: false,
+//     isSuccess: undefined,
+//     message: '',
+//   });
+//   const [directoryPath, setDirectoryPath] = useState<string | null>(null);
 
-interface ExportWizardProps {
-  isOpen: boolean;
-  onClose: () => void;
-  selectedFiles: FileHandle[];
-}
+//   const handleSelectRootDirectory = async () => {
+//     const directory = await selectDirectory();
+//     if (directory) {
+//       setDirectoryPath(directory);
+//       setExportStatus({ isLoading: false, message: `Directory selected: ${directory}` });
+//     }
+//   };
 
-const ExportWizard: React.FC<ExportWizardProps> = ({ isOpen, onClose, selectedFiles }) => {
-  const [copySuccess, setCopySuccess] = useState(false);
-  const [directoryPath, setDirectoryPath] = useState<string>('');
+//   const handleExport = async () => {
+//     if (!directoryPath) {
+//       setExportStatus({ isLoading: false, message: "Please select a directory first." });
+//       return;
+//     }
+//     setExportStatus({ isLoading: true, message: "Exporting..." });
+//     try {
+//       const template = await readTemplateFile(jsonFilePath);
+//       await createFolderStructure(template, directoryPath);
+//       await copyFilesToStructure(template, directoryPath);
+//       setExportStatus({ isLoading: false, isSuccess: true, message: "Export completed successfully!" });
+//     } catch (error) {
+//       setExportStatus({ isLoading: false, isSuccess: false, message: `Export failed: ${error.message}` });
+//     }
+//   };
 
-  const handleCopyFiles = async () => {
-    if (!directoryPath) {
-      console.error("No directory selected for copying files.");
-      return;
-    }
+//   return (
+//     <div className="flex flex-col space-y-4">
+//       <UserFeedback status={exportStatus} />
+//       <button
+//         className="btn-primary"
+//         onClick={handleSelectRootDirectory}
+//         disabled={exportStatus.isLoading}
+//       >
+//         Select Export Root
+//       </button>
+//       <button
+//         className="btn-secondary"
+//         onClick={handleExport}
+//         disabled={!directoryPath || exportStatus.isLoading}
+//       >
+//         EXPORT
+//       </button>
+//       <button
+//         className="btn-cancel"
+//         onClick={onClose}
+//       >
+//         Close
+//       </button>
+//     </div>
+//   );
+// };
 
-    try {
-      const filePaths = selectedFiles.map(file => file.path);
-      const result = await ipcRenderer.invoke('copy-files', filePaths, directoryPath);
-      if (result.success) {
-        setCopySuccess(true);
-        console.log('All files have been copied successfully!');
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      console.error('Error copying files:', error);
-      setCopySuccess(false);
-    }
-  };
+// export default ExportWizard;
 
-  const handleDirectorySelected = (path: string) => {
-    setDirectoryPath(path);
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="flex flex-col items-center p-4">
-        <FileSelector selectedFiles={selectedFiles} />
-
-        <DirectoryPicker onDirectorySelect={handleDirectorySelected} />
-
-        {copySuccess && (
-          <div className="text-sm bg-green-200 text-green-700 p-2 rounded-lg">
-            Files copied successfully!
-          </div>
-        )}
-
-        <button
-          className="bg-green-500 text-white active:bg-green-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
-          onClick={handleCopyFiles}
-          disabled={selectedFiles.length === 0 || !directoryPath}
-        >
-          Copy Files
-        </button>
-      </div>
-    </Modal>
-  );
-};
-
-export default ExportWizard;
+//! deprecated due to IPC implementation - resuse as needed.

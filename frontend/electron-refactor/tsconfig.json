@@ -13,5 +13,5 @@
     "moduleResolution": "node",
     "resolveJsonModule": true
   },
-  "include": ["src"]
+  "include": ["src", "../../to_delete/TestFileCopy.tsx", "../../to_delete/TestExportProcess.tsx"]
 }

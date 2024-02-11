@@ -2,16 +2,8 @@ import './index.css';
 // Note: Setting this to true means we're running in Electron context
 window.type = true;
 import './content/app';
+import { selectDirectory, copyFiles } from './content/lib/ipcService'; // assuming ipcService.js is at this path
 
-// Import IPC Renderer to communicate with the main process
-const { ipcRenderer } = require('electron');
-
-// Function to request the main process to open the directory picker
-window.selectDirectory = async () => {
-  return await ipcRenderer.invoke('select-directory');
-};
-
-// Function to request the main process to copy files
-window.copyFiles = async (sourceFiles: string[], destination: string) => {
-  return await ipcRenderer.invoke('copy-files', sourceFiles, destination);
-};
+// Attach the services to window object to make them accessible throughout the renderer process
+window.selectDirectory = selectDirectory;
+window.copyFiles = copyFiles;
