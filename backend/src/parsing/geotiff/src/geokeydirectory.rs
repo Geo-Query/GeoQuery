@@ -1,14 +1,8 @@
 use std::collections::HashMap;
-use std::fmt::format;
-use crate::GeoKeyDirectoryErrorState::{ProjectionError, UnexpectedFormat};
+use std::fmt::Display;
+use crate::error::GeoKeyDirectoryErrorState::UnexpectedFormat;
 use proj4rs::Proj;
-use crate::TIFFErrorState;
-
-#[derive(Debug)]
-pub enum GeoKeyDirectoryErrorState {
-    ProjectionError(String),
-    UnexpectedFormat(String)
-}
+use crate::error::TIFFErrorState;
 
 #[derive(Debug)]
 pub struct GeoKeyDirectoryHeader {

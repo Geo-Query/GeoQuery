@@ -1,8 +1,8 @@
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom,Write};
 use util::ByteOrder;
-use crate::{TIFFErrorState, util};
-use crate::entry::IFDEntryErrorState::MissingAssociatedValue;
+use crate::util;
+use crate::error::{IFDEntryErrorState, TIFFErrorState};
 use crate::util::FromBytes;
 
 
@@ -37,12 +37,6 @@ pub struct IFDEntry {
     value: Option<EntryValue>
 }
 
-#[derive(Debug)]
-pub enum IFDEntryErrorState {
-    UnexpectedEntryType(u16),
-    MissingAssociatedValue(u16),
-    InvalidLength(usize)
-}
 
 impl IFDEntry {
     pub fn new(entry_buf: &[u8], byte_order: &ByteOrder) -> Result<IFDEntry, TIFFErrorState> {
@@ -95,23 +89,22 @@ impl IFDEntry {
                                 },
                                 Err(e) => {
                                     eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                    return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                                    return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                                 }
                             }
                         },
                         Err(e) => {
                             eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                            return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                         }
                     }
                 }),
                 EntryType::ASCII => EntryValue::ASCII(if self.count < 5 {
                     match String::from_utf8(self.associated_bytes.to_vec()) {
-                        //Ok(s) => vec![s],
-                        Ok(s) => vec![s.trim_end_matches('\0').to_string()],
+                        Ok(s) => vec![s],
                         Err(e) => {
                             eprintln!("Failed to parse string from bytes for tag: {}, Error: {:?}", self.tag, e);
-                            return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)));
+                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)));
                         }
                     }
                 } else {
@@ -123,22 +116,21 @@ impl IFDEntry {
 
                             match reader.read_exact(&mut bytes) {
                                 Ok(..) => match String::from_utf8(bytes) {
-                                    //Ok(s) => vec![s],
-                                    Ok(s) => vec![s.trim_end_matches('\0').to_string()],
+                                    Ok(s) => vec![s],
                                     Err(e) => {
                                         eprintln!("Failed to parse string from bytes for tag: {}, Error: {:?}", self.tag, e);
-                                        return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)));
+                                        return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)));
                                     }
                                 },
                                 Err(e) => {
                                     eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                    return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                                    return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                                 }
                             }
                         },
                         Err(e) => {
                                 eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                                return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                                return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                         }
                     }
                 }),
@@ -163,14 +155,14 @@ impl IFDEntry {
                                         },
                                         Err(e) => {
                                             eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                            return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))                                        }
+                                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))                                        }
                                     }
                                 }
                                 EntryValue::SHORT(values)
                             },
                             Err(e) => {
                                 eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                                return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                                return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                             }
                         }
                     }
@@ -194,14 +186,14 @@ impl IFDEntry {
                                         },
                                         Err(e) => {
                                             eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                            return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))                                                    }
+                                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))                                                    }
                                     }
                                 }
                                 EntryValue::LONG(values)
                             },
                             Err(e) => {
                                 eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                                return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                                return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                             }
                         }
                     }
@@ -222,7 +214,7 @@ impl IFDEntry {
                                     },
                                     Err(e) => {
                                         eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                        return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                                        return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                                     }
                                 }
                             };
@@ -231,7 +223,7 @@ impl IFDEntry {
                         },
                         Err(e) => {
                             eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                            return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                         }
                     }
                 }
@@ -250,7 +242,7 @@ impl IFDEntry {
                                     },
                                     Err(e) => {
                                         eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                        return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                                        return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                                     }
                                 }
                             };
@@ -259,7 +251,7 @@ impl IFDEntry {
                         },
                         Err(e) => {
                             eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                            return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                         }
                     }
                 },
@@ -276,13 +268,13 @@ impl IFDEntry {
                                 },
                                 Err(e) => {
                                     eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                    return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                                    return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                                 }
                             }
                         },
                         Err(e) => {
                             eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                            return Err(TIFFErrorState::IFDEntryError(MissingAssociatedValue(self.tag)))
+                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
                         }
                     }
                 })
@@ -409,35 +401,35 @@ mod tests {
         file.write_all(&[1, 0, 0, 0, 2, 0, 0, 0]).unwrap(); // Two LONG value：1, 2
         file.seek(SeekFrom::Start(0)).unwrap();
         let mut reader = BufReader::new(file);
-    
+
         let mut entry = IFDEntry {
             tag: 0,
             count: 2,
             field_type: EntryType::LONG,
-            associated_bytes: [0, 0, 0, 0], 
+            associated_bytes: [0, 0, 0, 0],
             value: None,
         };
-    
+
         let result = entry.resolve(&ByteOrder::LittleEndian, &mut reader);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), &EntryValue::LONG(vec![1, 2]));
     }
-    
+
     #[test]
     fn test_resolve_rational() {
         let mut file = tempfile().unwrap();
         file.write_all(&[1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0]).unwrap(); // Two RATIONAL value：(1, 2), (3, 4)
         file.seek(SeekFrom::Start(0)).unwrap();
         let mut reader = BufReader::new(file);
-    
+
         let mut entry = IFDEntry {
             tag: 0,
             count: 2,
             field_type: EntryType::RATIONAL,
-            associated_bytes: [0, 0, 0, 0], 
+            associated_bytes: [0, 0, 0, 0],
             value: None,
         };
-    
+
         let result = entry.resolve(&ByteOrder::LittleEndian, &mut reader);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), &EntryValue::RATIONAL(vec![(1, 2), (3, 4)]));
@@ -447,32 +439,32 @@ mod tests {
     fn test_invalid_entry_length() {
         let entry_buf = [0u8; 11]; // Invalid entry length, should be 12
         let byte_order = ByteOrder::LittleEndian;
-    
+
         let result = IFDEntry::new(&entry_buf, &byte_order);
         assert!(matches!(result, Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::InvalidLength(_)))));
     }
-    
+
     #[test]
     fn test_empty_ascii_entry() {
         let mut entry = IFDEntry {
             tag: 0,
             count: 0, // ASCII string length is 0
             field_type: EntryType::ASCII,
-            associated_bytes: [0; 4], 
+            associated_bytes: [0; 4],
             value: None,
         };
-    
+
         let file = tempfile().expect("Failed to create tempfile");
         let mut reader = BufReader::new(file);
-    
+
         let result = entry.resolve(&ByteOrder::LittleEndian, &mut reader);
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), &EntryValue::ASCII(vec!["".to_string()]));
     }
-    
-    
 
-    
+
+
+
 }
 
 

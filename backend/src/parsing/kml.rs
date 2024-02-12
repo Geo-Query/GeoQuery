@@ -1,3 +1,5 @@
+use std::error::Error;
+use std::fmt::{Display, Formatter};
 use crate::spatial::Coordinate;
 use std::fs::File;
 use std::io::{BufReader,Read,Write, Seek, SeekFrom};
@@ -28,10 +30,16 @@ pub fn get_boundaries(coordinates: Vec<Coordinate>) -> (Coordinate, Coordinate) 
     return ((min_x, min_y), (max_x, max_y));
 }
 
+
 #[derive(Debug)]
 pub struct KMLRegion {
     pub top_right: Coordinate,
     pub bottom_left: Coordinate,
+}
+#[derive(Debug)]
+pub struct KMLMetadata {
+    pub region: KMLRegion,
+    pub tags: Vec<(String, String)>
 }
 
 #[derive(Debug)]
@@ -40,9 +48,21 @@ pub enum KMLErrorState {
     NotEnoughGeoData
 }
 
-pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLRegion, KMLErrorState> {
+impl Display for KMLErrorState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            UnexpectedFormat(s) => format!("UnexpectedFormatError: {s}"),
+            NotEnoughGeoData => "Not enough geographic data within the file to establish a boundary!".to_string()
+        })
+    }
+}
+impl Error for KMLErrorState {}
+
+
+pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLMetadata, KMLErrorState> {
     // Initialise Event iterator, as well as coordinate buffer.
     let mut reader = EventReader::new(reader).into_iter();
+    let mut tags = vec![("Filetype".to_string(), "KML".to_string())];
     let mut coordinates: Vec<(f64, f64)> = vec![];
 
     while let Some(Ok(event)) = reader.next() { // Capture events until file over.
@@ -57,18 +77,18 @@ pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLRegion, KMLErrorStat
                             for coordinate_pair in coordinate_pairs {
                                 let coordinate_strs: Vec<&str> = coordinate_pair.split(",").collect();
                                 if coordinate_strs.len() < 2 {
-                                    return Err(UnexpectedFormat(String::from(format!("Expected coordinate pair of len 2, got: {:?}", coordinate_strs))));
+                                    return Err(UnexpectedFormat(format!("Expected coordinate pair of len 2, got: {:?}", coordinate_strs)));
                                 }
                                 coordinates.push((
                                     match f64::from_str(coordinate_strs[0]) {
                                         Ok(v) => v,
                                         Err(e) => {
-                                            return Err(UnexpectedFormat(String::from(format!("Failed to parse floating point coord: {} with err: {:?}", coordinate_strs[0], e))));
+                                            return Err(UnexpectedFormat(format!("Failed to parse floating point coord: {} with err: {:?}", coordinate_strs[0], e)));
                                         }
                                     }, match f64::from_str(coordinate_strs[1]) {
                                         Ok(v) => v,
                                         Err(e) => {
-                                            return Err(UnexpectedFormat(String::from(format!("Failed to parse floating point coord: {} with err: {:?}", coordinate_strs[1], e))));
+                                            return Err(UnexpectedFormat(format!("Failed to parse floating point coord: {} with err: {:?}", coordinate_strs[1], e)));
                                         }
                                     }
                                 ));
@@ -88,10 +108,13 @@ pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLRegion, KMLErrorStat
     }
 
     let (bottom_left, top_right) = get_boundaries(coordinates); // Draw a bounding box around given coords
-    return Ok(KMLRegion {
-        bottom_left,
-        top_right
-    }); // Return region defined by file.
+    return Ok(KMLMetadata {
+        region: KMLRegion {
+            bottom_left,
+            top_right
+        },
+        tags
+        }); // Return region defined by file.
 }
 
 #[cfg(test)]
