@@ -23,6 +23,8 @@ use axum::extract::Path;
 use rayon::prelude::*;
 use tower::Layer;
 
+use std::process::Command;
+
 mod spatial;
 mod index;
 mod parsing;
@@ -193,5 +195,11 @@ async fn main() {
     let axum_task = axum::serve(listener, app);
 
     event!(Level::INFO, "Starting Web Server & Parallel Worker!");
+
+
+   // let mut child = Command::new("electron-refactor")
+     //   .spawn()
+       // .expect("failed to execute child");
     futures::join!(axum_task.into_future(), worker(shared_state));
+
 }

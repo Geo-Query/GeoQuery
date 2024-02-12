@@ -1,5 +1,7 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
+const { exec } = require('node:child_process');
+
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -36,6 +38,30 @@ app.on('ready', createWindow);
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
+  const v = exec("touch foofile.txt");
+  const x = exec("./backend.exe");
+  v.stdout.on('data', (data: any) => {
+    console.log(`stdout: ${data}`);
+  });
+
+  v.on('close', (code: any) => {
+    console.log(`child process close all stdio with code ${code}`);
+  });
+
+  v.on('exit', (code: any) => {
+    console.log(`child process exited with code ${code}`);
+  });
+  x.stdout.on('data', (data: any) => {
+    console.log(`stdout: ${data}`);
+  });
+
+  x.on('close', (code: any) => {
+    console.log(`child process close all stdio with code ${code}`);
+  });
+
+  x.on('exit', (code: any) => {
+    console.log(`child process exited with code ${code}`);
+  });
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -44,6 +70,8 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
+  // Do background process for backend
+  
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
