@@ -54,18 +54,28 @@ const FolderCard: React.FC<FolderCardProps> = ({ folder, depth, onAddChild, onDe
   return (
     <div className="folder-card rounded-lg shadow-lg hover:shadow-xl" style={style}>
       <div className="flex justify-between items-center">
-        {isEditing ? (
-          <div>
-            <input 
-              type="text"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className="text-black"
-            />
-            <button onClick={handleRename}>Save</button>
-            <button onClick={() => setIsEditing(false)}>Cancel</button>
-          </div>
-        ) : (
+      {isEditing ? (
+  <div className="flex space-x-2">
+    <input 
+      type="text"
+      value={newName}
+      onChange={(e) => setNewName(e.target.value)}
+      className="p-2 text-gray-800 w-full rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+    <button 
+      onClick={handleRename}
+      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out"
+    >
+      Save
+    </button>
+    <button 
+      onClick={() => setIsEditing(false)}
+      className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out"
+    >
+      Cancel
+    </button>
+  </div>
+) : (
           <div onClick={onSelect}>
             <span 
                 className="font-mono text-sm text-white cursor-pointer"

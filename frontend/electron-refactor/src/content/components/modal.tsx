@@ -1,7 +1,5 @@
-import { useState } from "react";
-import React from "react";
-import {QueryResult, QueryState} from "../lib/query";
-import Query_progress from "./query_progress";
+import React, { useEffect } from "react";
+import { QueryResult, QueryState } from "../lib/query";
 import QueryProgress from "./query_progress";
 import ResultCards from "./result_cards";
 import FolderTemplate from "./folders_template";
@@ -11,7 +9,20 @@ export interface ModalProps {
     results: Array<QueryResult>,
     setQueryState: React.Dispatch<React.SetStateAction<QueryState>>;
 }
+
 export default function Modal(props: ModalProps) {
+
+        // Effect to disable scroll on mount and enable on unmount
+        useEffect(() => {
+            // Disable background scroll
+            document.body.style.overflow = 'hidden';
+    
+            // Re-enable scroll on component unmount
+            return () => {
+                document.body.style.overflow = 'unset';
+            };
+        }, []); // Empty dependency array means this runs once on mount and cleanup runs on unmount
+    
 
     const handleClose = () => {
         props.setQueryState(QueryState.BUILDING);

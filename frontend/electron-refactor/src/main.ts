@@ -1,67 +1,80 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
-const { exec } = require('node:child_process');
+import fs from 'fs';
+import util from 'util';
+import { readFile } from 'fs/promises';
+import { createFolderStructure } from './content/services/folderStructureService';
+import { copyFilesToStructure } from './content/services/fileCopierService';
 
+const copyFile = util.promisify(fs.copyFile);
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
-const createWindow = () => {
+// Keep a global reference of the window object, if you don't, the window will
+// be closed automatically when the JavaScript object is garbage collected.
+let mainWindow: BrowserWindow | null;
+
+const createWindow = (): void => {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
+    icon: path.join(__dirname, '../../assets/favicon.ico'), //laods the icon
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
     },
+
   });
 
-  // and load the index.html of the app.
+
+  // Load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
     mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
-
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
 };
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
+// IPC event for selecting the destination directory
+ipcMain.handle('select-directory', async () => {
+  const result = await dialog.showOpenDialog(mainWindow!, {
+    properties: ['openDirectory']
+  });
+  if (result.canceled) {
+    return null;
+  } else {
+    return result.filePaths[0];
+  }
+});
+
+
+// IPC event for copying files
+ipcMain.handle('copy-files', async (event, sourceFiles: string[], destination: string) => {
+  try {
+    for (const sourceFile of sourceFiles) {
+      const fileName = path.basename(sourceFile);
+      const destinationPath = path.join(destination, fileName);
+      await copyFile(sourceFile, destinationPath);
+    }
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to copy files:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 app.on('ready', createWindow);
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-  const v = exec("touch foofile.txt");
-  const x = exec("./backend.exe");
-  v.stdout.on('data', (data: any) => {
-    console.log(`stdout: ${data}`);
-  });
-
-  v.on('close', (code: any) => {
-    console.log(`child process close all stdio with code ${code}`);
-  });
-
-  v.on('exit', (code: any) => {
-    console.log(`child process exited with code ${code}`);
-  });
-  x.stdout.on('data', (data: any) => {
-    console.log(`stdout: ${data}`);
-  });
-
-  x.on('close', (code: any) => {
-    console.log(`child process close all stdio with code ${code}`);
-  });
-
-  x.on('exit', (code: any) => {
-    console.log(`child process exited with code ${code}`);
-  });
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -71,11 +84,32 @@ app.on('activate', () => {
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   // Do background process for backend
-  
+
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
+    }
+});
+
+ipcMain.handle('read-template-file', async (event, jsonFilePath) => {
+  try {
+    const data = await readFile(jsonFilePath, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Failed to read template file:', error);
+    throw error; // Rethrow to send error back to renderer
   }
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
+ipcMain.handle('execute-export', async (event, directory, template) => {
+  try {
+      // Assuming createFolderStructure and copyFilesToStructure are functions that you will define or import
+      await createFolderStructure(template, directory);
+      await copyFilesToStructure(template[0], directory).then(() => {
+        console.log('Export process completed.');
+      }).catch(console.error);
+      return { success: true, message: "Export completed successfully!" };
+  } catch (error) {
+      console.error("Export failed:", error);
+      return { success: false, message: `Export failed: ${error.message}` };
+  }
+});
