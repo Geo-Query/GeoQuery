@@ -1,3 +1,4 @@
+import React from "react";
 import {useState} from "react";
 import ReactDom from "react-dom";
 import SelectedRegion from "./lib/region";
