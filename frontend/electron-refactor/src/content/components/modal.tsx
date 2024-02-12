@@ -1,7 +1,5 @@
-import { useState } from "react";
 import React from "react";
-import {QueryResult, QueryState} from "../lib/query";
-import Query_progress from "./query_progress";
+import { QueryResult, QueryState } from "../lib/query";
 import QueryProgress from "./query_progress";
 import ResultCards from "./result_cards";
 import FolderTemplate from "./folders_template";
@@ -11,6 +9,7 @@ export interface ModalProps {
     results: Array<QueryResult>,
     setQueryState: React.Dispatch<React.SetStateAction<QueryState>>;
 }
+
 export default function Modal(props: ModalProps) {
 
     const handleClose = () => {
