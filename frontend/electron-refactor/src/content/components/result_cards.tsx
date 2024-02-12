@@ -67,9 +67,9 @@ export default function ResultCards(response: ModalProps) {
           {visibleResults.length > 0 ? (
           <div>
             <h3 className="text-lg font-bold text-white mb-4">Results:</h3>
-            <div className="grid grid-cols-1 gap-4 overflow-x-auto">
+            <div className="flex flex-col gap-4">
               {visibleResults.map((result, index) => (
-                <div key={index} className="bg-[#525461] rounded-lg shadow-lg p-4 transition-transform duration-300 ease-in-out hover:scale-105 hover:bg-[#526071] hover:shadow-xl">
+                <div key={index} className="bg-[#525461] rounded-lg shadow-lg p-4 transition-transform duration-300 ease-in-out scale-95 hover:scale-100 hover:bg-[#526071] hover:shadow-xl">
                   <div className="flex justify-between items-center mb-2">
                     <span className="font-mono text-sm text-white">
                       {result.file.path}

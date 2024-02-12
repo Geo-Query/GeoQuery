@@ -22,9 +22,9 @@ function App() {
     return (
         <div className="App bg-thales-dark min-h-screen flex flex-col text-left">
             <Map selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion}/>
-            <div className="flex flex-wrap justify-between items-stretch">
+            <div className="flex flex-wrap justify-between">
                 <History queryHistory={queryHistory} setQueryHistory={setQueryHistory} setSelectedRegion={setSelectedRegion}/>
-                <div className="flex-grow p-4 rounded mx-6 my-2 bg-[#353744] gap-4">
+                <div className="flex-grow p-4 h-min rounded mx-6 my-2 bg-[#353744] gap-4">
                     <div className="bg-blue-600 text-white font-bold py-2 px-4 rounded min-w-full md:min-w-0 md:min-w-200px mb-5 text-left"><span>Query Configuration</span></div>
                     <Configurator selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} queryHistory={queryHistory} setQueryHistory={setQueryHistory}/>
                     <Requestor selectedRegion={selectedRegion} queryState={queryState} setQueryState={setQueryState} queryHistory={queryHistory} setQueryHistory={setQueryHistory}/>
