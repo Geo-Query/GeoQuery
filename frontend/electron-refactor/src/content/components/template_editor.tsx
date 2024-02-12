@@ -12,16 +12,20 @@ interface Folder {
   children: Folder[];
 }
 interface TemplateEditorProps {
-  folder: Folder; // This is how you pass a Folder object to the component
+  folder: Folder;
+  onUpdateTemplate: (updatedTemplate: Folder) => void;
 }
 
-// Define the component using the props interface
-const TemplateEditor: React.FC<TemplateEditorProps> = ({ folder }) => {
+const TemplateEditor: React.FC<TemplateEditorProps> = ({ folder, onUpdateTemplate }) => {
 
   const [newTemplateName, setNewTemplateName] = useState("");
   const [folders, setFolders] = useState<Folder[]>([folder]);
   const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
   const [deletedFolder, setDeletedFolder] = useState<{ folder: Folder; parentId: number | null } | null>(null);
+
+  useEffect(() => {
+    onUpdateTemplate(folders[0]); // If folders[0] represents the root folder template
+  }, [folders, onUpdateTemplate]);
 
   // Function to recursively update folder tags
   const updateFolderTags = (folders: Folder[], folderId: number, newTags: string): Folder[] => {

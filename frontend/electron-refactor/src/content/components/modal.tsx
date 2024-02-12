@@ -10,6 +10,7 @@ export interface ModalProps {
     setQueryState: React.Dispatch<React.SetStateAction<QueryState>>;
 }
 
+
 export default function Modal(props: ModalProps) {
 
         // Effect to disable scroll on mount and enable on unmount
@@ -47,7 +48,7 @@ export default function Modal(props: ModalProps) {
             content = <ResultCards {...props} />;
             break;
         case QueryState.EDITOR:
-            content = <FolderTemplate />;
+            content = <FolderTemplate results={props.results} />;
             break;
         case QueryState.FAILED:
             content = <p>An error occurred.</p>;
