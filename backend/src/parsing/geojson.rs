@@ -1,9 +1,11 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
-use std::io::BufReader;
+//use std::io::BufReader;
+use std::io::{BufReader, Write, Seek, SeekFrom};
 use crate::spatial::Coordinate;
 use json_event_parser::{JsonReader, JsonEvent};
+use tempfile::tempfile;
 
 pub fn get_boundaries(coordinates: Vec<[f64; 2]>) -> (Coordinate, Coordinate) {
     let mut min_x: f64 = coordinates[0][0];
@@ -52,14 +54,14 @@ pub struct GeoJSONRegion {
 #[derive(Debug, Clone)]
 pub struct GeoJSONMetaData {
     pub region: GeoJSONRegion,
-    pub tags: Vec<String>
+    pub tags: Vec<(String, String)>
 }
 
 pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<GeoJSONMetaData, GeoJSONErrorState> {
     let mut json_reader = JsonReader::from_reader(reader);
     let mut buffer = Vec::new();
     let mut coordinate_pairs: Vec<[f64; 2]> = Vec::new();
-
+    let mut tags = vec![("Filetype".to_string(), "GEOJSON".to_string())];
 
 
     while let event = match json_reader.read_event(&mut buffer) {
@@ -119,6 +121,51 @@ pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<GeoJSONMetaData, Ge
             top_right: boundaries.1,
             bottom_left: boundaries.0,
         },
-        tags: vec!["Filetype: GEOJSON".to_string()]
+        tags
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempfile;
+    use std::io::Write;
+    use std::io::Seek;
+    use std::io::BufReader;
+    use std::io::SeekFrom;
+
+    #[test]
+    fn test_get_boundaries() {
+        // Test coordinates for boundary calculation
+        let coordinates = vec![
+            [0.0, 0.0], // Bottom left corner
+            [2.0, 2.0], // Top right corner
+            [0.0, 2.0], // Top left corner
+            [2.0, 0.0], // Bottom right corner
+        ];
+        let (bottom_left, top_right) = get_boundaries(coordinates);
+        assert_eq!(bottom_left, (0.0, 0.0)); // Assert bottom left corner
+        assert_eq!(top_right, (2.0, 2.0));   // Assert top right corner
+    }
+
+    #[test]
+    fn test_parse_geojson_valid() {
+        // Create a mock file or in-memory stream containing valid GeoJSON data
+        // The example GeoJSON data should include a valid set of coordinates
+        let geojson_data = br#"{
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[[0.0, 0.0], [2.0, 0.0], [2.0, 2.0], [0.0, 2.0], [0.0, 0.0]]]
+            }
+        }"#;
+        let mut temp_file = tempfile().unwrap();
+        temp_file.write_all(geojson_data).unwrap();
+        temp_file.seek(SeekFrom::Start(0)).unwrap(); // Reset file pointer to the start
+
+        let mut reader = BufReader::new(temp_file);
+        let result = parse_geojson(&mut reader);
+        assert!(result.is_ok()); // Assert that parsing was successful
+    } 
+}
+

@@ -1,9 +1,9 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
-use std::io::{BufReader, Read};
+use std::io::{BufReader,Read,Write, Seek, SeekFrom};
 use crate::spatial::Coordinate;
-
+use tempfile::tempfile;
 #[derive(Debug)]
 pub enum DT2ErrorState {
     UnexpectedFormat(String),
@@ -38,7 +38,8 @@ pub enum DSIErrorState {
 
 fn parse_dddmmssh(data: &[u8]) -> Result<f64, DT2ErrorState> {
     if data.len() != 8 {
-        return Err(DT2ErrorState::DSIError(DSIErrorState::InvalidDDDMMSSH(data.try_into().unwrap())));
+        return Err(DT2ErrorState::DSIError(DSIErrorState::InvalidLength(data.len())));
+        //return Err(DT2ErrorState::DSIError(DSIErrorState::InvalidDDDMMSSH(data.try_into().unwrap())));
     }
 
     let degrees = String::from_utf8(data[0..3].to_vec())
@@ -68,7 +69,8 @@ fn parse_dddmmssh(data: &[u8]) -> Result<f64, DT2ErrorState> {
 }
 fn parse_ddmmssh(data: &[u8]) -> Result<f64, DT2ErrorState> {
     if data.len() != 7 {
-        return Err(DT2ErrorState::DSIError(DSIErrorState::InvalidDDMMSSH(data.try_into().unwrap())));
+        return Err(DT2ErrorState::DSIError(DSIErrorState::InvalidLength(data.len())));
+        //return Err(DT2ErrorState::DSIError(DSIErrorState::InvalidDDMMSSH(data.try_into().unwrap())));
     }
 
     let degrees = String::from_utf8(data[0..2].to_vec())
@@ -110,7 +112,7 @@ pub struct DT2Region {
 #[derive(Debug)]
 pub struct DT2MetaData {
     pub region: DT2Region,
-    pub tags: Vec<String>
+    pub tags: Vec<(String, String)>
 }
 
 #[derive(Debug)]
@@ -262,6 +264,7 @@ impl DataSetIdentification {
 
 
 pub fn parse_dt2(reader: &mut BufReader<File>) -> Result<DT2MetaData, DT2ErrorState> {
+    let mut tags = vec![("Filetype".to_string(), "DTED".to_string())];
     let mut uhl_buf = [0u8; 80];
     let _uhl = match reader.read_exact(&mut uhl_buf) {
         Ok(_) => UserHeaderLabel::from_bytes(&uhl_buf)?,
@@ -284,6 +287,149 @@ pub fn parse_dt2(reader: &mut BufReader<File>) -> Result<DT2MetaData, DT2ErrorSt
             bottom_right: dsi.se_corner,
             bottom_left: dsi.sw_corner,
         },
-        tags: vec!["Filetype: DT2".to_string()]
+        tags
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Test parse_dddmmssh function with valid data
+    #[test]
+    fn test_parse_dddmmssh_valid() {
+        let data = b"1230456E"; // Valid data
+        assert_eq!(parse_dddmmssh(data).unwrap(), 123.08222222222222);
+    }
+
+    // Test parse_dddmmssh function with invalid length
+    #[test]
+    fn test_parse_dddmmssh_invalid_length() {
+        let data = b"123456"; // Data with insufficient length
+        assert!(parse_dddmmssh(data).is_err());
+    }
+
+    // Test parse_dddmmssh function with invalid hemisphere direction
+    #[test]
+    fn test_parse_dddmmssh_invalid_hemisphere() {
+        let data = b"1230456X"; // Invalid hemisphere direction
+        assert!(parse_dddmmssh(data).is_err());
+    }
+
+    // Test parse_ddmmssh function with valid data
+    #[test]
+    fn test_parse_ddmmssh_valid() {
+        let data = b"120456E"; // Valid data
+        assert_eq!(parse_ddmmssh(data).unwrap(), 12.082222222222223);
+    }
+
+    // Test parse_ddmmssh function with invalid length
+    #[test]
+    fn test_parse_ddmmssh_invalid_length() {
+        let data = b"123456"; // Data with insufficient length
+        assert!(parse_ddmmssh(data).is_err());
+    }
+
+    // Test parse_ddmmssh function with invalid hemisphere direction
+    #[test]
+    fn test_parse_ddmmssh_invalid_hemisphere() {
+        let data = b"123045X"; // Invalid hemisphere direction
+        assert!(parse_ddmmssh(data).is_err());
+    }
+
+    // Test UserHeaderLabel::from_bytes function with valid data
+    #[test]
+    fn test_user_header_label_from_bytes() {
+        let mut buffer = [0u8; 80];
+        buffer[0..4].copy_from_slice(&[85, 72, 76, 49]); // Sentinel "UHL1"
+        buffer[4..12].copy_from_slice(&[49, 50, 51, 48, 52, 53, 54, 69]); // Longitude "1234567E"
+        buffer[12..20].copy_from_slice(&[48, 55, 56, 49, 53, 52, 54, 78]); // Latitude "0781546N"
+
+        let result = UserHeaderLabel::from_bytes(&buffer);
+        assert!(result.is_ok());
+    }
+
+    // Test UserHeaderLabel::from_bytes function with invalid length
+    #[test]
+    fn test_user_header_label_from_bytes_invalid_length() {
+        let mut buffer = [0u8; 79];
+        let result = UserHeaderLabel::from_bytes(&buffer);
+        assert!(result.is_err());
+    }
+
+    // Test UserHeaderLabel::from_bytes function with invalid sentinel
+    #[test]
+    fn test_user_header_label_from_bytes_invalid_sentinel() {
+        let mut buffer = [0u8; 80];
+        let result = UserHeaderLabel::from_bytes(&buffer);
+        assert!(result.is_err());
+    }
+
+    // Test DataSetIdentification::from_bytes function with valid data
+    #[test]
+    fn test_data_set_identification_from_bytes_valid() {
+        // Create a buffer of length 648 and initialize to 0
+        let mut buffer = vec![0; 648];
+        buffer[0..4].copy_from_slice(&[68, 83, 73, 85]); // Sentinel "DSIU"
+        // Fill in the coordinates for SW, NW, NE, and SE corners
+        buffer[204..211].copy_from_slice(b"000000N"); // SW latitude, 0 degrees 0 minutes 0 seconds North
+        buffer[211..219].copy_from_slice(b"0000000E"); // SW longitude, 0 degrees 0 minutes 0 seconds East
+        buffer[219..226].copy_from_slice(b"100000N"); // NW latitude
+        buffer[226..234].copy_from_slice(b"1000000E"); // NW longitude
+        buffer[234..241].copy_from_slice(b"003000N"); // NE latitude
+        buffer[241..249].copy_from_slice(b"0003000E"); // NE longitude
+        buffer[249..256].copy_from_slice(b"000045N"); // SE latitude
+        buffer[256..264].copy_from_slice(b"0000045E"); // SE longitude
+
+        let result = DataSetIdentification::from_bytes(&buffer);
+        assert!(result.is_ok());
+        let corner = result.unwrap();
+        assert_eq!(corner.sw_corner, (0.0, 0.0));
+        assert_eq!(corner.nw_corner, (100.0, 10.0));
+        assert_eq!(corner.ne_corner, (0.5, 0.5));
+        assert_eq!(corner.se_corner, (0.0125, 0.0125));
+    }
+
+    // Test parse_dt2 function with valid data
+    #[test]
+    fn test_parse_dt2_valid() {
+        // Create a buffer with valid DT2 data
+        let mut test_data = Vec::new();
+        test_data.extend_from_slice(&[85, 72, 76, 49]); // Sentinel "UHL1"
+        test_data.extend_from_slice(&[49, 50, 51, 48, 52, 53, 54, 69]); // Longitude "1234567E"
+        test_data.extend_from_slice(&[48, 55, 56, 49, 53, 52, 54, 78]); // Latitude "0781546N"
+        test_data.extend(vec![0; 60]); // Fill remaining UHL part
+        test_data.extend_from_slice(&[68, 83, 73, 85]); // Sentinel "DSIU"
+        test_data.extend(vec![0; 200]); // Fill up to SW latitude position
+        // Fill in the coordinates for SW, NW, NE, and SE corners
+        test_data.extend_from_slice(b"000000N"); // SW latitude
+        test_data.extend_from_slice(b"0000000E"); // SW longitude
+        test_data.extend_from_slice(b"100000N"); // NW latitude
+        test_data.extend_from_slice(b"1000000E"); // NW longitude
+        test_data.extend_from_slice(b"003000N"); // NE latitude
+        test_data.extend_from_slice(b"0003000E"); // NE longitude
+        test_data.extend_from_slice(b"000045N"); // SE latitude
+        test_data.extend_from_slice(b"0000045E"); // SE longitude
+        test_data.extend(vec![0; (648 - 264)]); // Fill remaining DSI part
+
+        // Create a temporary file and write test data
+        let mut temp_file = tempfile().unwrap();
+        temp_file.write_all(&test_data).unwrap();
+        temp_file.seek(SeekFrom::Start(0)).unwrap(); // Reset file pointer to start
+
+        // Use BufReader to read the temporary file
+        let mut reader = BufReader::new(temp_file);
+
+        // Call parse_dt2 function
+        let result = parse_dt2(&mut reader);
+        assert!(result.is_ok());
+
+        // Validate the returned DT2Region (adjust assertions based on actual data and expected results)
+        let dt2_meta = result.unwrap();
+        assert_eq!(dt2_meta.region.bottom_left, (0.0, 0.0)); // SW corner
+        assert_eq!(dt2_meta.region.top_left, (100.0, 10.0)); // NW corner
+        assert_eq!(dt2_meta.region.top_right, (0.5, 0.5)); // NE corner
+        assert_eq!(dt2_meta.region.bottom_right, (0.0125, 0.0125)); // SE corner
+    }
+}
+

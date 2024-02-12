@@ -1,45 +1,25 @@
 use std::collections::HashMap;
 use std::error::Error;
-use std::fmt::{Display, Formatter};
+use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::PathBuf;
 use proj4rs::Proj;
+use error::TIFFErrorState;
 use crate::entry::{EntryValue, IFDEntry};
-pub use crate::geokeydirectory::GeoKeyDirectoryErrorState;
-pub use crate::header::HeaderErrorState;
-pub use crate::entry::IFDEntryErrorState;
+pub use error::GeoKeyDirectoryErrorState;
+pub use error::HeaderErrorState;
+pub use error::IFDEntryErrorState;
 use crate::geokeydirectory::GeoKeyDirectory;
-use crate::TIFFErrorState::ProjectionError;
+use error::TIFFErrorState::ProjectionError;
 use crate::util::FromBytes;
+
 
 mod util;
 mod entry;
 mod header;
 mod geokeydirectory;
-
-
-#[derive(Debug)]
-pub enum TIFFErrorState {
-    HeaderError(HeaderErrorState),
-    IFDEntryError(IFDEntryErrorState),
-    GeoKeyDirectoryError(GeoKeyDirectoryErrorState),
-    UnexpectedFormat(String),
-    ProjectionError(String),
-    NotEnoughGeoData,
-}
-
-impl Display for TIFFErrorState {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl Error for TIFFErrorState {
-    fn description(&self) -> &str {
-        "FOO"
-    }
-}
+mod error;
 
 pub trait FileDescriptor {
     fn get_path(&self) -> &PathBuf;
@@ -55,10 +35,11 @@ pub struct GeoTiffRegion {
 #[derive(Debug, Clone)]
 pub struct GeoTiffMetaData {
     pub region: GeoTiffRegion,
-    pub tags: Vec<String>
+    pub tags: Vec<(String, String)>
 }
 
 pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffMetaData, TIFFErrorState> {
+    let mut tags = vec![("Filetype".to_string(), "TIFF".to_string())];
     // Parse the file header.
     // First, seek to the start of the file, and validate.
     // Then read into an 8 byte buffer, and validate.
@@ -190,7 +171,7 @@ pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffMetaData, TIFFE
 
     return Ok(GeoTiffMetaData {
         region,
-        tags: vec!["Filetype: TIFF".to_string()]
+        tags
     });
 }
 
@@ -222,4 +203,76 @@ fn calculate_extent(
         top_left,
         bottom_right
     });
+}
+
+
+ #[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::{Write, Seek, SeekFrom};
+    use tempfile::tempfile;
+    use std::fs::File;
+    use std::io::BufReader;
+    use byteorder::{LittleEndian, WriteBytesExt,ByteOrder};
+    fn mock_geo_tiff_data() -> Vec<u8> {
+        let mut data = Vec::new();
+        // Mock GeoKeyDirectory header data
+        let geo_key_directory_header = vec![1u16, 1, 0, 1]; // Key Directory Version, Key Revision, Minor Revision, Number of Keys
+        // Mock GeoKey: GeographicTypeGeoKey (ID 2048) set to EPSG:4326 (WGS 84)
+        let geographic_type_geo_key = vec![2048u16, 0, 1, 4326]; // ID, Location, Count, Value
+
+        // Write the header and key into data
+        for value in geo_key_directory_header.iter().chain(geographic_type_geo_key.iter()) {
+            data.write_u16::<LittleEndian>(*value).unwrap(); // Note: using unwrap() here; handle errors more gracefully in production code
+        }
+
+        data
+    }
+
+    #[test]
+    fn test_geo_key_directory_parsing() {
+        // Create mock data
+        let mock_data = mock_geo_tiff_data();
+        // Create a temporary file and write mock data into it
+        let mut file = tempfile().expect("Failed to create temporary file");
+        file.write_all(&mock_data).expect("Failed to write mock data to temporary file");
+        file.seek(SeekFrom::Start(0)).expect("Failed to rewind temporary file");
+
+        // Read the temporary file into a BufReader
+        let reader = BufReader::new(file);
+        // Read data from BufReader into a Vec<u16>
+        let mut shorts = Vec::new();
+        for chunk in mock_data.chunks(2) {
+            shorts.push(LittleEndian::read_u16(&chunk));
+        }
+
+        // Attempt to parse the GeoKeyDirectory
+        let result = GeoKeyDirectory::from_shorts(&shorts);
+        assert!(result.is_ok(), "Failed to parse GeoKeyDirectory from mock data");
+
+        // Further validate the GeoKeyDirectory
+        let geo_key_directory = result.unwrap();
+        assert_eq!(geo_key_directory.header.key_revision, 1);
+        assert_eq!(geo_key_directory.header.minor_revision, 0);
+        assert_eq!(geo_key_directory.header.count, 1);
+        assert!(geo_key_directory.keys.contains_key(&2048), "GeoKeyDirectory does not contain expected GeoKey");
+        assert_eq!(geo_key_directory.keys.get(&2048).unwrap().value, Some(4326), "GeographicTypeGeoKey does not match expected value");
+    }
+
+    #[test]
+    fn test_geo_key_directory_incorrect_header_length() {
+        // Create mock data with incorrect header length to simulate an error
+        let incorrect_header = vec![1, 1, 0]; // Missing one element
+        let result = GeoKeyDirectory::from_shorts(&incorrect_header);
+        assert!(result.is_err(), "Expected an error due to incorrect header length");
+    }
+
+    #[test]
+    fn test_geo_key_directory_unsupported_version() {
+        // Create mock data with an unsupported version to simulate an error
+        let unsupported_version_header = vec![0, 1, 0, 1]; // Version set to 0
+        let result = GeoKeyDirectory::from_shorts(&unsupported_version_header);
+        assert!(result.is_err(), "Expected an error due to unsupported GeoKeyDirectory version");
+    }
+
 }

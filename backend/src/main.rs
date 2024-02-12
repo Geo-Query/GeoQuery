@@ -2,16 +2,16 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::future::IntoFuture;
-use tracing::{event, span, Level};
+use tracing::{event, Level, span};
 use std::path::PathBuf;
-use std::sync::{Arc};
+use std::sync::Arc;
 use axum;
 use tracing_subscriber;
 use rstar::RTree;
 use tokio;
-use tokio::sync::{Mutex, mpsc, RwLock};
+use tokio::sync::{mpsc, Mutex, RwLock};
 use uuid::Uuid;
-use crate::index::{Node, parse};
+use crate::index::Node;
 use crate::routes::{index, results, search};
 use crate::worker::{QueryTask, worker};
 use crate::config::Config;
@@ -19,9 +19,9 @@ use tower_http::cors::{Any, CorsLayer};
 use http::Method;
 use serde::{Deserialize, Serialize};
 use std::io::BufReader;
-use axum::extract::Path;
 use rayon::prelude::*;
 use tower::Layer;
+use parsing::parse;
 
 use std::process::Command;
 
@@ -131,7 +131,7 @@ async fn main() {
     event!(Level::INFO, "Building Index");
     event!(Level::DEBUG, "Empty Index Initialised!");
     for (mut i, file) in files.iter().enumerate() {
-        println!("Parsing: {:?}", file.path);
+        event!(Level::INFO, "Parsing: {:?}", file.path);
         i += 1;
         match parse(file.clone()) {
             Ok(v) => match v {
@@ -204,3 +204,5 @@ async fn main() {
     }
     futures::join!(axum_task.into_future(), worker(shared_state));
 }
+
+
