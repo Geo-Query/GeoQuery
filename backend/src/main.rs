@@ -197,9 +197,10 @@ async fn main() {
     event!(Level::INFO, "Starting Web Server & Parallel Worker!");
 
 
-   // let mut child = Command::new("electron-refactor")
-     //   .spawn()
-       // .expect("failed to execute child");
+    if let Ok(child) = Command::new("electron-refactor").spawn() {
+        println!("Launched Frontend!");
+    } else {
+        println!("Failed to launch frontend!")
+    }
     futures::join!(axum_task.into_future(), worker(shared_state));
-
 }
