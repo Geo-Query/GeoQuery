@@ -140,3 +140,124 @@ impl GeoKeyDirectory {
         });
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_geo_key_directory_header_from_shorts_valid() {
+        let shorts = [1, 0, 0, 0]; // Valid input data
+        let result = GeoKeyDirectoryHeader::from_shorts(&shorts);
+        assert!(result.is_ok());
+        let header = result.unwrap();
+        assert_eq!(header.key_revision, 0);
+        assert_eq!(header.minor_revision, 0);
+        assert_eq!(header.count, 0);
+    }
+
+    #[test]
+    fn test_geo_key_directory_header_from_shorts_invalid_length() {
+        let shorts = [1, 0, 0]; // Invalid input data (incorrect length)
+        let result = GeoKeyDirectoryHeader::from_shorts(&shorts);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_geo_key_from_shorts_valid() {
+        let shorts = [1, 0, 1, 10]; // Assumed valid input data
+        let result = GeoKey::from_shorts(&shorts);
+        assert!(result.is_ok());
+        let key = result.unwrap();
+        assert_eq!(key.id, 1);
+        assert_eq!(key.location, 0);
+        assert_eq!(key.count, 1);
+        assert_eq!(key.value, Some(10));
+    }
+
+    #[test]
+    fn test_geo_key_from_shorts_invalid_length() {
+        let shorts = [1, 0, 1]; // Invalid input data (incorrect length)
+        let result = GeoKey::from_shorts(&shorts);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_geo_key_directory_from_shorts_valid() {
+        let shorts = vec![1, 0, 0, 1, 1, 0, 1, 10]; // Assumed valid input data
+        let result = GeoKeyDirectory::from_shorts(&shorts);
+        assert!(result.is_ok());
+        let directory = result.unwrap();
+        assert_eq!(directory.keys.len(), 1);
+        assert!(directory.keys.contains_key(&1));
+    }
+
+    #[test]
+    fn test_geo_key_directory_from_shorts_invalid() {
+        let shorts = vec![1, 0, 0]; // Invalid input data (incorrect length)
+        let result = GeoKeyDirectory::from_shorts(&shorts);
+        assert!(result.is_err());
+    }
+    #[test]
+    fn test_geo_key_directory_header_unexpected_version() {
+        let shorts = [2, 0, 0, 0]; // Unexpected version
+        let result = GeoKeyDirectoryHeader::from_shorts(&shorts);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_geo_key_directory_header_unexpected_format() {
+        let shorts = [1, 0, 0, 0, 0]; // Unexpected format with extra shorts
+        let result = GeoKeyDirectoryHeader::from_shorts(&shorts);
+        assert!(result.is_err());
+    }
+    #[test]
+    fn test_geo_key_directory_from_shorts_with_multiple_keys() {
+        let shorts = vec![1, 0, 0, 2, 1, 0, 1, 10, 2, 0, 1, 20]; // Two valid keys
+        let result = GeoKeyDirectory::from_shorts(&shorts);
+        assert!(result.is_ok());
+        let directory = result.unwrap();
+        assert_eq!(directory.keys.len(), 2);
+        assert!(directory.keys.contains_key(&1) && directory.keys.contains_key(&2));
+    }
+
+    
+    fn prepare_geo_key_directory_with_valid_crs() -> GeoKeyDirectory {
+        let header = GeoKeyDirectoryHeader {
+            key_revision: 1,
+            minor_revision: 0,
+            count: 1,
+        };
+
+        // Assume a GeoKey for EPSG:4326, the GeoKey ID for GeographicTypeGeoKey might need adjustment
+        let geographic_type_geo_key = GeoKey {
+            id: 2048, // Hypothetical GeoKey ID for GeographicTypeGeoKey
+            location: 0,
+            count: 1,
+            value: Some(4326), // WGS 84
+        };
+
+        let mut keys = HashMap::new();
+        keys.insert(geographic_type_geo_key.id, geographic_type_geo_key);
+
+        GeoKeyDirectory {
+            header,
+            keys,
+        }
+    }
+
+    #[test]
+    fn test_get_projection_for_valid_crs_code() {
+        let directory = prepare_geo_key_directory_with_valid_crs();
+        let target_epsg = "EPSG:4326"; // The target CRS code, used here as an example
+
+        let projection_result = directory.get_projection(target_epsg);
+
+        // Check if projection_result is Ok, the exact type of Ok value depends on the return type of Proj::from_proj_string
+        assert!(projection_result.is_ok(), "Failed to get projection for a valid CRS code");
+        
+    }    
+
+
+}
+

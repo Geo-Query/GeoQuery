@@ -8,7 +8,7 @@ use crate::spatial::Region;
 use crate::State;
 use crate::worker::QueryState::{Complete, Processing};
 use tracing::{event, Level, span};
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum QueryState {
     Waiting,
     Processing,
@@ -57,3 +57,4 @@ pub async fn worker(state: Arc<State>) {
         event!(Level::INFO, "Finished processing task: {task:?}");
     }
 }
+

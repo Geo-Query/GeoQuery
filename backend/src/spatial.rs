@@ -80,3 +80,59 @@ impl From<QueryRegion> for Region {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Test conversion from GeoTiffRegion to Region
+    #[test]
+    fn test_convert_from_geotiff_region() {
+        let geo_tiff_region = GeoTiffRegion {
+            top_left: (1.0, 2.0),
+            bottom_right: (3.0, 4.0),
+        };
+        let region: Region = geo_tiff_region.into();
+        assert_eq!(region.top_left, (1.0, 2.0));
+        assert_eq!(region.bottom_right, (3.0, 4.0));
+    }
+
+    // Test conversion from KMLRegion to Region
+    #[test]
+    fn test_convert_from_kml_region() {
+        let kml_region = KMLRegion {
+            bottom_left: (1.0, 2.0),
+            top_right: (3.0, 4.0),
+        };
+        let region: Region = kml_region.into();
+        assert_eq!(region.top_left, (1.0, 4.0));
+        assert_eq!(region.bottom_right, (3.0, 2.0));
+    }
+
+    // Test conversion from GeoJSONRegion to Region
+    #[test]
+    fn test_convert_from_geojson_region() {
+        let geojson_region = GeoJSONRegion {
+            bottom_left: (1.0, 2.0),
+            top_right: (3.0, 4.0),
+        };
+        let region: Region = geojson_region.into();
+        assert_eq!(region.top_left, (1.0, 4.0));
+        assert_eq!(region.bottom_right, (3.0, 2.0));
+    }
+
+    // Test conversion from DT2Region to Region
+    #[test]
+    fn test_convert_from_dt2_region() {
+        let dt2_region = DT2Region {
+            top_left: (1.0, 2.0),
+            top_right: (3.0, 2.0), 
+            bottom_left: (1.0, 4.0), 
+            bottom_right: (3.0, 4.0),
+        };
+        let region: Region = dt2_region.into();
+        assert_eq!(region.top_left, (1.0, 2.0));
+        assert_eq!(region.bottom_right, (3.0, 4.0));
+    }
+
+}

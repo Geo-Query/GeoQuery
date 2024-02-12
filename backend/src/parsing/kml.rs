@@ -2,10 +2,11 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use crate::spatial::Coordinate;
 use std::fs::File;
-use std::io::BufReader;
+use std::io::{BufReader,Read,Write, Seek, SeekFrom};
 use std::str::FromStr;
 use xml::reader::{EventReader, XmlEvent};
 use crate::parsing::kml::KMLErrorState::{NotEnoughGeoData, UnexpectedFormat};
+
 
 pub fn get_boundaries(coordinates: Vec<Coordinate>) -> (Coordinate, Coordinate) {
     let mut min_x: f64 = coordinates[0].0;
@@ -114,4 +115,62 @@ pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLMetadata, KMLErrorSt
         },
         tags
         }); // Return region defined by file.
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempfile;
+    use std::io::Write;
+    use std::io::BufReader;
+
+    #[test]
+    fn test_parse_kml_with_tempfile() {
+        // Create a mock KML file content
+        let kml_data = r#"
+            <kml>
+                <Document>
+                    <Placemark>
+                        <Point>
+                            <coordinates>-122.0822035425683,37.42228990140251,0</coordinates>
+                        </Point>
+                    </Placemark>
+                    <Placemark>
+                        <Point>
+                            <coordinates>-123.0822035425683,38.42228990140251,0</coordinates>
+                        </Point>
+                    </Placemark>
+                </Document>
+            </kml>
+        "#;
+
+        // Create a temporary file and write the KML data into it
+        let mut file = tempfile().unwrap();
+        write!(file, "{}", kml_data).unwrap();
+        file.flush().unwrap();
+        file.seek(std::io::SeekFrom::Start(0)).unwrap();
+
+        // Use BufReader to read the temporary file
+        let mut reader = BufReader::new(file);
+
+        // Call the parse_kml function
+        let result = parse_kml(&mut reader);
+        assert!(result.is_ok());
+
+        // Check if the parsed result matches the expected values
+        let kml_meta = result.unwrap();
+        assert_eq!(kml_meta.region.bottom_left, (-123.0822035425683, 37.42228990140251));
+        assert_eq!(kml_meta.region.top_right, (-122.0822035425683, 38.42228990140251));
+    }
+    #[test]
+    fn test_empty_kml() {
+        let kml_data = r#"<kml></kml>"#;
+        let mut file = tempfile().unwrap();
+        write!(file, "{}", kml_data).unwrap();
+        file.flush().unwrap();
+        file.seek(SeekFrom::Start(0)).unwrap();
+        let mut reader = BufReader::new(file);
+        let result = parse_kml(&mut reader);
+        assert!(matches!(result, Err(NotEnoughGeoData)));
+    }
 }

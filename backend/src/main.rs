@@ -195,3 +195,5 @@ async fn main() {
     event!(Level::INFO, "Starting Web Server & Parallel Worker!");
     futures::join!(axum_task.into_future(), worker(shared_state));
 }
+
+
