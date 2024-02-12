@@ -2,6 +2,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{BufReader,Read,Write, Seek, SeekFrom};
+use std::path::PathBuf;
 use crate::spatial::Coordinate;
 use tempfile::tempfile;
 #[derive(Debug)]
@@ -19,6 +20,11 @@ impl Display for DT2ErrorState {
 
 impl Error for DT2ErrorState {
     // TODO: Implement error descriptions!
+}
+
+#[derive(Debug, Clone)]
+pub struct DTEDMap {
+    pub(crate) path: PathBuf
 }
 
 #[derive(Debug)]

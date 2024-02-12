@@ -3,6 +3,8 @@ use std::fmt::{Display, Formatter};
 use std::fs::File;
 //use std::io::BufReader;
 use std::io::{BufReader, Write, Seek, SeekFrom};
+use std::path::PathBuf;
+use axum::extract::Path;
 use crate::spatial::Coordinate;
 use json_event_parser::{JsonReader, JsonEvent};
 use tempfile::tempfile;
@@ -33,6 +35,11 @@ pub fn get_boundaries(coordinates: Vec<[f64; 2]>) -> (Coordinate, Coordinate) {
 pub enum GeoJSONErrorState {
     InvalidJSON(Box<dyn Error>),
     UnparsableCoordinate(String)
+}
+
+#[derive(Debug, Clone)]
+pub struct GEOJSONMap {
+    pub(crate) path: PathBuf
 }
 
 impl Display for GeoJSONErrorState {

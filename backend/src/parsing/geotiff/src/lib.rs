@@ -26,6 +26,14 @@ pub trait FileDescriptor {
 }
 
 
+
+#[derive(Debug, Clone)]
+pub struct GeoTiffMap {
+    pub tiff: PathBuf,
+    pub tfw: Option<PathBuf>,
+    pub prj: Option<PathBuf>
+}
+
 #[derive(Debug, Clone)]
 pub struct GeoTiffRegion {
     pub top_left: (f64, f64),

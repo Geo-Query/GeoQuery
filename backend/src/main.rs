@@ -1,6 +1,7 @@
 use std::collections::HashMap;
+use std::error::Error;
 use std::ffi::OsStr;
-use std::fs::File;
+use std::fs::{DirEntry, File};
 use std::future::IntoFuture;
 use tracing::{event, Level, span};
 use std::path::PathBuf;
@@ -19,11 +20,17 @@ use tower_http::cors::{Any, CorsLayer};
 use http::Method;
 use serde::{Deserialize, Serialize};
 use std::io::BufReader;
+use std::path;
 use rayon::prelude::*;
 use tower::Layer;
 use parsing::parse;
 
 use std::process::Command;
+use geotiff::GeoTiffMap;
+use crate::error::RootErrorKind;
+use crate::parsing::dted::DTEDMap;
+use crate::parsing::geojson::GEOJSONMap;
+use crate::parsing::kml::KMLMap;
 
 mod spatial;
 mod index;
@@ -32,13 +39,9 @@ mod routes;
 mod worker;
 mod io;
 mod config;
+mod error;
 
 const INDEX_ADDRESS: &str = "0.0.0.0:42069";
-
-// Tag list:
-// Filetype:
-//     KML
-
 
 
 
@@ -51,38 +54,74 @@ struct State {
 }
 
 
+#[derive(Debug, Clone)]
+pub enum MapType {
+    GeoTIFF(GeoTiffMap),
+    DTED(DTEDMap),
+    KML(KMLMap),
+    GEOJSON(GEOJSONMap)
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileMeta {
     pub path: PathBuf
 }
 
-fn traverse(p: PathBuf) -> Result<Vec<PathBuf>, String>{
+
+
+// File traversal logic.
+fn traverse(p: PathBuf) -> Result<Vec<MapType>, Box<dyn Error>>{
     let mut build = Vec::new();
     if !p.is_dir() {
-        return Err("cfg.directory is not a directory!".to_string());
+        return Err(RootErrorKind::InvalidMapDirectory("cfg.directory is not a directory!".to_string()).into());
     }
-    match p.read_dir() {
-        Ok(d) => {
-            for e in d.filter_map(Result::ok) {
-                if e.path().is_dir() {
-                    build.append(&mut traverse(e.path()).unwrap())
-                } else if e.path().is_file() {
-                    match e.path().extension().and_then(OsStr::to_str) {
-                        Some(ext) => match ext {
-                            "kml" | "tif" | "dt2" | "dt1" | "geojson"  => build.push(e.path()),
-                            _ => continue
-                        },
-                        None => continue
+
+    let files: Vec<DirEntry> = p.read_dir()?.map(|f| f.unwrap()).collect();
+
+    for file in files.iter() {
+        let path = file.path();
+        if path.is_file() {
+            let ext = path.extension().and_then(OsStr::to_str);
+            if let Some(ext) = ext {
+                match ext {
+                    "tif" => {
+                        build.push(MapType::GeoTIFF(GeoTiffMap {
+                            tiff: Default::default(),
+                            tfw: files.iter().find(|candidate|
+                                candidate.path().extension().and_then(OsStr::to_str).is_some_and(|s| s == "tfw")
+                                && candidate.path().file_stem().is_some_and(|s| s == path.file_stem().unwrap())
+                            ).map(DirEntry::path),
+                            prj: files.iter().find(|candidate|
+                                candidate.path().extension().and_then(OsStr::to_str).is_some_and(|s| s == "prj")
+                                && candidate.path().file_stem().is_some_and(|s| s == path.file_stem().unwrap())
+                            ).map(DirEntry::path),
+                        }));
+                    },
+                    "kml" => build.push(MapType::KML(KMLMap {
+                        path,
+                    })),
+                    "dt1" | "dt2" => build.push(MapType::DTED(DTEDMap {
+                        path,
+                    })),
+                    "geojson" => build.push(MapType::GEOJSON(GEOJSONMap {
+                        path,
+                    })),
+                    _ => {
+
                     }
                 }
+            } else {
+                continue
             }
-            return Ok(build);
-        }
-        Err(e) => {
-            return Err(format!("Failed to iterate over dir: {p:?}"));
+        } else if path.is_dir() {
+          build.append(&mut traverse(path)?)
+        } else {
+            return Err(RootErrorKind::UnexpectedPathType.into())
         }
     }
+    return Ok(build);
 }
+
 
 #[tokio::main]
 async fn main() {
@@ -115,15 +154,19 @@ async fn main() {
         panic!();
     }
 
-    event!(Level::INFO, "Discovering Map Files in directory!");
-    let files: Vec<Arc<FileMeta>> = match traverse(cfg.directory) {
-        Ok(f) => f.iter().map(|z| Arc::new(FileMeta {path: z.clone()})).collect(),
-        Err(e) => {
-            event!(Level::ERROR, "Failed to traverse files to build index.");
-            event!(Level::ERROR, "Reason: {e:?}");
-            panic!();
-        }
-    };
+    // event!(Level::INFO, "Discovering Map Files in directory!");
+    // let files: Vec<Arc<FileMeta>> = match traverse(cfg.directory) {
+    //     Ok(f) => f.iter().map(|z| Arc::new(FileMeta {path: z.clone()})).collect(),
+    //     Err(e) => {
+    //         event!(Level::ERROR, "Failed to traverse files to build index.");
+    //         event!(Level::ERROR, "Reason: {e:?}");
+    //         panic!();
+    //     }
+    // };
+    let found = traverse(cfg.directory);
+    println!("{:?}", found);
+    panic!();
+    let files: Vec<Arc<FileMeta>> = vec![];
     let index_building = span!(Level::INFO, "Indexing");
     let _index_build_guard = index_building.enter();
 

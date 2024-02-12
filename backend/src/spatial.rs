@@ -2,7 +2,7 @@ use std::fmt::{Debug};
 use serde::{Deserialize, Serialize};
 use geotiff::GeoTiffRegion;
 use crate::io::QueryRegion;
-use crate::parsing::dt2::DT2Region;
+use crate::parsing::dted::DT2Region;
 use crate::parsing::geojson::GeoJSONRegion;
 use crate::parsing::kml::KMLRegion;
 

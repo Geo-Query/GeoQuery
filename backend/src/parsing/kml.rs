@@ -3,6 +3,7 @@ use std::fmt::{Display, Formatter};
 use crate::spatial::Coordinate;
 use std::fs::File;
 use std::io::{BufReader,Read,Write, Seek, SeekFrom};
+use std::path::PathBuf;
 use std::str::FromStr;
 use xml::reader::{EventReader, XmlEvent};
 use crate::parsing::kml::KMLErrorState::{NotEnoughGeoData, UnexpectedFormat};
@@ -46,6 +47,12 @@ pub struct KMLMetadata {
 pub enum KMLErrorState {
     UnexpectedFormat(String),
     NotEnoughGeoData
+}
+
+
+#[derive(Debug, Clone)]
+pub struct KMLMap {
+    pub(crate) path: PathBuf
 }
 
 impl Display for KMLErrorState {
