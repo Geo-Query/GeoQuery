@@ -89,6 +89,15 @@ async function pollQuery(
     }
 }
 
+function isQueryUnique(newRegion, queryHistory) {
+    return !queryHistory.queries.some(query =>
+        query.northWest.lat === newRegion.northWest.lat &&
+        query.northWest.long === newRegion.northWest.long &&
+        query.southEast.lat === newRegion.southEast.lat &&
+        query.southEast.long === newRegion.southEast.long
+    );
+}
+
 async function makeQuery(
     selectedRegion: SelectedRegion,
     setQueryState: React.Dispatch<React.SetStateAction<QueryState>>,
@@ -98,9 +107,11 @@ async function makeQuery(
     queryHistory: QueryHistory,
     setQueryHistory: React.Dispatch<React.SetStateAction<QueryHistory>>
 ) {
-    if (selectedRegion.region) {
+    if (selectedRegion.region && isQueryUnique(selectedRegion.region, queryHistory)) {
         console.log(selectedRegion.region);
+        // Only add to history if unique
         setQueryHistory(queryHistory.add(selectedRegion.region));
+        // Proceed with making the query as before
         try {
             const resp = await axios.get(`${BACKEND_URL}/search`, {
                 params: {
@@ -119,24 +130,38 @@ async function makeQuery(
                 setQueryState(QueryState.FAILED);
             }
         } catch (e) {
-            console.log("Request failed; or unexpected response!");
-            console.log(e);
+            console.error("Request failed; or unexpected response!", e);
             arbitraryFailure();
             setQueryState(QueryState.FAILED);
         }
     } else {
-        Toastify({
-            text: "No Region Selected!",
-            duration: 3000,
-            gravity: "bottom", // `top` or `bottom`
-            position: "right", // `left`, `center` or `right`
-            stopOnFocus: true, // Prevents dismissing of toast on hover
-            style: {
-                background: "red",
-            },
-        }).showToast();
+        // Handle the case where no region is selected or query is not unique
+        // Possibly notify the user about the non-uniqueness if the region is not null
+        if (selectedRegion.region) {
+            Toastify({
+                text: "Query already exists in history!",
+                duration: 3000,
+                gravity: "bottom",
+                position: "right",
+                style: {
+                    background: "orange",
+                },
+            }).showToast();
+        } else {
+            // Existing no region selected notification
+            Toastify({
+                text: "No Region Selected!",
+                duration: 3000,
+                gravity: "bottom",
+                position: "right",
+                style: {
+                    background: "red",
+                },
+            }).showToast();
+        }
     }
 }
+
 
 
 export default function Requestor(props: RequestorProps) {
