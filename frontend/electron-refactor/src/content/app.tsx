@@ -69,8 +69,7 @@ function App() {
         }
       ]
     }
-  ]
-  ;
+  ];
             
             const result = await window.electronAPI.executeExport(directory, template);
             if (result.success) {

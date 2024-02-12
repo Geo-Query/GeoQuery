@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import SelectedRegion from "../lib/region";
+import SelectedRegion, {Region} from "../lib/region";
 import {QueryResult, QueryState, queryStateFromString} from "../lib/query";
 import axios from 'axios';
 import Toastify from 'toastify-js';
@@ -89,7 +89,7 @@ async function pollQuery(
     }
 }
 
-function isQueryUnique(newRegion, queryHistory) {
+function isQueryUnique(newRegion: Region, queryHistory: QueryHistory): boolean {
     return !queryHistory.queries.some(query =>
         query.northWest.lat === newRegion.northWest.lat &&
         query.northWest.long === newRegion.northWest.long &&
@@ -107,10 +107,12 @@ async function makeQuery(
     queryHistory: QueryHistory,
     setQueryHistory: React.Dispatch<React.SetStateAction<QueryHistory>>
 ) {
-    if (selectedRegion.region && isQueryUnique(selectedRegion.region, queryHistory)) {
+    if (selectedRegion.region) {
         console.log(selectedRegion.region);
         // Only add to history if unique
-        setQueryHistory(queryHistory.add(selectedRegion.region));
+        if (isQueryUnique(selectedRegion.region, queryHistory)) {
+            setQueryHistory(queryHistory.add(selectedRegion.region));
+        }
         // Proceed with making the query as before
         try {
             const resp = await axios.get(`${BACKEND_URL}/search`, {
@@ -135,30 +137,16 @@ async function makeQuery(
             setQueryState(QueryState.FAILED);
         }
     } else {
-        // Handle the case where no region is selected or query is not unique
-        // Possibly notify the user about the non-uniqueness if the region is not null
-        if (selectedRegion.region) {
-            Toastify({
-                text: "Query already exists in history!",
-                duration: 3000,
-                gravity: "bottom",
-                position: "right",
-                style: {
-                    background: "orange",
-                },
-            }).showToast();
-        } else {
-            // Existing no region selected notification
-            Toastify({
-                text: "No Region Selected!",
-                duration: 3000,
-                gravity: "bottom",
-                position: "right",
-                style: {
-                    background: "red",
-                },
-            }).showToast();
-        }
+        // Existing no region selected notification
+        Toastify({
+            text: "No Region Selected!",
+            duration: 3000,
+            gravity: "bottom",
+            position: "right",
+            style: {
+                background: "red",
+            },
+        }).showToast();
     }
 }
 

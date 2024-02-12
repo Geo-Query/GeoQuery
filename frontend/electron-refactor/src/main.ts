@@ -22,7 +22,7 @@ const createWindow = (): void => {
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
-    icon: path.join(__dirname, '../../assets/favicon.ico'), //laods the icon
+    icon: path.join(__dirname, '../../assets/favicon.ico'), //loads the icon
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
