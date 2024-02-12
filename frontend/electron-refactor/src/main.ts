@@ -22,11 +22,14 @@ const createWindow = (): void => {
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
+    icon: path.join(__dirname, '../../assets/favicon.ico'), //laods the icon
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
     },
+    
   });
+
 
   // Load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
@@ -67,6 +70,8 @@ ipcMain.handle('copy-files', async (event, sourceFiles: string[], destination: s
 });
 
 app.on('ready', createWindow);
+
+
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
