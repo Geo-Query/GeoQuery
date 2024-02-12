@@ -425,11 +425,11 @@ mod tests {
         assert!(result.is_ok());
 
         // Validate the returned DT2Region (adjust assertions based on actual data and expected results)
-        let dt2_region = result.unwrap();
-        assert_eq!(dt2_region.bottom_left, (0.0, 0.0)); // SW corner
-        assert_eq!(dt2_region.top_left, (100.0, 10.0)); // NW corner
-        assert_eq!(dt2_region.top_right, (0.5, 0.5)); // NE corner
-        assert_eq!(dt2_region.bottom_right, (0.0125, 0.0125)); // SE corner
+        let dt2_meta = result.unwrap();
+        assert_eq!(dt2_meta.region.bottom_left, (0.0, 0.0)); // SW corner
+        assert_eq!(dt2_meta.region.top_left, (100.0, 10.0)); // NW corner
+        assert_eq!(dt2_meta.region.top_right, (0.5, 0.5)); // NE corner
+        assert_eq!(dt2_meta.region.bottom_right, (0.0125, 0.0125)); // SE corner
     }
 }
 

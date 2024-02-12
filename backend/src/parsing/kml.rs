@@ -158,9 +158,9 @@ mod tests {
         assert!(result.is_ok());
 
         // Check if the parsed result matches the expected values
-        let kml_region = result.unwrap();
-        assert_eq!(kml_region.bottom_left, (-123.0822035425683, 37.42228990140251));
-        assert_eq!(kml_region.top_right, (-122.0822035425683, 38.42228990140251));
+        let kml_meta = result.unwrap();
+        assert_eq!(kml_meta.region.bottom_left, (-123.0822035425683, 37.42228990140251));
+        assert_eq!(kml_meta.region.top_right, (-122.0822035425683, 38.42228990140251));
     }
     #[test]
     fn test_empty_kml() {
