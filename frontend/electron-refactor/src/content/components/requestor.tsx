@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import SelectedRegion from "../lib/region";
+import SelectedRegion, {Region} from "../lib/region";
 import {QueryResult, QueryState, queryStateFromString} from "../lib/query";
 import axios from 'axios';
 import Toastify from 'toastify-js';
@@ -89,6 +89,15 @@ async function pollQuery(
     }
 }
 
+function isQueryUnique(newRegion: Region, queryHistory: QueryHistory): boolean {
+    return !queryHistory.queries.some(query =>
+        query.northWest.lat === newRegion.northWest.lat &&
+        query.northWest.long === newRegion.northWest.long &&
+        query.southEast.lat === newRegion.southEast.lat &&
+        query.southEast.long === newRegion.southEast.long
+    );
+}
+
 async function makeQuery(
     selectedRegion: SelectedRegion,
     setQueryState: React.Dispatch<React.SetStateAction<QueryState>>,
@@ -100,7 +109,11 @@ async function makeQuery(
 ) {
     if (selectedRegion.region) {
         console.log(selectedRegion.region);
-        setQueryHistory(queryHistory.add(selectedRegion.region));
+        // Only add to history if unique
+        if (isQueryUnique(selectedRegion.region, queryHistory)) {
+            setQueryHistory(queryHistory.add(selectedRegion.region));
+        }
+        // Proceed with making the query as before
         try {
             const resp = await axios.get(`${BACKEND_URL}/search`, {
                 params: {
@@ -119,24 +132,24 @@ async function makeQuery(
                 setQueryState(QueryState.FAILED);
             }
         } catch (e) {
-            console.log("Request failed; or unexpected response!");
-            console.log(e);
+            console.error("Request failed; or unexpected response!", e);
             arbitraryFailure();
             setQueryState(QueryState.FAILED);
         }
     } else {
+        // Existing no region selected notification
         Toastify({
             text: "No Region Selected!",
             duration: 3000,
-            gravity: "bottom", // `top` or `bottom`
-            position: "right", // `left`, `center` or `right`
-            stopOnFocus: true, // Prevents dismissing of toast on hover
+            gravity: "bottom",
+            position: "right",
             style: {
                 background: "red",
             },
         }).showToast();
     }
 }
+
 
 
 export default function Requestor(props: RequestorProps) {
