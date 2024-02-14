@@ -95,17 +95,16 @@ fn traverse(p: PathBuf) -> Result<Vec<MapType>, Box<dyn Error>>{
                             ).map(DirEntry::path),
                         }));
                     },
-                    // "kml" => build.push(MapType::KML(KMLMap {
-                    //     path,
-                    // })),
-                    // "dt1" | "dt2" => build.push(MapType::DTED(DTEDMap {
-                    //     path,
-                    // })),
-                    // "geojson" => build.push(MapType::GEOJSON(GEOJSONMap {
-                    //     path,
-                    // })),
+                    "kml" => build.push(MapType::KML(KMLMap {
+                        path,
+                    })),
+                    "dt1" | "dt2" => build.push(MapType::DTED(DTEDMap {
+                        path,
+                    })),
+                    "geojson" => build.push(MapType::GEOJSON(GEOJSONMap {
+                        path,
+                    })),
                     "shp" => {
-                        println!("{:?}", path);
                         build.push(MapType::ShapeFile (ShapeFileMap {
                             shp: path.clone(),
                             tfw: files.iter().find(|candidate|

@@ -100,23 +100,22 @@ pub fn parse_shapefile(shp_reader: &mut BufReader<File>, prj_reader: Option<&mut
         proj4rs::transform::transform(&proj, &to_proj, &mut top_left)?;
         proj4rs::transform::transform(&proj, &to_proj, &mut bottom_right)?;
         event!(Level::INFO, "Parsed shapefile and applied projection!");
+
+        return Ok(ShapeFileMetaData {
+            region: Region { top_left: (top_left.0.to_degrees(), top_left.1.to_degrees()), bottom_right: (bottom_right.0.to_degrees(), bottom_right.1.to_degrees()) },
+            tags,
+        })
     } else {
         event!(Level::WARN, "Shapefile without accompanying projection found!");
         event!(Level::WARN, "This is a forseen error, and we will assume that the CRS is EPSG:4326!");
         event!(Level::WARN, "However, this might be incorrect! If you encounter inaccuracies in shapefile");
-        event!(Level::WARN, "Please contact the developers, and attach the unhandled file!")
+        event!(Level::WARN, "Please contact the developers, and attach the unhandled file!");
         // TODO: Add a config option to disable this behaviour!
+        let mut top_left = (header.x_min, header.y_max);
+        let mut bottom_right = (header.x_max, header.y_min);
+        return Ok(ShapeFileMetaData {
+            region: Region { top_left, bottom_right },
+            tags,
+        });
     }
-
-
-
-    println!("{:?}", header);
-    let mut top_left = (header.x_min.to_radians(), header.y_max.to_radians());
-    let mut bottom_right = (header.x_max.to_radians(), header.y_min.to_radians(),);
-
-
-    return Ok(ShapeFileMetaData {
-        region: Region { top_left: (top_left.0.to_degrees(), top_left.1.to_degrees()), bottom_right: (bottom_right.0.to_degrees(), bottom_right.1.to_degrees()) },
-        tags,
-    })
 }
