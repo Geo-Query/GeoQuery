@@ -270,7 +270,7 @@ impl DataSetIdentification {
 }
 
 
-pub fn parse_dt2(reader: &mut BufReader<File>) -> Result<DT2MetaData, DT2ErrorState> {
+pub fn parse_dted(reader: &mut BufReader<File>) -> Result<DT2MetaData, DT2ErrorState> {
     let mut tags = vec![("Filetype".to_string(), "DTED".to_string())];
     let mut uhl_buf = [0u8; 80];
     let _uhl = match reader.read_exact(&mut uhl_buf) {
@@ -428,7 +428,7 @@ mod tests {
         let mut reader = BufReader::new(temp_file);
 
         // Call parse_dt2 function
-        let result = parse_dt2(&mut reader);
+        let result = parse_dted(&mut reader);
         assert!(result.is_ok());
 
         // Validate the returned DT2Region (adjust assertions based on actual data and expected results)

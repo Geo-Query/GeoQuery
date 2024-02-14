@@ -7,7 +7,7 @@ use std::ffi::OsStr;
 use geotiff::{GeoTiffMetaData, parse_tiff};
 use crate::{FileMeta, MapType};
 use crate::index::Node;
-use crate::parsing::dted::parse_dt2;
+use crate::parsing::dted::parse_dted;
 use crate::parsing::error::ParseErrorKind;
 use crate::parsing::geojson::parse_geojson;
 use crate::parsing::kml::parse_kml;
@@ -26,7 +26,7 @@ pub fn parse(map: Arc<MapType>) -> Result<Option<Node>, Box<dyn Error>> {
             map
         })),
         MapType::DTED(dted) => Ok(Some(Node {
-            metadata: parse_dt2(&mut BufReader::new(File::open(&dted.path)?))?.into(),
+            metadata: parse_dted(&mut BufReader::new(File::open(&dted.path)?))?.into(),
             map
         })),
         MapType::KML(kml) => Ok(Some(Node {
