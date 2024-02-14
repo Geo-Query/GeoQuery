@@ -66,8 +66,8 @@ pub fn parse_mbtiles(filepath: &str ) -> Result<MBTilesMetaData> {
 
         //Goes lat then long
 
-        bottom_right_result = (values[1], values[2]);
-        top_left_result = (values[3], values[0]);
+        bottom_right_result = (values[2], values[1]);
+        top_left_result = (values[0], values[3]);
 
     }
 
