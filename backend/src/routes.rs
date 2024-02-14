@@ -8,8 +8,8 @@ use crate::State;
 use crate::index::Node;
 use crate::io::{PaginatedQueryResponse, Pagination, PER_PAGE, QueryRegion, ResultQuery, SearchQueryResponse};
 use crate::worker::QueryState::Waiting;
-use crate::worker::{QueryState, QueryTask};
-use tracing::{instrument, event, Level, span};
+use crate::worker::{QueryTask};
+use tracing::{event, Level, span};
 
 pub async fn index() -> &'static str {
     "INDEX ROOT"

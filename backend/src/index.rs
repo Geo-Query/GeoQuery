@@ -1,15 +1,15 @@
-use std::fmt::{Debug, Display};
+use std::fmt::{Debug};
 use std::sync::Arc;
 use crate::spatial::{Coordinate, Region};
 use rstar::{AABB, RTreeObject};
 use serde::{Deserialize, Serialize};
-use crate::FileMeta;
+use crate::MapType;
 
 // Node
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Node {
     pub metadata: MetaData,
-    pub file: Arc<FileMeta>
+    pub map: Arc<MapType>
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

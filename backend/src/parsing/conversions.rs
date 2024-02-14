@@ -1,6 +1,6 @@
 use geotiff::GeoTiffMetaData;
 use crate::index::MetaData;
-use crate::parsing::dt2::DT2MetaData;
+use crate::parsing::dted::DT2MetaData;
 use crate::parsing::geojson::GeoJSONMetaData;
 use crate::parsing::kml::KMLMetadata;
 

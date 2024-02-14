@@ -1,9 +1,10 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
-use std::io::{BufReader,Read,Write, Seek, SeekFrom};
+use std::io::{BufReader,Read};
+use std::path::PathBuf;
+use serde::{Deserialize, Serialize};
 use crate::spatial::Coordinate;
-use tempfile::tempfile;
 #[derive(Debug)]
 pub enum DT2ErrorState {
     UnexpectedFormat(String),
@@ -19,6 +20,11 @@ impl Display for DT2ErrorState {
 
 impl Error for DT2ErrorState {
     // TODO: Implement error descriptions!
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DTEDMap {
+    pub(crate) path: PathBuf
 }
 
 #[derive(Debug)]
@@ -263,8 +269,8 @@ impl DataSetIdentification {
 }
 
 
-pub fn parse_dt2(reader: &mut BufReader<File>) -> Result<DT2MetaData, DT2ErrorState> {
-    let mut tags = vec![("Filetype".to_string(), "DTED".to_string())];
+pub fn parse_dted(reader: &mut BufReader<File>) -> Result<DT2MetaData, DT2ErrorState> {
+    let tags = vec![("Filetype".to_string(), "DTED".to_string())];
     let mut uhl_buf = [0u8; 80];
     let _uhl = match reader.read_exact(&mut uhl_buf) {
         Ok(_) => UserHeaderLabel::from_bytes(&uhl_buf)?,
@@ -293,6 +299,8 @@ pub fn parse_dt2(reader: &mut BufReader<File>) -> Result<DT2MetaData, DT2ErrorSt
 
 #[cfg(test)]
 mod tests {
+    use std::io::{Seek, SeekFrom, Write};
+    use tempfile::tempfile;
     use super::*;
 
     // Test parse_dddmmssh function with valid data
@@ -421,7 +429,7 @@ mod tests {
         let mut reader = BufReader::new(temp_file);
 
         // Call parse_dt2 function
-        let result = parse_dt2(&mut reader);
+        let result = parse_dted(&mut reader);
         assert!(result.is_ok());
 
         // Validate the returned DT2Region (adjust assertions based on actual data and expected results)

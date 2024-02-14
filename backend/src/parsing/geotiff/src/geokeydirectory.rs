@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::fmt::Display;
 use crate::error::GeoKeyDirectoryErrorState::UnexpectedFormat;
 use proj4rs::Proj;
 use crate::error::TIFFErrorState;
@@ -96,7 +95,7 @@ impl GeoKeyDirectory {
         });
     }
 
-    pub fn get_projection(&self, target_epsg: &str) -> Result<Proj, TIFFErrorState> {
+    pub fn get_projection(&self) -> Result<Proj, TIFFErrorState> {
         let crs_code = if let Some(v) = self.keys.get(&2048) {
             if v.location == 0 {
                 match v.value {
@@ -251,7 +250,7 @@ mod tests {
         let directory = prepare_geo_key_directory_with_valid_crs();
         let target_epsg = "EPSG:4326"; // The target CRS code, used here as an example
 
-        let projection_result = directory.get_projection(target_epsg);
+        let projection_result = directory.get_projection();
 
         // Check if projection_result is Ok, the exact type of Ok value depends on the return type of Proj::from_proj_string
         assert!(projection_result.is_ok(), "Failed to get projection for a valid CRS code");

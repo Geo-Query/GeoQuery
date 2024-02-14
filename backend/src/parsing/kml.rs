@@ -2,8 +2,10 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use crate::spatial::Coordinate;
 use std::fs::File;
-use std::io::{BufReader,Read,Write, Seek, SeekFrom};
+use std::io::{BufReader};
+use std::path::PathBuf;
 use std::str::FromStr;
+use serde::{Deserialize, Serialize};
 use xml::reader::{EventReader, XmlEvent};
 use crate::parsing::kml::KMLErrorState::{NotEnoughGeoData, UnexpectedFormat};
 
@@ -48,6 +50,12 @@ pub enum KMLErrorState {
     NotEnoughGeoData
 }
 
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct KMLMap {
+    pub(crate) path: PathBuf
+}
+
 impl Display for KMLErrorState {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", match self {
@@ -62,7 +70,7 @@ impl Error for KMLErrorState {}
 pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLMetadata, KMLErrorState> {
     // Initialise Event iterator, as well as coordinate buffer.
     let mut reader = EventReader::new(reader).into_iter();
-    let mut tags = vec![("Filetype".to_string(), "KML".to_string())];
+    let tags = vec![("Filetype".to_string(), "KML".to_string())];
     let mut coordinates: Vec<(f64, f64)> = vec![];
 
     while let Some(Ok(event)) = reader.next() { // Capture events until file over.
@@ -121,7 +129,7 @@ pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLMetadata, KMLErrorSt
 mod tests {
     use super::*;
     use tempfile::tempfile;
-    use std::io::Write;
+    use std::io::{Seek, Write};
     use std::io::BufReader;
 
     #[test]
@@ -168,7 +176,7 @@ mod tests {
         let mut file = tempfile().unwrap();
         write!(file, "{}", kml_data).unwrap();
         file.flush().unwrap();
-        file.seek(SeekFrom::Start(0)).unwrap();
+        file.seek(std::io::SeekFrom::Start(0)).unwrap();
         let mut reader = BufReader::new(file);
         let result = parse_kml(&mut reader);
         assert!(matches!(result, Err(NotEnoughGeoData)));
