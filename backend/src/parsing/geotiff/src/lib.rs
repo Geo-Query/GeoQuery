@@ -11,6 +11,7 @@ pub use error::IFDEntryErrorState;
 use crate::geokeydirectory::GeoKeyDirectory;
 use error::TIFFErrorState::ProjectionError;
 use serde::{Deserialize, Serialize};
+use crate::tfw::parse_tfw;
 use crate::util::FromBytes;
 
 
@@ -19,6 +20,7 @@ mod entry;
 mod header;
 mod geokeydirectory;
 mod error;
+mod tfw;
 
 pub trait FileDescriptor {
     fn get_path(&self) -> &PathBuf;
@@ -45,7 +47,14 @@ pub struct GeoTiffMetaData {
     pub tags: Vec<(String, String)>
 }
 
-pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffMetaData, TIFFErrorState> {
+pub fn parse_tiff(reader: &mut BufReader<File>, tfw_reader: Option<&mut BufReader<File>>) -> Result<GeoTiffMetaData, TIFFErrorState> {
+    if tfw_reader.is_some() {
+        parse_tfw(&mut tfw_reader.unwrap());
+    }
+
+
+
+
     let tags = vec![("Filetype".to_string(), "TIFF".to_string())];
     // Parse the file header.
     // First, seek to the start of the file, and validate.
@@ -95,7 +104,6 @@ pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffMetaData, TIFFE
             Err(e) => return Err(TIFFErrorState::UnexpectedFormat(String::from(format!("Expected IFD Entry #{}, could not read, due to {:?}", entry_number, e))))
         }
     }
-
     // Read next 4 bytes for next ifd if you care
     // TODO: Implement support for multiple IFDs.
     // println!("Entries: {:?}", entries);
