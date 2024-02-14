@@ -154,32 +154,29 @@ async fn main() {
         panic!();
     }
 
-    // event!(Level::INFO, "Discovering Map Files in directory!");
-    // let files: Vec<Arc<FileMeta>> = match traverse(cfg.directory) {
-    //     Ok(f) => f.iter().map(|z| Arc::new(FileMeta {path: z.clone()})).collect(),
-    //     Err(e) => {
-    //         event!(Level::ERROR, "Failed to traverse files to build index.");
-    //         event!(Level::ERROR, "Reason: {e:?}");
-    //         panic!();
-    //     }
-    // };
-    let found = traverse(cfg.directory);
-    println!("{:?}", found);
-    panic!();
-    let files: Vec<Arc<FileMeta>> = vec![];
+
+    let files: Vec<Arc<MapType>> = match traverse(cfg.directory) {
+        Ok(files) => files.iter().map(Arc::new).collect(),
+        Err(e) => {
+            event!(Level::ERROR, "Failed to traverse files to build index.");
+            event!(Level::ERROR, "Reason: {e:?}");
+            panic!();
+        }
+    };
+
     let index_building = span!(Level::INFO, "Indexing");
     let _index_build_guard = index_building.enter();
 
     let mut idx: RTree<Node> = RTree::new();
     event!(Level::INFO, "Building Index");
     event!(Level::DEBUG, "Empty Index Initialised!");
-    for (mut i, file) in files.iter().enumerate() {
-        event!(Level::INFO, "Parsing: {:?}", file.path);
+
+    for (mut i, map) in files.iter().enumerate() {
         i += 1;
-        match parse(file.clone()) {
+        match parse(map.clone()) {
             Ok(v) => match v {
                 None => {
-
+                    // Ignore if none!
                 }
                 Some(node) => {idx.insert(node)}
             },
