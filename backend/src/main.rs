@@ -67,7 +67,7 @@ fn traverse(p: PathBuf) -> Result<Vec<PathBuf>, String>{
                 } else if e.path().is_file() {
                     match e.path().extension().and_then(OsStr::to_str) {
                         Some(ext) => match ext {
-                            "kml" | "tif" | "dt2" | "dt1" | "geojson" | "mbtiles" => build.push(e.path()),
+                            "kml" | "tif" | "dt2" | "dt1" | "geojson" | "mbtiles" | "gpkg" => build.push(e.path()),
                             _ => continue
                         },
                         None => continue

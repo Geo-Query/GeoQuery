@@ -6,6 +6,7 @@ use crate::parsing::dt2::DT2Region;
 use crate::parsing::geojson::GeoJSONRegion;
 use crate::parsing::kml::KMLRegion;
 use crate::parsing::mbtiles::MBTilesRegion;
+use crate::parsing::gpkg::GPKGRegion;
 
 // Coordinate type alias; for ease of use.
 pub type Coordinate = (f64, f64);
@@ -84,6 +85,15 @@ impl From<QueryRegion> for Region {
 
 impl From<MBTilesRegion> for Region {
     fn from(t: MBTilesRegion) -> Region {
+        Region {
+            top_left: t.top_left,
+            bottom_right: t.bottom_right
+        }
+    }
+}
+
+impl From<GPKGRegion> for Region {
+    fn from(t: GPKGRegion) -> Region {
         Region {
             top_left: t.top_left,
             bottom_right: t.bottom_right

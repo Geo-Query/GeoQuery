@@ -16,10 +16,6 @@ pub struct MBTilesMetaData {
     pub tags: Vec<(String, String)>
 }
 
-//pub fn get_boundaries(coordinates: Vec<Coordinate>) -> (Coordinate,Coordinate) {
-
-//}
-
 pub fn parse_mbtiles(filepath: &str ) -> Result<MBTilesMetaData> {
     //Tags for metadata
     let mut tags = vec![("Filetype".to_string(), "MBTiles".to_string())];
@@ -61,10 +57,7 @@ pub fn parse_mbtiles(filepath: &str ) -> Result<MBTilesMetaData> {
             Err(error) => panic!("Problem Occurred when parsing coordinates to float64: {:?}",error)
         };
 
-        //bottom_left_result = (values[1], values[0]);
-        //top_right_result = (values[3], values[2]);
-
-        //Goes lat then long
+        //Goes long then lat
 
         bottom_right_result = (values[2], values[1]);
         top_left_result = (values[0], values[3]);

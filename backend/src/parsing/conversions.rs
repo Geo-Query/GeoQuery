@@ -4,6 +4,7 @@ use crate::parsing::dt2::DT2MetaData;
 use crate::parsing::geojson::GeoJSONMetaData;
 use crate::parsing::kml::KMLMetadata;
 use crate::parsing::mbtiles::MBTilesMetaData;
+use crate::parsing::gpkg::GPKGMetaData;
 
 impl From<KMLMetadata> for MetaData {
     fn from(value: KMLMetadata) -> Self {
@@ -44,6 +45,15 @@ impl From<GeoJSONMetaData> for MetaData {
 
 impl From<MBTilesMetaData> for MetaData {
     fn from(value: MBTilesMetaData) -> Self {
+        MetaData {
+            region: value.region.into(),
+            tags: value.tags
+        }
+    }
+}
+
+impl From<GPKGMetaData> for MetaData {
+    fn from(value: GPKGMetaData) -> Self {
         MetaData {
             region: value.region.into(),
             tags: value.tags

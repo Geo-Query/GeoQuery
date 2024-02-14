@@ -13,6 +13,7 @@ use crate::parsing::error::ParseErrorKind;
 use crate::parsing::geojson::parse_geojson;
 use crate::parsing::kml::parse_kml;
 use crate::parsing::mbtiles::parse_mbtiles;
+use crate::parsing::gpkg::parse_gpkg;
 pub mod dt2;
 pub mod geojson;
 pub mod kml;
@@ -21,6 +22,7 @@ pub mod mbtiles;
 
 pub mod conversions;
 pub mod error;
+pub(crate) mod gpkg;
 
 pub fn parse(file_meta: Arc<FileMeta>) -> Result<Option<Node>, Box<dyn Error>> {
     let span = span!(Level::INFO, "Parsing");
@@ -53,6 +55,10 @@ pub fn parse(file_meta: Arc<FileMeta>) -> Result<Option<Node>, Box<dyn Error>> {
             "mbtiles" => Ok(Some(Node {
                 file: file_meta.clone(),
                 metadata: parse_mbtiles(&file_meta.path.to_string_lossy())?.into()
+            })),
+            "gpkg" => Ok(Some(Node {
+                file: file_meta.clone(),
+                metadata: parse_gpkg(&file_meta.path.to_string_lossy())?.into()
             })),
 
             _ => {
