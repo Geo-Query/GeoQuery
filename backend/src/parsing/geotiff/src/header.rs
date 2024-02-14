@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use std::io::SeekFrom;
 use crate::error::{HeaderErrorState, TIFFErrorState};
 use crate::util::{ByteOrder, FromBytes};

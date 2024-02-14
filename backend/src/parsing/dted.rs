@@ -1,11 +1,10 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
-use std::io::{BufReader,Read,Write, Seek, SeekFrom};
+use std::io::{BufReader,Read};
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use crate::spatial::Coordinate;
-use tempfile::tempfile;
 #[derive(Debug)]
 pub enum DT2ErrorState {
     UnexpectedFormat(String),
@@ -271,7 +270,7 @@ impl DataSetIdentification {
 
 
 pub fn parse_dted(reader: &mut BufReader<File>) -> Result<DT2MetaData, DT2ErrorState> {
-    let mut tags = vec![("Filetype".to_string(), "DTED".to_string())];
+    let tags = vec![("Filetype".to_string(), "DTED".to_string())];
     let mut uhl_buf = [0u8; 80];
     let _uhl = match reader.read_exact(&mut uhl_buf) {
         Ok(_) => UserHeaderLabel::from_bytes(&uhl_buf)?,

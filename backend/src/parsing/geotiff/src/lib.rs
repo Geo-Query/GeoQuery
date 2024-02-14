@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::error::Error;
-use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::PathBuf;
@@ -48,7 +46,7 @@ pub struct GeoTiffMetaData {
 }
 
 pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffMetaData, TIFFErrorState> {
-    let mut tags = vec![("Filetype".to_string(), "TIFF".to_string())];
+    let tags = vec![("Filetype".to_string(), "TIFF".to_string())];
     // Parse the file header.
     // First, seek to the start of the file, and validate.
     // Then read into an 8 byte buffer, and validate.
@@ -116,7 +114,8 @@ pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffMetaData, TIFFE
 
     // println!("GeoKeyDirectory: {:?}", geo_key_directory);
 
-    let projection = geo_key_directory.get_projection("EPSG:4326")?;
+    // let projection = geo_key_directory.get_projection("EPSG:4326")?;
+    let projection = geo_key_directory.get_projection()?;
 
     let top_left = match entries.get_mut(&33922) {
         None => return Err(TIFFErrorState::NotEnoughGeoData),

@@ -2,7 +2,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use crate::spatial::Coordinate;
 use std::fs::File;
-use std::io::{BufReader,Read,Write, Seek, SeekFrom};
+use std::io::{BufReader};
 use std::path::PathBuf;
 use std::str::FromStr;
 use serde::{Deserialize, Serialize};
@@ -70,7 +70,7 @@ impl Error for KMLErrorState {}
 pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLMetadata, KMLErrorState> {
     // Initialise Event iterator, as well as coordinate buffer.
     let mut reader = EventReader::new(reader).into_iter();
-    let mut tags = vec![("Filetype".to_string(), "KML".to_string())];
+    let tags = vec![("Filetype".to_string(), "KML".to_string())];
     let mut coordinates: Vec<(f64, f64)> = vec![];
 
     while let Some(Ok(event)) = reader.next() { // Capture events until file over.

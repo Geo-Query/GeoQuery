@@ -1,14 +1,12 @@
 use std::sync::Arc;
 use std::error::Error;
-use tracing::{event, span, Level};
+use tracing::{span, Level};
 use std::fs::File;
 use std::io::BufReader;
-use std::ffi::OsStr;
-use geotiff::{GeoTiffMetaData, parse_tiff};
-use crate::{FileMeta, MapType};
+use geotiff::{parse_tiff};
+use crate::{MapType};
 use crate::index::Node;
 use crate::parsing::dted::parse_dted;
-use crate::parsing::error::ParseErrorKind;
 use crate::parsing::geojson::parse_geojson;
 use crate::parsing::kml::parse_kml;
 pub mod dted;

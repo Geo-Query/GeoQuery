@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{BufReader, Read, Seek, SeekFrom,Write};
+use std::io::{BufReader, Read, Seek, SeekFrom};
 use util::ByteOrder;
 use crate::util;
 use crate::error::{IFDEntryErrorState, TIFFErrorState};

@@ -1,14 +1,11 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
-//use std::io::BufReader;
-use std::io::{BufReader, Write, Seek, SeekFrom};
+use std::io::{BufReader};
 use std::path::PathBuf;
-use axum::extract::Path;
 use crate::spatial::Coordinate;
 use json_event_parser::{JsonReader, JsonEvent};
 use serde::{Deserialize, Serialize};
-use tempfile::tempfile;
 
 pub fn get_boundaries(coordinates: Vec<[f64; 2]>) -> (Coordinate, Coordinate) {
     let mut min_x: f64 = coordinates[0][0];
@@ -69,7 +66,7 @@ pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<GeoJSONMetaData, Ge
     let mut json_reader = JsonReader::from_reader(reader);
     let mut buffer = Vec::new();
     let mut coordinate_pairs: Vec<[f64; 2]> = Vec::new();
-    let mut tags = vec![("Filetype".to_string(), "GEOJSON".to_string())];
+    let tags = vec![("Filetype".to_string(), "GEOJSON".to_string())];
 
 
     while let event = match json_reader.read_event(&mut buffer) {

@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::fmt::{Display, Formatter, write};
+use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone)]
 pub enum RootErrorKind {

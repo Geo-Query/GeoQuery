@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Display};
+use std::fmt::{Debug};
 use std::sync::Arc;
 use crate::spatial::{Coordinate, Region};
 use rstar::{AABB, RTreeObject};

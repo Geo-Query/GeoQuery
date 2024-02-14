@@ -20,11 +20,7 @@ use tower_http::cors::{Any, CorsLayer};
 use http::Method;
 use serde::{Deserialize, Serialize};
 use std::io::BufReader;
-use std::path;
-use rayon::prelude::*;
-use tower::Layer;
 use parsing::parse;
-
 use std::process::Command;
 use geotiff::GeoTiffMap;
 use crate::error::RootErrorKind;
@@ -171,8 +167,7 @@ async fn main() {
     event!(Level::INFO, "Building Index");
     event!(Level::DEBUG, "Empty Index Initialised!");
 
-    for (mut i, map) in files.iter().enumerate() {
-        i += 1;
+    for (_, map) in files.iter().enumerate() {
         match parse(map.clone()) {
             Ok(v) => match v {
                 None => {
@@ -240,7 +235,7 @@ async fn main() {
     event!(Level::INFO, "Starting Web Server & Parallel Worker!");
 
 
-    if let Ok(child) = Command::new("electron-refactor").spawn() {
+    if let Ok(_) = Command::new("electron-refactor").spawn() {
         println!("Launched Frontend!");
     } else {
         println!("Failed to launch frontend!")

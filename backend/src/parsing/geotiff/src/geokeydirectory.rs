@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::fmt::Display;
 use crate::error::GeoKeyDirectoryErrorState::UnexpectedFormat;
 use proj4rs::Proj;
 use crate::error::TIFFErrorState;
@@ -96,7 +95,7 @@ impl GeoKeyDirectory {
         });
     }
 
-    pub fn get_projection(&self, target_epsg: &str) -> Result<Proj, TIFFErrorState> {
+    pub fn get_projection(&self) -> Result<Proj, TIFFErrorState> {
         let crs_code = if let Some(v) = self.keys.get(&2048) {
             if v.location == 0 {
                 match v.value {
