@@ -1,0 +1,14 @@
+stages:
+  - test
+
+test_job:
+  stage: test
+  image: rust:latest
+  before_script:
+    - rustc --version
+    - cargo --version
+    - cargo build --verbose --all
+  script:
+    - cargo test --verbose --all
+
+
