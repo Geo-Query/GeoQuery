@@ -16,9 +16,9 @@ pub struct MBTilesMetaData {
     pub tags: Vec<(String, String)>
 }
 
-pub fn get_boundaries(coordinates: Vec<Coordinate>) -> (Coordinate,Coordinate) {
+//pub fn get_boundaries(coordinates: Vec<Coordinate>) -> (Coordinate,Coordinate) {
 
-}
+//}
 
 pub fn parse_mbtiles(filepath: &str ) -> Result<MBTilesMetaData> {
     //Tags for metadata
