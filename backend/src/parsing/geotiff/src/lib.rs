@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::PathBuf;
 use proj4rs::Proj;
+use proj4rs::proj::ProjType;
 use error::TIFFErrorState;
 use crate::entry::{EntryValue, IFDEntry};
 pub use error::GeoKeyDirectoryErrorState;
@@ -201,23 +202,32 @@ fn calculate_extent(
     let to_proj = Proj::from_proj_string(crs_definitions::EPSG_4326.proj4).expect("FAILED TO BUILD DEFAULT PROJ!");
 
     let mut top_left = top_left.clone();
+
     // Calculate the bottom-right coordinates in the image's CRS
     let mut bottom_right = (
         top_left.0 + (scale.0 * image_dimensions.0 as f64),
         top_left.1 - (scale.1 * image_dimensions.1 as f64), // subtract because pixel scale is usually positive as you go down
     );
 
-    if let Err(e) = proj4rs::transform::transform(&from_proj, &to_proj, &mut top_left) {
+    let (mut top_left_r, mut bottom_right_r) = match from_proj.projection_type() {
+        ProjType::Latlong => ((top_left.0.to_radians(), top_left.1.to_radians()), (bottom_right.0.to_radians(), bottom_right.1.to_radians())),
+        ProjType::Other => (top_left, bottom_right),
+        ProjType::Geocentric => {
+            return Err(ProjectionError(format!("Unsupported projection! From GEOCENTRIC! Please contact developer, and send file content for implementation.")));
+        }
+    };
+
+    if let Err(e) = proj4rs::transform::transform(&from_proj, &to_proj, &mut top_left_r) {
         return Err(ProjectionError(format!("Failed to apply tranformation for {from_proj:?} to {to_proj:?}, for points: {top_left:?}, with reason {e:?}")))
     } else {};
-    if let Err(e) = proj4rs::transform::transform(&from_proj, &to_proj, &mut bottom_right) {
+    if let Err(e) = proj4rs::transform::transform(&from_proj, &to_proj, &mut bottom_right_r) {
         return Err(ProjectionError(format!("Failed to apply tranformation for {from_proj:?} to {to_proj:?}, for points: {bottom_right:?}, with reason {e:?}")))
     } else {};
 
 
     return Ok(GeoTiffRegion {
-        top_left,
-        bottom_right
+        top_left: (top_left_r.0.to_degrees(), top_left_r.1.to_degrees()),
+        bottom_right: (bottom_right_r.0.to_degrees(), bottom_right_r.1.to_degrees())
     });
 }
 
