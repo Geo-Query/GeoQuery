@@ -299,6 +299,8 @@ pub fn parse_dted(reader: &mut BufReader<File>) -> Result<DT2MetaData, DT2ErrorS
 
 #[cfg(test)]
 mod tests {
+    use std::io::{Seek, SeekFrom, Write};
+    use tempfile::tempfile;
     use super::*;
 
     // Test parse_dddmmssh function with valid data

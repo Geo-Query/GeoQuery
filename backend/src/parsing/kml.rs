@@ -129,7 +129,7 @@ pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLMetadata, KMLErrorSt
 mod tests {
     use super::*;
     use tempfile::tempfile;
-    use std::io::Write;
+    use std::io::{Seek, Write};
     use std::io::BufReader;
 
     #[test]
@@ -176,7 +176,7 @@ mod tests {
         let mut file = tempfile().unwrap();
         write!(file, "{}", kml_data).unwrap();
         file.flush().unwrap();
-        file.seek(SeekFrom::Start(0)).unwrap();
+        file.seek(std::io::SeekFrom::Start(0)).unwrap();
         let mut reader = BufReader::new(file);
         let result = parse_kml(&mut reader);
         assert!(matches!(result, Err(NotEnoughGeoData)));

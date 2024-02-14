@@ -101,7 +101,7 @@ impl IFDEntry {
                 }),
                 EntryType::ASCII => EntryValue::ASCII(if self.count < 5 {
                     match String::from_utf8(self.associated_bytes.to_vec()) {
-                        Ok(s) => vec![s],
+                        Ok(s) => vec![s.trim_end_matches("\0").to_string()],
                         Err(e) => {
                             eprintln!("Failed to parse string from bytes for tag: {}, Error: {:?}", self.tag, e);
                             return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)));
@@ -116,7 +116,7 @@ impl IFDEntry {
 
                             match reader.read_exact(&mut bytes) {
                                 Ok(..) => match String::from_utf8(bytes) {
-                                    Ok(s) => vec![s],
+                                    Ok(s) => vec![s.trim_end_matches("\0").to_string()],
                                     Err(e) => {
                                         eprintln!("Failed to parse string from bytes for tag: {}, Error: {:?}", self.tag, e);
                                         return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)));
@@ -293,6 +293,7 @@ impl IFDEntry {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Write;
     use super::*;
     use crate::util::ByteOrder;
     use tempfile::tempfile;

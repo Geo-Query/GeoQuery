@@ -250,7 +250,7 @@ mod tests {
         let directory = prepare_geo_key_directory_with_valid_crs();
         let target_epsg = "EPSG:4326"; // The target CRS code, used here as an example
 
-        let projection_result = directory.get_projection(target_epsg);
+        let projection_result = directory.get_projection();
 
         // Check if projection_result is Ok, the exact type of Ok value depends on the return type of Proj::from_proj_string
         assert!(projection_result.is_ok(), "Failed to get projection for a valid CRS code");
