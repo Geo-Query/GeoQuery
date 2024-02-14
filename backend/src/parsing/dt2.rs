@@ -1,3 +1,5 @@
+use std::error::Error;
+use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io::{BufReader, Read};
 use crate::spatial::Coordinate;
@@ -7,6 +9,16 @@ pub enum DT2ErrorState {
     UnexpectedFormat(String),
     UHLError(UHLErrorState),
     DSIError(DSIErrorState)
+}
+
+impl Display for DT2ErrorState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl Error for DT2ErrorState {
+    // TODO: Implement error descriptions!
 }
 
 #[derive(Debug)]
@@ -93,6 +105,12 @@ pub struct DT2Region {
     pub top_right: Coordinate,
     pub bottom_right: Coordinate,
     pub bottom_left: Coordinate
+}
+
+#[derive(Debug)]
+pub struct DT2MetaData {
+    pub region: DT2Region,
+    pub tags: Vec<(String, String)>
 }
 
 #[derive(Debug)]
@@ -243,7 +261,8 @@ impl DataSetIdentification {
 }
 
 
-pub fn parse_dt2(reader: &mut BufReader<File>) -> Result<DT2Region, DT2ErrorState> {
+pub fn parse_dt2(reader: &mut BufReader<File>) -> Result<DT2MetaData, DT2ErrorState> {
+    let mut tags = vec![("Filetype".to_string(), "DTED".to_string())];
     let mut uhl_buf = [0u8; 80];
     let _uhl = match reader.read_exact(&mut uhl_buf) {
         Ok(_) => UserHeaderLabel::from_bytes(&uhl_buf)?,
@@ -259,10 +278,13 @@ pub fn parse_dt2(reader: &mut BufReader<File>) -> Result<DT2Region, DT2ErrorStat
         }
     };
 
-    return Ok(DT2Region {
-        top_left: dsi.nw_corner,
-        top_right: dsi.ne_corner,
-        bottom_right: dsi.se_corner,
-        bottom_left: dsi.sw_corner,
+    return Ok(DT2MetaData {
+        region: DT2Region {
+            top_left: dsi.nw_corner,
+            top_right: dsi.ne_corner,
+            bottom_right: dsi.se_corner,
+            bottom_left: dsi.sw_corner,
+        },
+        tags
     })
 }

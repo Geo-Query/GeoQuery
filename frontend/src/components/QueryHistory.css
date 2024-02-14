@@ -1,0 +1,14 @@
+.log{
+    color : #aaa;
+}
+
+.coordinate {
+    display: flex;
+    justify-content: space-between;
+    min-width: 45%;
+    gap: 1em;
+}
+
+.darker {
+    color: lightgray;
+}

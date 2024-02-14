@@ -2,57 +2,80 @@ use std::fs::File;
 use std::io::{BufReader,Read};
 use crate::spatial::Coordinate;
 use rusqlite::{Connection, Result};
-use crate::parsing::mbtiles::MBTilesErrorState::{UnexpectedFormat,FailedQuery};
+//use crate::parsing::mbtiles::MBTilesErrorState::{UnexpectedFormat,FailedQuery};
 
 #[derive(Debug)]
 pub struct MBTilesRegion {
-    pub top_right: Coordinate,
-    pub bottom_left: Coordinate,
+    pub top_left: Coordinate,
+    pub bottom_right: Coordinate,
 }
 
-//Get this to work
-pub enum MBTilesErrorState {
-    UnexpectedFormat(String),
-    FailedQuery
+#[derive(Debug)]
+pub struct MBTilesMetaData {
+    pub region: MBTilesRegion,
+    pub tags: Vec<(String, String)>
 }
 
-pub fn parse_mbtiles(reader: &mut BufReader<File>) -> Result<MBTilesRegion> {
-    //Opens connection to MBTiles file(its just a sqlite db)
-    let mut filename = String::new();
-    reader.read_to_string(&mut filename).expect("Cannot Read String");
-    let conn = Connection::open(filename).unwrap();
+pub fn get_boundaries(coordinates: Vec<Coordinate>) -> (Coordinate,Coordinate) {
+
+}
+
+pub fn parse_mbtiles(filepath: &str ) -> Result<MBTilesMetaData> {
+    //Tags for metadata
+    let mut tags = vec![("Filetype".to_string(), "MBTiles".to_string())];
+
+    let conn_result = Connection::open(filepath);
+
+    //Some error handling
+    let conn = match conn_result {
+        Ok(conn) => conn,
+        Err(error) => panic!("Problem Occurred when connecting to DB file: {:?}",error),
+    };
+
+    //Add error handling for Unsupported Version MBTiles 1.0
 
     //Prepares a query to return bounds of MBTiles using metadata table
-    let mut stmt_result = conn.prepare("SELECT * FROM metadata WHERE name = 'bounds'");
+    let stmt_result = conn.prepare("SELECT * FROM metadata WHERE name = 'bounds'");
 
-    //Add error handling here
+    //Some error handling
     let mut stmt = match stmt_result {
         Ok(stmt) => stmt,
         Err(error) => panic!("Problem Occurred when querying the DB: {:?}",error),
-        //Err(e) => return Err(FailedQuery),
     };
 
-    let mut rows = stmt.query([]).unwrap();
+    let mut rows = stmt.query([])?;
+
+    let mut top_left_result: (f64,f64) = (0.0,0.0);
+    let mut bottom_right_result: (f64,f64) = (0.0,0.0);
 
     //Iterate through result rows of query
     while let Some(row) = rows.next().unwrap() {
         let value: String = row.get("value").unwrap();
 
         //Mbtiles bounds coordinates are stored as left, bottom, right, top
-        let values: Vec<f64> = value
-            .split(',')
-            .map(|s| s.trim().parse::<f64>())
-            .collect::<Result<_, _>>().unwrap();
+        let values_result = value.split(',').map(|s| s.trim().parse::<f64>()).collect::<Result<_, _>>();
+
+        //Some error handling
+        let values:Vec<f64> = match values_result {
+            Ok(values) => values,
+            Err(error) => panic!("Problem Occurred when parsing coordinates to float64: {:?}",error)
+        };
+
+        //bottom_left_result = (values[1], values[0]);
+        //top_right_result = (values[3], values[2]);
 
         //Goes lat then long
-        let bottom_left = (values[1], values[0]);
-        let top_right = (values[3], values[2]);
+
+        bottom_right_result = (values[1], values[2]);
+        top_left_result = (values[3], values[0]);
+
     }
 
-
-    return Ok(MBTilesRegion {
-        top_right,
-        bottom_left,
+    return Ok(MBTilesMetaData {
+        region: MBTilesRegion{
+                top_left: top_left_result,
+                bottom_right: bottom_right_result,
+        },
+        tags
     });
-
 }

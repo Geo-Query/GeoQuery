@@ -1,13 +1,8 @@
 use std::collections::HashMap;
-use proj::{Proj, ProjCreateError};
-use crate::GeoKeyDirectoryErrorState::{ProjectionError, UnexpectedFormat};
-use crate::TIFFErrorState;
-
-#[derive(Debug)]
-pub enum GeoKeyDirectoryErrorState {
-    ProjectionError(ProjCreateError),
-    UnexpectedFormat(String)
-}
+use std::fmt::Display;
+use crate::error::GeoKeyDirectoryErrorState::UnexpectedFormat;
+use proj4rs::Proj;
+use crate::error::TIFFErrorState;
 
 #[derive(Debug)]
 pub struct GeoKeyDirectoryHeader {
@@ -102,40 +97,46 @@ impl GeoKeyDirectory {
     }
 
     pub fn get_projection(&self, target_epsg: &str) -> Result<Proj, TIFFErrorState> {
-        return match Proj::new_known_crs(
-            format!("EPSG:{}", if let Some(v) = self.keys.get(&2048) {
-                if v.location == 0 {
-                    match v.value {
-                        Some(v) => if v == 4277 {
-                            27700
-                        } else {
-                            v
-                        },
-                        None => {
-                            return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from("Location for Geographic EPSG code was 0! Expected value! But none found."))));
-                        }
+        let crs_code = if let Some(v) = self.keys.get(&2048) {
+            if v.location == 0 {
+                match v.value {
+                    Some(v) => if v == 4277 {
+                        27700
+                    } else {
+                        v
+                    },
+                    None => {
+                        return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from("Location for Geographic EPSG code was 0! Expected value! But none found."))));
                     }
-                } else {
-                    return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from(format!("Expected Geographic EPSG code to be single short! Actual got tag location: {}", v.location)))));
-                }
-            } else if let Some(v) = self.keys.get(&3072) {
-                if v.location == 0 {
-                    match v.value {
-                        Some(v) => v,
-                        None => return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from("Location for Projected EPSG code was 0! Expected value! But none found."))))
-                    }
-
-                } else {
-                    return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from(format!("Expected Projected EPSG code to be single short! Actual got tag location: {}", v.location)))));
                 }
             } else {
-                return Err(TIFFErrorState::NotEnoughGeoData);
-            }).as_str(),
-            target_epsg,
-            None
-        ) {
-            Ok(proj) => Ok(proj),
-            Err(e) => Err(TIFFErrorState::GeoKeyDirectoryError(ProjectionError(e)))
-        }
+                return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from(format!("Expected Geographic EPSG code to be single short! Actual got tag location: {}", v.location)))));
+            }
+        } else if let Some(v) = self.keys.get(&3072) {
+            if v.location == 0 {
+                match v.value {
+                    Some(v) => v,
+                    None => return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from("Location for Projected EPSG code was 0! Expected value! But none found."))))
+                }
+
+            } else {
+                return Err(TIFFErrorState::GeoKeyDirectoryError(UnexpectedFormat(String::from(format!("Expected Projected EPSG code to be single short! Actual got tag location: {}", v.location)))));
+            }
+        } else {
+            return Err(TIFFErrorState::NotEnoughGeoData);
+        };
+
+        let def = if let Some(v) = crs_definitions::from_code(crs_code) {
+            v
+        } else {
+            return Err(TIFFErrorState::ProjectionError(format!("Unsupported CRS: {crs_code}")));
+        };
+
+        return Ok(match Proj::from_proj_string(def.proj4) {
+            Ok(v) => v,
+            Err(e) => {
+                return Err(TIFFErrorState::ProjectionError(format!("Projection Error: {e:?}")))
+            }
+        });
     }
 }
