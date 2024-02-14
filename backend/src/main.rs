@@ -27,6 +27,7 @@ use crate::error::RootErrorKind;
 use crate::parsing::dted::DTEDMap;
 use crate::parsing::geojson::GEOJSONMap;
 use crate::parsing::kml::KMLMap;
+use crate::parsing::shapefile::ShapeFileMap;
 
 mod spatial;
 mod index;
@@ -55,7 +56,8 @@ pub enum MapType {
     GeoTIFF(GeoTiffMap),
     DTED(DTEDMap),
     KML(KMLMap),
-    GEOJSON(GEOJSONMap)
+    GEOJSON(GEOJSONMap),
+    ShapeFile(ShapeFileMap)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -102,6 +104,19 @@ fn traverse(p: PathBuf) -> Result<Vec<MapType>, Box<dyn Error>>{
                     "geojson" => build.push(MapType::GEOJSON(GEOJSONMap {
                         path,
                     })),
+                    "shp" => {
+                        build.push(MapType::ShapeFile (ShapeFileMap {
+                            shp: path.clone(),
+                            tfw: files.iter().find(|candidate|
+                                candidate.path().extension().and_then(OsStr::to_str).is_some_and(|s| s == "tfw")
+                                    && candidate.path().file_stem().is_some_and(|s| s == path.file_stem().unwrap())
+                            ).map(DirEntry::path),
+                            prj: files.iter().find(|candidate|
+                                candidate.path().extension().and_then(OsStr::to_str).is_some_and(|s| s == "prj")
+                                    && candidate.path().file_stem().is_some_and(|s| s == path.file_stem().unwrap())
+                            ).map(DirEntry::path),
+                        }));
+                    }
                     _ => {
 
                     }

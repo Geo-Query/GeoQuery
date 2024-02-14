@@ -9,6 +9,9 @@ members = [
 ]
 
 [dependencies]
+crs-definitions = "0.3.0"
+proj4rs = "0.1.2"
+proj4wkt = "0.1.0"
 anyhow = "1.0.75"
 rstar = { version="0.11.0" , features = ["serde"]}
 xml-rs = "0.8.19"

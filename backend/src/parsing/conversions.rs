@@ -3,6 +3,7 @@ use crate::index::MetaData;
 use crate::parsing::dted::DT2MetaData;
 use crate::parsing::geojson::GeoJSONMetaData;
 use crate::parsing::kml::KMLMetadata;
+use crate::parsing::shapefile::ShapeFileMetaData;
 
 impl From<KMLMetadata> for MetaData {
     fn from(value: KMLMetadata) -> Self {
@@ -38,5 +39,14 @@ impl From<GeoJSONMetaData> for MetaData {
             tags: value.tags
         };
         return x;
+    }
+}
+
+impl From<ShapeFileMetaData> for MetaData {
+    fn from(value: ShapeFileMetaData) -> Self {
+        MetaData {
+            region: value.region,
+            tags: value.tags
+        }
     }
 }
