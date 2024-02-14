@@ -5,6 +5,7 @@ test_job:
   stage: test
   image: rust:latest
   before_script:
+    - cd backend
     - rustc --version
     - cargo --version
     - cargo build --verbose --all
