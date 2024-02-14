@@ -54,7 +54,7 @@ struct State {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MapType {
     GeoTIFF(GeoTiffMap),
     DTED(DTEDMap),
@@ -86,7 +86,7 @@ fn traverse(p: PathBuf) -> Result<Vec<MapType>, Box<dyn Error>>{
                 match ext {
                     "tif" => {
                         build.push(MapType::GeoTIFF(GeoTiffMap {
-                            tiff: Default::default(),
+                            tiff: path.clone(),
                             tfw: files.iter().find(|candidate|
                                 candidate.path().extension().and_then(OsStr::to_str).is_some_and(|s| s == "tfw")
                                 && candidate.path().file_stem().is_some_and(|s| s == path.file_stem().unwrap())
@@ -156,7 +156,7 @@ async fn main() {
 
 
     let files: Vec<Arc<MapType>> = match traverse(cfg.directory) {
-        Ok(files) => files.iter().map(Arc::new).collect(),
+        Ok(files) => files.into_iter().map(Arc::new).collect(),
         Err(e) => {
             event!(Level::ERROR, "Failed to traverse files to build index.");
             event!(Level::ERROR, "Reason: {e:?}");
@@ -178,7 +178,10 @@ async fn main() {
                 None => {
                     // Ignore if none!
                 }
-                Some(node) => {idx.insert(node)}
+                Some(node) => {
+                    event!(Level::DEBUG, "Found & Inserted: {:?}", node);
+                    idx.insert(node)
+                }
             },
             Err(e) => {
                 event!(Level::ERROR, "{:?}", e);

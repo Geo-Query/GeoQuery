@@ -10,3 +10,4 @@ proj4wkt = "0.1.0"
 crs-definitions = "0.3.0"
 tempfile = "3.9.0"
 byteorder = "1.4.3"
+serde = { version = "1.0.193", features = ["derive", "rc"] }

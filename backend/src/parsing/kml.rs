@@ -5,6 +5,7 @@ use std::fs::File;
 use std::io::{BufReader,Read,Write, Seek, SeekFrom};
 use std::path::PathBuf;
 use std::str::FromStr;
+use serde::{Deserialize, Serialize};
 use xml::reader::{EventReader, XmlEvent};
 use crate::parsing::kml::KMLErrorState::{NotEnoughGeoData, UnexpectedFormat};
 
@@ -50,7 +51,7 @@ pub enum KMLErrorState {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KMLMap {
     pub(crate) path: PathBuf
 }

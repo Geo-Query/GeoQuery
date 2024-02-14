@@ -12,6 +12,7 @@ pub use error::HeaderErrorState;
 pub use error::IFDEntryErrorState;
 use crate::geokeydirectory::GeoKeyDirectory;
 use error::TIFFErrorState::ProjectionError;
+use serde::{Deserialize, Serialize};
 use crate::util::FromBytes;
 
 
@@ -27,7 +28,7 @@ pub trait FileDescriptor {
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeoTiffMap {
     pub tiff: PathBuf,
     pub tfw: Option<PathBuf>,

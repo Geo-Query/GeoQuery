@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use axum::extract::Path;
 use crate::spatial::Coordinate;
 use json_event_parser::{JsonReader, JsonEvent};
+use serde::{Deserialize, Serialize};
 use tempfile::tempfile;
 
 pub fn get_boundaries(coordinates: Vec<[f64; 2]>) -> (Coordinate, Coordinate) {
@@ -37,7 +38,7 @@ pub enum GeoJSONErrorState {
     UnparsableCoordinate(String)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GEOJSONMap {
     pub(crate) path: PathBuf
 }
