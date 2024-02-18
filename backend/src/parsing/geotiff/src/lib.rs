@@ -1,10 +1,9 @@
 use std::collections::HashMap;
-use std::error::Error;
-use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::PathBuf;
 use proj4rs::Proj;
+use proj4rs::proj::ProjType;
 use error::TIFFErrorState;
 use crate::entry::{EntryValue, IFDEntry};
 pub use error::GeoKeyDirectoryErrorState;
@@ -12,18 +11,30 @@ pub use error::HeaderErrorState;
 pub use error::IFDEntryErrorState;
 use crate::geokeydirectory::GeoKeyDirectory;
 use error::TIFFErrorState::ProjectionError;
+use serde::{Deserialize, Serialize};
+use crate::tfw::parse_tfw;
 use crate::util::FromBytes;
+
 
 mod util;
 mod entry;
 mod header;
 mod geokeydirectory;
 mod error;
+mod tfw;
 
 pub trait FileDescriptor {
     fn get_path(&self) -> &PathBuf;
 }
 
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GeoTiffMap {
+    pub tiff: PathBuf,
+    pub tfw: Option<PathBuf>,
+    pub prj: Option<PathBuf>
+}
 
 #[derive(Debug, Clone)]
 pub struct GeoTiffRegion {
@@ -37,8 +48,15 @@ pub struct GeoTiffMetaData {
     pub tags: Vec<(String, String)>
 }
 
-pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffMetaData, TIFFErrorState> {
-    let mut tags = vec![("Filetype".to_string(), "TIFF".to_string())];
+pub fn parse_tiff(reader: &mut BufReader<File>, tfw_reader: Option<&mut BufReader<File>>) -> Result<GeoTiffMetaData, TIFFErrorState> {
+    if tfw_reader.is_some() {
+        parse_tfw(&mut tfw_reader.unwrap());
+    }
+
+
+
+
+    let tags = vec![("Filetype".to_string(), "TIFF".to_string())];
     // Parse the file header.
     // First, seek to the start of the file, and validate.
     // Then read into an 8 byte buffer, and validate.
@@ -87,7 +105,6 @@ pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffMetaData, TIFFE
             Err(e) => return Err(TIFFErrorState::UnexpectedFormat(String::from(format!("Expected IFD Entry #{}, could not read, due to {:?}", entry_number, e))))
         }
     }
-
     // Read next 4 bytes for next ifd if you care
     // TODO: Implement support for multiple IFDs.
     // println!("Entries: {:?}", entries);
@@ -106,7 +123,8 @@ pub fn parse_tiff(reader: &mut BufReader<File>) -> Result<GeoTiffMetaData, TIFFE
 
     // println!("GeoKeyDirectory: {:?}", geo_key_directory);
 
-    let projection = geo_key_directory.get_projection("EPSG:4326")?;
+    // let projection = geo_key_directory.get_projection("EPSG:4326")?;
+    let projection = geo_key_directory.get_projection()?;
 
     let top_left = match entries.get_mut(&33922) {
         None => return Err(TIFFErrorState::NotEnoughGeoData),
@@ -184,22 +202,103 @@ fn calculate_extent(
     let to_proj = Proj::from_proj_string(crs_definitions::EPSG_4326.proj4).expect("FAILED TO BUILD DEFAULT PROJ!");
 
     let mut top_left = top_left.clone();
+
     // Calculate the bottom-right coordinates in the image's CRS
     let mut bottom_right = (
         top_left.0 + (scale.0 * image_dimensions.0 as f64),
         top_left.1 - (scale.1 * image_dimensions.1 as f64), // subtract because pixel scale is usually positive as you go down
     );
 
-    if let Err(e) = proj4rs::transform::transform(&from_proj, &to_proj, &mut top_left) {
+    let (mut top_left_r, mut bottom_right_r) = match from_proj.projection_type() {
+        ProjType::Latlong => ((top_left.0.to_radians(), top_left.1.to_radians()), (bottom_right.0.to_radians(), bottom_right.1.to_radians())),
+        ProjType::Other => (top_left, bottom_right),
+        ProjType::Geocentric => {
+            return Err(ProjectionError(format!("Unsupported projection! From GEOCENTRIC! Please contact developer, and send file content for implementation.")));
+        }
+    };
+
+    if let Err(e) = proj4rs::transform::transform(&from_proj, &to_proj, &mut top_left_r) {
         return Err(ProjectionError(format!("Failed to apply tranformation for {from_proj:?} to {to_proj:?}, for points: {top_left:?}, with reason {e:?}")))
     } else {};
-    if let Err(e) = proj4rs::transform::transform(&from_proj, &to_proj, &mut bottom_right) {
+    if let Err(e) = proj4rs::transform::transform(&from_proj, &to_proj, &mut bottom_right_r) {
         return Err(ProjectionError(format!("Failed to apply tranformation for {from_proj:?} to {to_proj:?}, for points: {bottom_right:?}, with reason {e:?}")))
     } else {};
 
 
     return Ok(GeoTiffRegion {
-        top_left,
-        bottom_right
+        top_left: (top_left_r.0.to_degrees(), top_left_r.1.to_degrees()),
+        bottom_right: (bottom_right_r.0.to_degrees(), bottom_right_r.1.to_degrees())
     });
+}
+
+
+ #[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::{Write, Seek, SeekFrom};
+    use tempfile::tempfile;
+    use std::fs::File;
+    use std::io::BufReader;
+    use byteorder::{LittleEndian, WriteBytesExt,ByteOrder};
+    fn mock_geo_tiff_data() -> Vec<u8> {
+        let mut data = Vec::new();
+        // Mock GeoKeyDirectory header data
+        let geo_key_directory_header = vec![1u16, 1, 0, 1]; // Key Directory Version, Key Revision, Minor Revision, Number of Keys
+        // Mock GeoKey: GeographicTypeGeoKey (ID 2048) set to EPSG:4326 (WGS 84)
+        let geographic_type_geo_key = vec![2048u16, 0, 1, 4326]; // ID, Location, Count, Value
+
+        // Write the header and key into data
+        for value in geo_key_directory_header.iter().chain(geographic_type_geo_key.iter()) {
+            data.write_u16::<LittleEndian>(*value).unwrap(); // Note: using unwrap() here; handle errors more gracefully in production code
+        }
+
+        data
+    }
+
+    #[test]
+    fn test_geo_key_directory_parsing() {
+        // Create mock data
+        let mock_data = mock_geo_tiff_data();
+        // Create a temporary file and write mock data into it
+        let mut file = tempfile().expect("Failed to create temporary file");
+        file.write_all(&mock_data).expect("Failed to write mock data to temporary file");
+        file.seek(SeekFrom::Start(0)).expect("Failed to rewind temporary file");
+
+        // Read the temporary file into a BufReader
+        let reader = BufReader::new(file);
+        // Read data from BufReader into a Vec<u16>
+        let mut shorts = Vec::new();
+        for chunk in mock_data.chunks(2) {
+            shorts.push(LittleEndian::read_u16(&chunk));
+        }
+
+        // Attempt to parse the GeoKeyDirectory
+        let result = GeoKeyDirectory::from_shorts(&shorts);
+        assert!(result.is_ok(), "Failed to parse GeoKeyDirectory from mock data");
+
+        // Further validate the GeoKeyDirectory
+        let geo_key_directory = result.unwrap();
+        assert_eq!(geo_key_directory.header.key_revision, 1);
+        assert_eq!(geo_key_directory.header.minor_revision, 0);
+        assert_eq!(geo_key_directory.header.count, 1);
+        assert!(geo_key_directory.keys.contains_key(&2048), "GeoKeyDirectory does not contain expected GeoKey");
+        assert_eq!(geo_key_directory.keys.get(&2048).unwrap().value, Some(4326), "GeographicTypeGeoKey does not match expected value");
+    }
+
+    #[test]
+    fn test_geo_key_directory_incorrect_header_length() {
+        // Create mock data with incorrect header length to simulate an error
+        let incorrect_header = vec![1, 1, 0]; // Missing one element
+        let result = GeoKeyDirectory::from_shorts(&incorrect_header);
+        assert!(result.is_err(), "Expected an error due to incorrect header length");
+    }
+
+    #[test]
+    fn test_geo_key_directory_unsupported_version() {
+        // Create mock data with an unsupported version to simulate an error
+        let unsupported_version_header = vec![0, 1, 0, 1]; // Version set to 0
+        let result = GeoKeyDirectory::from_shorts(&unsupported_version_header);
+        assert!(result.is_err(), "Expected an error due to unsupported GeoKeyDirectory version");
+    }
+
 }

@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use util::ByteOrder;
@@ -7,7 +6,7 @@ use crate::error::{IFDEntryErrorState, TIFFErrorState};
 use crate::util::FromBytes;
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum EntryType {
     BYTES,
     ASCII,
@@ -18,7 +17,7 @@ pub enum EntryType {
     DOUBLE
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum EntryValue {
     BYTES(Vec<u8>),
     ASCII(Vec<String>),
@@ -102,7 +101,7 @@ impl IFDEntry {
                 }),
                 EntryType::ASCII => EntryValue::ASCII(if self.count < 5 {
                     match String::from_utf8(self.associated_bytes.to_vec()) {
-                        Ok(s) => vec![s],
+                        Ok(s) => vec![s.trim_end_matches("\0").to_string()],
                         Err(e) => {
                             eprintln!("Failed to parse string from bytes for tag: {}, Error: {:?}", self.tag, e);
                             return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)));
@@ -117,7 +116,7 @@ impl IFDEntry {
 
                             match reader.read_exact(&mut bytes) {
                                 Ok(..) => match String::from_utf8(bytes) {
-                                    Ok(s) => vec![s],
+                                    Ok(s) => vec![s.trim_end_matches("\0").to_string()],
                                     Err(e) => {
                                         eprintln!("Failed to parse string from bytes for tag: {}, Error: {:?}", self.tag, e);
                                         return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)));
@@ -288,3 +287,185 @@ impl IFDEntry {
         }
     }
 }
+
+
+
+
+#[cfg(test)]
+mod tests {
+    use std::io::Write;
+    use super::*;
+    use crate::util::ByteOrder;
+    use tempfile::tempfile;
+    #[test]
+    fn test_ifd_entry_new() {
+        // Create expected IFD entry byte sequence
+        let entry_buf: [u8; 12] = [0, 1, 0, 3, 0, 0, 0, 1, 0, 0, 0, 0];
+        let byte_order = ByteOrder::BigEndian;
+
+        // Attempt to parse IFDEntry
+        let result = IFDEntry::new(&entry_buf, &byte_order);
+
+        assert!(result.is_ok(), "Failed to parse IFDEntry: {:?}", result);
+
+        let ifd_entry = result.expect("Failed to parse IFDEntry");
+
+        // Verify if each field is correctly parsed
+        assert_eq!(ifd_entry.tag, 1);
+        assert_eq!(ifd_entry.field_type, EntryType::SHORT);
+        assert_eq!(ifd_entry.count, 1);
+        assert_eq!(ifd_entry.associated_bytes, [0, 0, 0, 0]);
+    }
+    #[test]
+    fn test_resolve_bytes() {
+        let mut file = tempfile().unwrap();
+        file.write_all(&[0, 1, 2, 3, 4, 5, 6, 7]).unwrap();
+        file.seek(SeekFrom::Start(0)).unwrap();
+        let mut reader = BufReader::new(file);
+
+        let mut entry = IFDEntry {
+            tag: 0,
+            count: 4,
+            field_type: EntryType::BYTES,
+            associated_bytes: [0, 1, 2, 3],
+            value: None,
+        };
+
+        let result = entry.resolve(&ByteOrder::LittleEndian, &mut reader);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), &EntryValue::BYTES(vec![0, 1, 2, 3]));
+    }
+
+    #[test]
+    fn test_resolve_ascii() {
+        let mut file = tempfile().unwrap();
+        file.write_all(b"Hello\0").unwrap();
+        file.seek(SeekFrom::Start(0)).unwrap();
+        let mut reader = BufReader::new(file);
+
+        let mut entry = IFDEntry {
+            tag: 0,
+            count: 6,
+            field_type: EntryType::ASCII,
+            associated_bytes: [0; 4], // Assume offset is at the start of the file
+            value: None,
+        };
+
+        let result = entry.resolve(&ByteOrder::LittleEndian, &mut reader);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), &EntryValue::ASCII(vec!["Hello".to_string()]));
+    }
+
+    #[test]
+    fn test_resolve_short_direct() {
+        let byte_order = ByteOrder::LittleEndian;
+        let mut entry = IFDEntry {
+            tag: 0,
+            count: 2,
+            field_type: EntryType::SHORT,
+            associated_bytes: [1, 0, 2, 0], // Two SHORT values: 1, 2
+            value: None,
+        };
+
+        let file = tempfile().expect("Failed to create tempfile");
+        let mut reader = BufReader::new(file);
+        let result = entry.resolve(&byte_order, &mut reader);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), &EntryValue::SHORT(vec![1, 2]));
+    }
+
+    #[test]
+    fn test_resolve_ascii_offset() {
+        let byte_order = ByteOrder::LittleEndian;
+        let text = "Hello\0";
+        let mut file = tempfile().expect("Failed to create tempfile");
+        file.write_all(text.as_bytes()).expect("Failed to write to tempfile");
+        file.seek(SeekFrom::Start(0)).expect("Failed to seek to start of tempfile");
+        let mut reader = BufReader::new(file);
+
+        let mut entry = IFDEntry {
+            tag: 0,
+            count: text.len() as u32,
+            field_type: EntryType::ASCII,
+            associated_bytes: [0, 0, 0, 0], // Offset to the ASCII value
+            value: None,
+        };
+
+        let result = entry.resolve(&byte_order, &mut reader);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), &EntryValue::ASCII(vec!["Hello".to_string()]));
+    }
+
+    #[test]
+    fn test_resolve_long() {
+        let mut file = tempfile().unwrap();
+        file.write_all(&[1, 0, 0, 0, 2, 0, 0, 0]).unwrap(); // Two LONG value：1, 2
+        file.seek(SeekFrom::Start(0)).unwrap();
+        let mut reader = BufReader::new(file);
+
+        let mut entry = IFDEntry {
+            tag: 0,
+            count: 2,
+            field_type: EntryType::LONG,
+            associated_bytes: [0, 0, 0, 0],
+            value: None,
+        };
+
+        let result = entry.resolve(&ByteOrder::LittleEndian, &mut reader);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), &EntryValue::LONG(vec![1, 2]));
+    }
+
+    #[test]
+    fn test_resolve_rational() {
+        let mut file = tempfile().unwrap();
+        file.write_all(&[1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0]).unwrap(); // Two RATIONAL value：(1, 2), (3, 4)
+        file.seek(SeekFrom::Start(0)).unwrap();
+        let mut reader = BufReader::new(file);
+
+        let mut entry = IFDEntry {
+            tag: 0,
+            count: 2,
+            field_type: EntryType::RATIONAL,
+            associated_bytes: [0, 0, 0, 0],
+            value: None,
+        };
+
+        let result = entry.resolve(&ByteOrder::LittleEndian, &mut reader);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), &EntryValue::RATIONAL(vec![(1, 2), (3, 4)]));
+    }
+
+    #[test]
+    fn test_invalid_entry_length() {
+        let entry_buf = [0u8; 11]; // Invalid entry length, should be 12
+        let byte_order = ByteOrder::LittleEndian;
+
+        let result = IFDEntry::new(&entry_buf, &byte_order);
+        assert!(matches!(result, Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::InvalidLength(_)))));
+    }
+
+    #[test]
+    fn test_empty_ascii_entry() {
+        let mut entry = IFDEntry {
+            tag: 0,
+            count: 0, // ASCII string length is 0
+            field_type: EntryType::ASCII,
+            associated_bytes: [0; 4],
+            value: None,
+        };
+
+        let file = tempfile().expect("Failed to create tempfile");
+        let mut reader = BufReader::new(file);
+
+        let result = entry.resolve(&ByteOrder::LittleEndian, &mut reader);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), &EntryValue::ASCII(vec!["".to_string()]));
+    }
+
+
+
+
+}
+
+

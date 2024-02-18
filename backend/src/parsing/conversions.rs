@@ -1,10 +1,12 @@
 use geotiff::GeoTiffMetaData;
 use crate::index::MetaData;
-use crate::parsing::dt2::DT2MetaData;
+use crate::parsing::dted::DT2MetaData;
 use crate::parsing::geojson::GeoJSONMetaData;
 use crate::parsing::kml::KMLMetadata;
 use crate::parsing::mbtiles::MBTilesMetaData;
 use crate::parsing::gpkg::GPKGMetaData;
+use crate::parsing::shapefile::ShapeFileMetaData;
+
 
 impl From<KMLMetadata> for MetaData {
     fn from(value: KMLMetadata) -> Self {
@@ -56,6 +58,15 @@ impl From<GPKGMetaData> for MetaData {
     fn from(value: GPKGMetaData) -> Self {
         MetaData {
             region: value.region.into(),
+            tags: value.tags
+        }
+    }
+}
+
+impl From<ShapeFileMetaData> for MetaData {
+    fn from(value: ShapeFileMetaData) -> Self {
+        MetaData {
+            region: value.region,
             tags: value.tags
         }
     }
