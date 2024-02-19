@@ -1,3 +1,4 @@
+
 use std::collections::HashMap;
 use std::error::Error;
 use std::ffi::OsStr;
@@ -27,6 +28,8 @@ use crate::error::RootErrorKind;
 use crate::parsing::dted::DTEDMap;
 use crate::parsing::geojson::GEOJSONMap;
 use crate::parsing::kml::KMLMap;
+use crate::parsing::mbtiles::MBTilesMap;
+use crate::parsing::gpkg::GPKGMap;
 use crate::parsing::shapefile::ShapeFileMap;
 
 mod spatial;
@@ -57,6 +60,8 @@ pub enum MapType {
     DTED(DTEDMap),
     KML(KMLMap),
     GEOJSON(GEOJSONMap),
+    MBTILES(MBTilesMap),
+    GPKG(GPKGMap),
     ShapeFile(ShapeFileMap)
 }
 
@@ -104,10 +109,10 @@ fn traverse(p: PathBuf) -> Result<Vec<MapType>, Box<dyn Error>>{
                     "geojson" => build.push(MapType::GEOJSON(GEOJSONMap {
                         path,
                     })),
-                    "mbtiles" => build.push(MapType::MBTILES(GEOJSONMap {
+                    "mbtiles" => build.push(MapType::MBTILES(MBTilesMap {
                         path,
                     })),
-                    "gpkg" => build.push(MapType::GPKG(GEOJSONMap {
+                    "gpkg" => build.push(MapType::GPKG(GPKGMap {
                         path,
                     })),
                     "shp" => {

@@ -1,7 +1,9 @@
 use std::fs::File;
 use std::io::{BufReader,Read};
+use std::path::PathBuf;
 use crate::spatial::Coordinate;
 use rusqlite::{Connection, Result};
+use serde::{Deserialize, Serialize};
 use crate::parsing::mbtiles::{MBTilesMetaData, MBTilesRegion};
 
 pub struct GPKG {
@@ -21,6 +23,11 @@ pub struct GPKGRegion {
 pub struct GPKGMetaData {
     pub region: GPKGRegion,
     pub tags: Vec<(String, String)>
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GPKGMap {
+    pub(crate) path: PathBuf
 }
 
 pub fn parse_gpkg(filepath: &str) ->Result<GPKGMetaData> {
@@ -59,6 +66,7 @@ pub fn parse_gpkg(filepath: &str) ->Result<GPKGMetaData> {
     let mut top_left_result: (f64,f64) = (0.0,0.0);
     let mut bottom_right_result: (f64,f64) = (0.0,0.0);
 
+    //Iterate through results, should only be one set of coords
     for coords in coords_iter {
         let temp = match coords {
             Ok(temp) => temp,

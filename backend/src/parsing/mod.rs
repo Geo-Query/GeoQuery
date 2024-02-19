@@ -51,11 +51,11 @@ pub fn parse(map: Arc<MapType>) -> Result<Option<Node>, Box<dyn Error>> {
             map
         })),
         MapType::MBTILES(mbtiles) => Ok(Some(Node {
-            metadata: parse_mbtiles(&mbtiles.path)?.into(),
+            metadata: parse_mbtiles(&mbtiles.path.to_str().unwrap())?.into(),
             map
         })),
         MapType::GPKG(gpkg) => Ok(Some(Node {
-            metadata: parse_mbtiles(&gpkg.path)?.into(),
+            metadata: parse_gpkg(&gpkg.path.to_str().unwrap())?.into(),
             map
         })),
         MapType::ShapeFile(shapefile) => {
