@@ -3,7 +3,7 @@ use uuid::Uuid;
 use crate::index::Node;
 use crate::worker::QueryState;
 
-pub const PER_PAGE: i32 = 50;
+pub const PER_PAGE: usize = 50;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SearchQueryResponse {
@@ -17,12 +17,16 @@ pub struct PaginatedQueryResponse {
     pub results: Vec<Node>
 }
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Pagination {
     pub count: usize,
     pub current_page: usize,
     pub per_page: usize
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Page {
+    pub page: Option<usize>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
