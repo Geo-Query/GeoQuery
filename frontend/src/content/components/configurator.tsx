@@ -35,6 +35,11 @@ export default function Configurator(props: ConfiguratorProps) {
             const validSouthEastLong = checkValid("long", formattedSouthEastLong);
             console.log("Coords validated");
 
+            console.log(validNorthWestLat)
+            console.log(validNorthWestLong)
+            console.log(validSouthEastLat)
+            console.log(validSouthEastLong)
+
             if(validNorthWestLat.isValid && validNorthWestLong.isValid && validSouthEastLat.isValid && validSouthEastLong.isValid){
             console.log("Attempting to plot");
                 // check valid and convert formats
@@ -42,14 +47,15 @@ export default function Configurator(props: ConfiguratorProps) {
                 // ACHIEVE BY SHARING SOME STATE BETWEEN REQUESTOR & CONFIGURATOR COMPONENT!
                 // ONLY SETSELECTEDREGION if valid.
                 props.setSelectedRegion({
+                    enteredManually: true,
                     region: {
                         northWest: {
-                            lat: validateAndConformCoordinate(validNorthWestLat.result),
-                            long: validateAndConformCoordinate(validNorthWestLong.result)
+                            lat: validNorthWestLat.result,
+                            long: validNorthWestLong.result
                         },
                         southEast: {
-                            lat: validateAndConformCoordinate(validSouthEastLat.result),
-                            long: validateAndConformCoordinate(validSouthEastLong.result)
+                            lat: validSouthEastLat.result,
+                            long: validSouthEastLong.result
                         }
                     }
                 })
@@ -57,12 +63,15 @@ export default function Configurator(props: ConfiguratorProps) {
         }
     }, [northWestLat, northWestLong, southEastLat, southEastLong]);
 
-
+    // if box drawn plot, if entered leave box
     useEffect(() => {
-        setNWLat(props.selectedRegion.region?.northWest.lat.toString());
-        setNWLong(props.selectedRegion.region?.northWest.long.toString());
-        setSELat(props.selectedRegion.region?.southEast.lat.toString());
-        setSELong(props.selectedRegion.region?.southEast.long.toString());
+        if(!props.selectedRegion.enteredManually){
+            setNWLat(props.selectedRegion.region?.northWest.lat.toString());
+            setNWLong(props.selectedRegion.region?.northWest.long.toString());
+            setSELat(props.selectedRegion.region?.southEast.lat.toString());
+            setSELong(props.selectedRegion.region?.southEast.long.toString());
+        }
+
     }, [props.selectedRegion]);
 
     // every change
@@ -72,18 +81,18 @@ export default function Configurator(props: ConfiguratorProps) {
                 <h1 style={{ width: "15%" }}>North West: </h1>
                 <div className="flex gap-3 w-full">
                     <input
-                        type="number"
+                        type="text"
                         value={northWestLat || ''}
                         onChange={(e) => {
-                            setNWLat(validateAndConformCoordinate(e.target.value))
+                            setNWLat(e.target.value)
                         }}
                         className="w-full px-4 py-2 text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     />
                     <input
-                        type="number"
+                        type="text"
                         value={northWestLong || ''}
                         onChange={(e) => {
-                            setNWLong(validateAndConformCoordinate(e.target.value))
+                            setNWLong(e.target.value)
                         }}
                         className="w-full px-4 py-2 text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     />
@@ -94,18 +103,18 @@ export default function Configurator(props: ConfiguratorProps) {
                 <div className="flex gap-3 w-full">
 
                     <input
-                        type="number"
+                        type="text"
                         value={southEastLat || ''}
                         onChange={(e) => {
-                            setSELat(validateAndConformCoordinate(e.target.value))
+                            setSELat(e.target.value)
                         }}
                         className="w-full px-4 py-2 text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     />
                     <input
-                        type="number"
+                        type="text"
                         value={southEastLong || ''}
                         onChange={(e) => {
-                            setSELong(validateAndConformCoordinate(e.target.value))
+                            setSELong(e.target.value)
                         }}
                         className="w-full px-4 py-2 text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     />

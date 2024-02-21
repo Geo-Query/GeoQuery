@@ -44,7 +44,8 @@ function handleDrawEvent(
     setSelectedRegion: React.Dispatch<React.SetStateAction<SelectedRegion>>,
 ) {
     const latlngs = event.layer.getLatLngs();
-    setSelectedRegion(new SelectedRegion({
+    setSelectedRegion(new SelectedRegion(
+         false, {
         northWest: {
             lat: latlngs[0][1].lat,
             long: latlngs[0][1].lng
