@@ -52,21 +52,48 @@ async function pollQuery(
                 const state = queryStateFromString(resp.data.status);
 
                 if (resp.data.results) {
-                    const build: QueryResult[] = resp.data.results.map((node: any) => ({
-                        file: { path: node.file.path },
-                        type: node.metadata.tags.join(', '), // Assuming 'type' can be derived from 'tags'
-                        region: {
-                            top_left: node.metadata.region.top_left,
-                            bottom_right: node.metadata.region.bottom_right
-                        },
-                        tags: node.metadata.tags // Assuming 'tags' is a direct property of 'metadata'
-                    })).filter((result: QueryResult) => !seen.has(result.file.path));
-
+                    const build: QueryResult[] = resp.data.results.map((node: any) => {
+                        // Initialize an empty array to collect file paths
+                        let files: string[] = [];
+                
+                        // Iterate over each key in the 'map' object
+                        for (const mapTypeKey in node.map) {
+                            const mapType = node.map[mapTypeKey];
+                            // Check if the mapType is an object and not null
+                            if (typeof mapType === 'object' && mapType !== null) {
+                                // Iterate over each key in the mapType object
+                                for (const fileKey in mapType) {
+                                    const filePath = mapType[fileKey];
+                                    // Only add the filePath to files if it's a string (ignoring nulls)
+                                    if (typeof filePath === 'string') {
+                                        files.push(filePath);
+                                    }
+                                }
+                            }
+                        }
+                
+                        return {
+                            file: { paths: files },
+                            type: node.metadata.tags.map((tag: [string, string]) => tag.join(': ')).join(', '),
+                            region: {
+                                top_left: node.metadata.region.top_left,
+                                bottom_right: node.metadata.region.bottom_right
+                            },
+                            tags: node.metadata.tags.flatMap((tag: [string, string]) => tag)
+                        };
+                    }).filter((result: QueryResult) => {
+                        // Create a unique identifier for each result based on its file paths
+                        const pathsString = result.file.paths.join(',');
+                        return !seen.has(pathsString);
+                    });
+                
                     // Update seen paths
-                    build.forEach(result => setSeen(seen.add(result.file.path)));
-
-                    setResults(prevResults => [...build, ...prevResults]);
+                    build.forEach(result => setSeen(seen.add(result.file.paths.join(','))));
+                
+                    setResults(prevResults => [...prevResults, ...build]);
                 }
+                
+                
                 
                 if (state !== queryState) {
                     setQueryState(state);

@@ -44,6 +44,9 @@ const FoldersTemplate: React.FC<FoldersTemplateProps> = ({ results }) => {
 
   const exportData = async (selectedTemplate: Folder, queryResults: Array<QueryResult>) => {
     try {
+
+      // print all the query results
+      console.log(queryResults);
     
         const directory = await window.electronAPI.selectDirectory();
         if (!directory) {
@@ -77,9 +80,9 @@ const FoldersTemplate: React.FC<FoldersTemplateProps> = ({ results }) => {
               return (tags: string[]) => {
                   console.log(`Evaluating condition against tags. Attribute: ${attribute}, Operator: ${operator}, Value: ${value}, Tags:`, tags);
       
-                  
+                  console.log(`Tags:`, tags);
                   // Find the tag in file's tags that corresponds to the attribute
-                  const tagValue = tags.find(tag => tag.toLowerCase().startsWith(`${attribute}:`))?.split(':')[1].trim().toLowerCase();
+                  const tagValue = tags[1]; // Assuming the second tag is the one we want
                   console.log(`Evaluating tag: ${attribute}:${tagValue} against condition: ${condition}`);
                   console.log(`Found tag value for attribute '${attribute}': ${tagValue}`);
                   console.log(`Comparing tagValue: '${tagValue}' with condition value: '${value}' for operator: '${operator}'`);
@@ -133,12 +136,15 @@ const FoldersTemplate: React.FC<FoldersTemplateProps> = ({ results }) => {
       
       // Build export template structure
       const buildExportTemplate = (folder: Folder, results: Array<QueryResult>, basePath: string = ""): ExportFolder => {
-          // Filter files that match folder's tags
-          const filesContained = results.filter(result => {
-            // Convert file tags to lowercase before passing them to the evaluator
-            const tagsLowercase = result.tags.map(tag => tag.toLowerCase());
-            return fileMatchesExpression(result, folder.tags, tagsLowercase); // Adjust fileMatchesExpression to accept tags as an argument
-        }).map(result => result.file.path);
+          // Filter files that match folder's tags and flatten all file paths into a single array
+          const filesContained = results.flatMap(result => {
+              const tagsLowercase = result.tags.map(tag => tag.toLowerCase());
+              if (fileMatchesExpression(result, folder.tags, tagsLowercase)) {
+                  return result.file.paths; // Now returns an array of paths instead of a single path
+              } else {
+                  return []; // Return an empty array if the file doesn't match the expression
+              }
+          });
               
           // Construct the relative path and recursively build the structure for children
           const relativePath = basePath ? `${basePath}/${folder.name}` : folder.name;
@@ -146,6 +152,7 @@ const FoldersTemplate: React.FC<FoldersTemplateProps> = ({ results }) => {
       
           return { id: folder.id, name: folder.name, relativePath, filesContained, children };
       };
+
 
         // Construct the export template
         const exportTemplate = buildExportTemplate(selectedTemplate, queryResults);
