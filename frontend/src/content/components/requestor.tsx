@@ -1,11 +1,11 @@
 import React, {useEffect, useState} from "react";
-import SelectedRegion, {Region} from "../lib/region";
-import {QueryResult, QueryState, queryStateFromString} from "../lib/query";
+import SelectedRegion, {Region} from "../utils/region";
+import {QueryResult, QueryState, queryStateFromString} from "../utils/query";
 import axios from 'axios';
 import Toastify from 'toastify-js';
 import "toastify-js/src/toastify.css";
 import Modal from "./modal";
-import QueryHistory from "../lib/queryhistory";
+import QueryHistory from "../utils/queryhistory";
 
 const BACKEND_URL = "http://127.0.0.1:42069"
 const POLL_INTERVAL = 3000;

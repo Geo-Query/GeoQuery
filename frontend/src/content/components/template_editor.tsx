@@ -2,8 +2,8 @@ import React, { useState, useEffect} from 'react';
 import FolderCard from './folder_card'; // Ensure this component is also refactored to TSX
 // import TagBuilder from './TagBuilder'; // This should also be a TSX component
 import { LuUndo2 } from 'react-icons/lu'; // Assuming you have an SVG version for TypeScript
-import FolderTemplatesStorage from '../lib/folder_template_storage';
-import { FolderTemplate } from '../lib/folder_template_storage';
+import FolderTemplatesStorage from '../utils/folder_template_storage';
+import { FolderTemplate } from '../utils/folder_template_storage';
 
 interface Folder {
   id: number;

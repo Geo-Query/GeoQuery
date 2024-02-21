@@ -1,5 +1,5 @@
-import QueryHistory from "../lib/queryhistory";
-import SelectedRegion from "../lib/region";
+import QueryHistory from "../utils/queryhistory";
+import SelectedRegion from "../utils/region";
 
 export interface QueryProps {
     queryHistory: QueryHistory

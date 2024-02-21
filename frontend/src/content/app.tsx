@@ -1,12 +1,12 @@
 import React from "react";
 import {useState} from "react";
 import ReactDom from "react-dom";
-import SelectedRegion from "./lib/region";
+import SelectedRegion from "./utils/region";
 import Map from "./components/map";
 import "./css/main.css";
 import Configurator from "./components/configurator";
-import QueryHistory, {loadQueryHistory} from "./lib/queryhistory";
-import {QueryState} from "./lib/query";
+import QueryHistory, {loadQueryHistory} from "./utils/queryhistory";
+import {QueryState} from "./utils/query";
 import Requestor from "./components/requestor";
 import History from "./components/history";
 

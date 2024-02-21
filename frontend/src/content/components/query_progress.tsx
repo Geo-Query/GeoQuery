@@ -1,4 +1,4 @@
-import {QueryState} from "../lib/query";
+import {QueryState} from "../utils/query";
 
 export interface QueryProgressProps {
     queryState: QueryState

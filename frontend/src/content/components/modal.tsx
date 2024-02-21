@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { QueryResult, QueryState } from "../lib/query";
+import { QueryResult, QueryState } from "../utils/query";
 import QueryProgress from "./query_progress";
 import ResultCards from "./result_cards";
 import FolderTemplate from "./folders_template";

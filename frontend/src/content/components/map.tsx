@@ -3,8 +3,8 @@ import L from "leaflet";
 import 'leaflet-draw';
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
-import SelectedRegion, {Region} from "../lib/region";
-import {QueryState} from "../lib/query";
+import SelectedRegion, {Region} from "../utils/region";
+import {QueryState} from "../utils/query";
 
 interface MapProps {
     selectedRegion: SelectedRegion

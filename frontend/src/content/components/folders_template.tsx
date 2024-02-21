@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import FolderTemplatesStorage from '../lib/folder_template_storage'; // Adjust the import path as necessary
+import FolderTemplatesStorage from '../utils/folder_template_storage'; // Adjust the import path as necessary
 import TemplateEditor from './template_editor'; // Adjust the import path as necessary
-import { FolderTemplate } from '../lib/folder_template_storage';
-import { QueryResult } from '../lib/query';
+import { FolderTemplate } from '../utils/folder_template_storage';
+import { QueryResult } from '../utils/query';
 interface Folder {
   id: number;
   name: string;

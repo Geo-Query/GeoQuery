@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from "react";
-import SelectedRegion, {validateAndConformCoordinate} from "../lib/region";
-import QueryHistory from "../lib/queryhistory";
+import SelectedRegion, {validateAndConformCoordinate} from "../utils/region";
+import QueryHistory from "../utils/queryhistory";
 
 interface ConfiguratorProps {
     selectedRegion: SelectedRegion,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {QueryResult, QueryState, queryString} from "../lib/query";
+import {QueryResult, QueryState, queryString} from "../utils/query";
 import { ModalProps } from "./modal";
 
 //populated result cards that will be take an array of results to go on into modal.tsx for the results
