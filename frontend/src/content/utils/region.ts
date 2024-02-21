@@ -41,3 +41,26 @@ export function checkFormat(initial: string): string {
         return initial;
     }
 }
+
+export function checkValid(coordType: 'lat' | 'long', initial:  string): { isValid: boolean; result: string } {
+
+    const DDLat = /^([-+]?(1[0-8]?\d(\.\d+)?|90(\.0+)?))$/;
+    const DDLong = /^([-+]?(1[0-7]\d(\.\d+)?|180(\.0+)?|0?(\.\d+)?|\d(\.\d+)?))$/;
+
+    switch (coordType) {
+        case 'lat':
+            if (DDLat.test(initial)) {
+                return { isValid: true, result: initial};
+            } else {
+                return { isValid: false, result: 'Invalid Latitude' };
+            }
+        case 'long':
+            if (DDLong.test(initial)) {
+                return { isValid: true, result: initial };
+            } else {
+                return { isValid: false, result: 'Invalid Longitude' };
+            }
+        default:
+            return { isValid: false, result: 'Invalid coordinate type' };
+    }
+}
