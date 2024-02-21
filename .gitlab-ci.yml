@@ -35,7 +35,7 @@ build_frontend:
   stage: build
   before_script:
     - cd frontend
-    - npm install -g electron-forge
+    - npm install
     - tree
   script:
     - npm run make -- --platform=win32
