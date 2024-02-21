@@ -5,6 +5,8 @@ use crate::io::QueryRegion;
 use crate::parsing::dted::DT2Region;
 use crate::parsing::geojson::GeoJSONRegion;
 use crate::parsing::kml::KMLRegion;
+use crate::parsing::mbtiles::MBTilesRegion;
+use crate::parsing::gpkg::GPKGRegion;
 
 // Coordinate type alias; for ease of use.
 pub type Coordinate = (f64, f64);
@@ -81,6 +83,23 @@ impl From<QueryRegion> for Region {
     }
 }
 
+impl From<MBTilesRegion> for Region {
+    fn from(t: MBTilesRegion) -> Region {
+        Region {
+            top_left: t.top_left,
+            bottom_right: t.bottom_right
+        }
+    }
+}
+
+impl From<GPKGRegion> for Region {
+    fn from(t: GPKGRegion) -> Region {
+        Region {
+            top_left: t.top_left,
+            bottom_right: t.bottom_right
+        }
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -126,13 +145,14 @@ mod tests {
     fn test_convert_from_dt2_region() {
         let dt2_region = DT2Region {
             top_left: (1.0, 2.0),
-            top_right: (3.0, 2.0), 
-            bottom_left: (1.0, 4.0), 
+            top_right: (3.0, 2.0),
+            bottom_left: (1.0, 4.0),
             bottom_right: (3.0, 4.0),
         };
         let region: Region = dt2_region.into();
         assert_eq!(region.top_left, (1.0, 2.0));
         assert_eq!(region.bottom_right, (3.0, 4.0));
     }
-
 }
+
+

@@ -9,18 +9,27 @@ use crate::index::Node;
 use crate::parsing::dted::parse_dted;
 use crate::parsing::geojson::parse_geojson;
 use crate::parsing::kml::parse_kml;
+use crate::parsing::mbtiles::parse_mbtiles;
+use crate::parsing::gpkg::parse_gpkg;
+
 use crate::parsing::shapefile::parse_shapefile;
 
 pub mod dted;
 pub mod geojson;
 pub mod kml;
+
+pub mod mbtiles;
+
 pub mod conversions;
 pub mod error;
+pub(crate) mod gpkg;
 pub(crate) mod shapefile;
+
 
 pub fn parse(map: Arc<MapType>) -> Result<Option<Node>, Box<dyn Error>> {
     let span = span!(Level::INFO, "Parsing");
     let _guard = span.enter();
+
     match map.as_ref() {
         MapType::GeoTIFF(tiff) => Ok(Some(Node {
             metadata: parse_tiff(
@@ -41,6 +50,14 @@ pub fn parse(map: Arc<MapType>) -> Result<Option<Node>, Box<dyn Error>> {
             metadata: parse_geojson(&mut BufReader::new(File::open(&geojson.path)?))?.into(),
             map
         })),
+        MapType::MBTILES(mbtiles) => Ok(Some(Node {
+            metadata: parse_mbtiles(&mbtiles.path.to_str().unwrap())?.into(),
+            map
+        })),
+        MapType::GPKG(gpkg) => Ok(Some(Node {
+            metadata: parse_gpkg(&gpkg.path.to_str().unwrap())?.into(),
+            map
+        })),
         MapType::ShapeFile(shapefile) => {
             let mut shp_reader = BufReader::new(File::open(&shapefile.shp)?);
             let mut prj_reader = shapefile.prj.clone()
@@ -54,6 +71,7 @@ pub fn parse(map: Arc<MapType>) -> Result<Option<Node>, Box<dyn Error>> {
                 )?.into(),
                 map
             }))
+
         }
     }
 }
