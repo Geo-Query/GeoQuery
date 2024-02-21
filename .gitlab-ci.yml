@@ -21,7 +21,7 @@ build_backends:
     - cargo --version
     - tree
   script:
-    cargo build --verbose --target x86_64-pc-windows-msvc -bin sh35-backend.exe all
+    cargo build --verbose --target x86_64-pc-windows-msvc --bin sh35-backend.exe all
   artifacts:
     name: "prototype"
     untracked: false
