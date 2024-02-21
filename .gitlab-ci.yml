@@ -29,4 +29,4 @@ build_backends:
     untracked: false
     when: on_success
     paths:
-      - "backend/target/release/sh35-backend.exe"
+      - "backend/target/x86_64-pc-windows-gnu/release/sh35-backend.exe"
