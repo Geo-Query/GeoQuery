@@ -4,7 +4,6 @@ use std::path::PathBuf;
 use crate::spatial::Coordinate;
 use rusqlite::{Connection, Result};
 use serde::{Deserialize, Serialize};
-//use crate::parsing::mbtiles::MBTilesErrorState::{UnexpectedFormat,FailedQuery};
 
 #[derive(Debug)]
 pub struct MBTilesRegion {
@@ -40,8 +39,6 @@ pub fn parse_mbtiles(filepath: &str ) -> Result<MBTilesMetaData> {
     //Prepares a query to return bounds of MBTiles using metadata table
     let stmt_result = conn.prepare("SELECT * FROM metadata WHERE name = 'bounds'");
 
-    //Add error handling for Unsupported Version MBTiles 1.0
-    //
 
     //Some error handling
     let mut stmt = match stmt_result {
