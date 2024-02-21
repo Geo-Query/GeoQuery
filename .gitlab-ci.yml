@@ -16,13 +16,13 @@ test_job:
 build_backends:
   stage: build
   before_script:
-    - rustup target add x86_64-pc-windows-msvc
+    - rustup target add x86_64-pc-windows-gnu
     - cd backend
     - rustc --version
     - cargo --version
     - tree
   script:
-    - cargo build --verbose --target x86_64-pc-windows-msvc --bin sh35-backend --all
+    - cargo build --verbose --target x86_64-pc-windows-gnu --bin sh35-backend --all
     - tree
   artifacts:
     name: "prototype"
