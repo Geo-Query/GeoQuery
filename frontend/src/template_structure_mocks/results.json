@@ -1,0 +1,24 @@
+{
+    "status": "Complete",
+    "pagination": {
+      "count": 1,
+      "current_page": 1,
+      "per_page": 50
+    },
+    "results": [
+      {
+        "metadata": {
+          "region": {
+            "top_left": [-179.999999, 83.533339],
+            "bottom_right": [179.999997, -89.900021]
+          },
+          "tags": [["Filetype", "GEOJSON"]]
+        },
+        "map": {
+          "GEOJSON": {
+            "path": "/home/ben/uni/psd/teamproj/sample_data/Sample map types/Vector/geojson/world.geojson"
+          }
+        }
+      }
+    ]
+  }

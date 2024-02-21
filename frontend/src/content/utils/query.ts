@@ -46,7 +46,7 @@ export function queryStateFromString(state: string) {
 }
 
 interface QueryResultFile {
-    path: string
+    paths: string[];
 }
 
 interface QueryResultRegion {
