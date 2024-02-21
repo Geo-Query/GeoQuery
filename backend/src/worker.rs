@@ -50,7 +50,7 @@ pub async fn worker(state: Arc<State>) {
             event!(Level::DEBUG, "Awaiting WRITE lock on task to add result!");
             task.write().await.results.push(n);
             event!(Level::DEBUG, "Result added!");
-            std::thread::sleep(Duration::from_secs(3));
+            // std::thread::sleep(Duration::from_secs(3));
         }
         event!(Level::DEBUG, "Awaiting WRITE lock on task state, setting to Complete");
         task.write().await.state = Complete;

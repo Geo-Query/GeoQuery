@@ -8,33 +8,29 @@ export default function ResultCards(response: ModalProps) {
   const [visibleResults, setVisibleResults] = useState<Array<QueryResult>>([]);
   const [removedResults, setRemovedResults] = useState<Array<string>>([]); // Track removed results by unique identifier
 
-
-    // Update visibleResults when props.results changes
   useEffect(() => {
-    // Filter out results that are already visible or have been removed
+    // Filter out results that have been removed
     const newUniqueResults = response.results.filter(result => 
-        !visibleResults.some(visibleResult => visibleResult.file.path === result.file.path) &&
-        !removedResults.includes(result.file.path)
+      !removedResults.includes(result.file.paths.join(',')) &&
+      !visibleResults.some(visibleResult => visibleResult.file.paths.join(',') === result.file.paths.join(','))
     );
     setVisibleResults(prevResults => [...prevResults, ...newUniqueResults]);
   }, [response.results, removedResults]);
-    
 
   const removeResult = (index: number) => {
     const resultToRemove = visibleResults[index];
-    setRemovedResults(prevRemoved => [...prevRemoved, resultToRemove.file.path]);
+    setRemovedResults(prevRemoved => [...prevRemoved, resultToRemove.file.paths.join(',')]);
     setVisibleResults(prevResults => prevResults.filter((_, i) => i !== index));
   };
 
-
   const undoLastRemove = () => {
-    const lastRemovedPath = removedResults.pop();
-    if (lastRemovedPath) {
-        const resultToUndo = response.results.find(result => result.file.path === lastRemovedPath);
-        if (resultToUndo) {
-            setVisibleResults(prevResults => [...prevResults, resultToUndo]);
-            setRemovedResults([...removedResults]);
-        }
+    if (removedResults.length > 0) {
+      const lastRemovedIdentifier = removedResults.pop();
+      const resultToUndo = response.results.find(result => result.file.paths.join(',') === lastRemovedIdentifier);
+      if (resultToUndo) {
+          setVisibleResults(prevResults => [...prevResults, resultToUndo]);
+          setRemovedResults(removedResults.filter(id => id !== lastRemovedIdentifier));
+      }
     }
   };
 
@@ -72,7 +68,7 @@ export default function ResultCards(response: ModalProps) {
                 <div key={index} className="bg-[#525461] rounded-lg shadow-lg p-4 transition-transform duration-300 ease-in-out scale-95 hover:scale-100 hover:bg-[#526071] hover:shadow-xl">
                   <div className="flex justify-between items-center mb-2">
                     <span className="font-mono text-sm text-white">
-                      {result.file.path}
+                      Paths: {result.file.paths.join(', ')}
                     </span>
                     <span className="text-xs font-semibold text-white">
                       {result.type}
@@ -98,7 +94,7 @@ export default function ResultCards(response: ModalProps) {
                   )}
                 </div>
               ))}
-            </div>
+          </div>
             {removedResults.length > 0 && (
                 <button onClick={undoLastRemove} className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
                     Undo Last Remove
@@ -108,10 +104,6 @@ export default function ResultCards(response: ModalProps) {
         ) : (
           <p className="text-gray-200">No results found.</p>
         )}
-  
-          
-        </div>
+    </div>
   );
 }
-
-
