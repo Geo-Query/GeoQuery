@@ -1,5 +1,6 @@
 stages:
   - test
+  - build
 
 test_job:
   stage: test
@@ -12,4 +13,18 @@ test_job:
   script:
     - cargo test --verbose --all
 
-
+build_backends:
+  stage: build
+  before_script:
+    - cd backend
+    - rustc --version
+    - cargo --version
+    - tree
+  script:
+    cargo build --verbose all --target x86_64-pc-windows-msvc -bin sh35-backend.exe
+  artifacts:
+    name: "prototype"
+    untracked: false
+    when: on_success
+    paths:
+      - "backend/target/release/sh35-backend.exe"
