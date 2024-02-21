@@ -22,7 +22,7 @@ pub fn parse(map: Arc<MapType>) -> Result<Option<Node>, Box<dyn Error>> {
     let span = span!(Level::INFO, "Parsing");
     let _guard = span.enter();
     match map.as_ref() {
-        MapType::GeoTIFF(tiff) => Ok(Some(Node {
+        MapType::GEOTIFF(tiff) => Ok(Some(Node {
             metadata: parse_tiff(
                 &mut BufReader::new(File::open(&tiff.tiff)?),
                 tiff.tfw.clone().map(File::open).transpose()?.map(BufReader::new).as_mut(),
@@ -41,7 +41,7 @@ pub fn parse(map: Arc<MapType>) -> Result<Option<Node>, Box<dyn Error>> {
             metadata: parse_geojson(&mut BufReader::new(File::open(&geojson.path)?))?.into(),
             map
         })),
-        MapType::ShapeFile(shapefile) => {
+        MapType::SHAPEFILE(shapefile) => {
             let mut shp_reader = BufReader::new(File::open(&shapefile.shp)?);
             let mut prj_reader = shapefile.prj.clone()
                 .map(File::open).transpose()?

@@ -53,11 +53,11 @@ struct State {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MapType {
-    GeoTIFF(GeoTiffMap),
+    GEOTIFF(GeoTiffMap),
     DTED(DTEDMap),
     KML(KMLMap),
     GEOJSON(GEOJSONMap),
-    ShapeFile(ShapeFileMap)
+    SHAPEFILE(ShapeFileMap)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -83,7 +83,7 @@ fn traverse(p: PathBuf) -> Result<Vec<MapType>, Box<dyn Error>>{
             if let Some(ext) = ext {
                 match ext {
                     "tif" => {
-                        build.push(MapType::GeoTIFF(GeoTiffMap {
+                        build.push(MapType::GEOTIFF(GeoTiffMap {
                             tiff: path.clone(),
                             tfw: files.iter().find(|candidate|
                                 candidate.path().extension().and_then(OsStr::to_str).is_some_and(|s| s == "tfw")
@@ -105,7 +105,7 @@ fn traverse(p: PathBuf) -> Result<Vec<MapType>, Box<dyn Error>>{
                         path,
                     })),
                     "shp" => {
-                        build.push(MapType::ShapeFile (ShapeFileMap {
+                        build.push(MapType::SHAPEFILE (ShapeFileMap {
                             shp: path.clone(),
                             tfw: files.iter().find(|candidate|
                                 candidate.path().extension().and_then(OsStr::to_str).is_some_and(|s| s == "tfw")
