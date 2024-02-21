@@ -39,73 +39,77 @@ async function pollQuery(
     results: Array<QueryResult>,
     setResults: React.Dispatch<React.SetStateAction<Array<QueryResult>>>,
     pollCount: number,
-    setPollCount: React.Dispatch<React.SetStateAction<number>>
+    setPollCount: React.Dispatch<React.SetStateAction<number>>,
+    currentPage: number = 1, // Add currentPage parameter
 ) {
     if (queryToken) {
         try {
-            const resp = await axios.get(`${BACKEND_URL}/results`, {
-                params: {
-                    uuid: queryToken
-                }
-            });
-            if (resp.status === 200 && resp.data?.results && resp.data?.status) {
-                const state = queryStateFromString(resp.data.status);
+            let shouldContinue = true;
+            while (shouldContinue) {
+                const resp = await axios.get(`${BACKEND_URL}/results`, {
+                    params: {
+                        uuid: queryToken,
+                        page: currentPage, // Use currentPage in request
+                    }
+                });
 
-                if (resp.data.results) {
-                    const build: QueryResult[] = resp.data.results.map((node: any) => {
-                        // Initialize an empty array to collect file paths
-                        let files: string[] = [];
-                
-                        // Iterate over each key in the 'map' object
-                        for (const mapTypeKey in node.map) {
-                            const mapType = node.map[mapTypeKey];
-                            // Check if the mapType is an object and not null
-                            if (typeof mapType === 'object' && mapType !== null) {
-                                // Iterate over each key in the mapType object
-                                for (const fileKey in mapType) {
-                                    const filePath = mapType[fileKey];
-                                    // Only add the filePath to files if it's a string (ignoring nulls)
-                                    if (typeof filePath === 'string') {
-                                        files.push(filePath);
+                if (resp.status === 200 && resp.data?.results && resp.data?.status) {
+                    const state = queryStateFromString(resp.data.status);
+                    const pagination = resp.data.pagination; // Capture pagination info
+
+                    if (resp.data.results) {
+                        const build: QueryResult[] = resp.data.results.map((node: any) => {
+                            let files: string[] = [];
+                            for (const mapTypeKey in node.map) {
+                                const mapType = node.map[mapTypeKey];
+                                if (typeof mapType === 'object' && mapType !== null) {
+                                    for (const fileKey in mapType) {
+                                        const filePath = mapType[fileKey];
+                                        if (typeof filePath === 'string') {
+                                            files.push(filePath);
+                                        }
                                     }
                                 }
                             }
-                        }
-                
-                        return {
-                            file: { paths: files },
-                            type: node.metadata.tags.map((tag: [string, string]) => tag.join(': ')).join(', '),
-                            region: {
-                                top_left: node.metadata.region.top_left,
-                                bottom_right: node.metadata.region.bottom_right
-                            },
-                            tags: node.metadata.tags.flatMap((tag: [string, string]) => tag)
-                        };
-                    }).filter((result: QueryResult) => {
-                        // Create a unique identifier for each result based on its file paths
-                        const pathsString = result.file.paths.join(',');
-                        return !seen.has(pathsString);
-                    });
-                
-                    // Update seen paths
-                    build.forEach(result => setSeen(seen.add(result.file.paths.join(','))));
-                
-                    setResults(prevResults => [...prevResults, ...build]);
+                            return {
+                                file: { paths: files },
+                                type: node.metadata.tags.map((tag: [string, string]) => tag.join(': ')).join(', '),
+                                region: {
+                                    top_left: node.metadata.region.top_left,
+                                    bottom_right: node.metadata.region.bottom_right
+                                },
+                                tags: node.metadata.tags.flatMap((tag: [string, string]) => tag)
+                            };
+                        }).filter((result: QueryResult) => {
+                            const pathsString = result.file.paths.join(',');
+                            return !seen.has(pathsString);
+                        });
+
+                        build.forEach(result => setSeen(seen.add(result.file.paths.join(','))));
+                        setResults(prevResults => [...prevResults, ...build]);
+                    }
+                    
+                    if (state !== queryState) {
+                        setQueryState(state);
+                    }
+
+                    // Check if we need to request the next page
+                    if (pagination && currentPage < pagination.current_page && pagination.count > 0) {
+                        currentPage++; // Prepare to request the next page
+                    } else {
+                        shouldContinue = false; // Stop the loop if we're on the last page or no pagination data
+                    }
+                } else {
+                    console.log("Request failed; or unexpected response!");
+                    console.log(resp);
+                    arbitraryFailure();
+                    setQueryState(QueryState.FAILED);
+                    shouldContinue = false; // Stop the loop on failure
                 }
-                
-                
-                
-                if (state !== queryState) {
-                    setQueryState(state);
-                }
-                if (state === QueryState.WAITING || state === QueryState.PROCESSING) {
-                    setPollCount(pollCount + 1);
-                }
-            } else {
-                console.log("Request failed; or unexpected response!");
-                console.log(resp);
-                arbitraryFailure();
-                setQueryState(QueryState.FAILED);
+            }
+
+            if (queryState === QueryState.WAITING || queryState === QueryState.PROCESSING) {
+                setPollCount(pollCount + 1);
             }
         } catch (e) {
             console.log("Request failed; or unexpected response!");
