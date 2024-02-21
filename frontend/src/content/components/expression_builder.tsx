@@ -137,16 +137,16 @@ const TagBuilder: React.FC<TagBuilderProps> = ({ onTagsUpdated }) => {
   ))}
   <div className="flex gap-2">
     <button
-      className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
       onClick={addTag}
     >
       Add Condition
     </button>
     <button
-      className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+      className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
       onClick={constructExpression}
     >
-      Update Tags
+      Save Tags
     </button>
   </div>
 </div>
