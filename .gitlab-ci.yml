@@ -16,7 +16,7 @@ test_job:
 build_backends:
   stage: build
   before_script:
-    - rustup target add x86_64-pc-windows-msvc`
+    - rustup target add x86_64-pc-windows-msvc
     - cd backend
     - rustc --version
     - cargo --version
