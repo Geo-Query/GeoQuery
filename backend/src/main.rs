@@ -27,6 +27,8 @@ use crate::error::RootErrorKind;
 use crate::parsing::dted::DTEDMap;
 use crate::parsing::geojson::GEOJSONMap;
 use crate::parsing::kml::KMLMap;
+use crate::parsing::mbtiles::MBTilesMap;
+use crate::parsing::gpkg::GPKGMap;
 use crate::parsing::shapefile::ShapeFileMap;
 
 mod spatial;
@@ -57,6 +59,8 @@ pub enum MapType {
     DTED(DTEDMap),
     KML(KMLMap),
     GEOJSON(GEOJSONMap),
+    MBTILES(MBTilesMap),
+    GPKG(GPKGMap),
     SHAPEFILE(ShapeFileMap)
 }
 
@@ -102,6 +106,12 @@ fn traverse(p: PathBuf) -> Result<Vec<MapType>, Box<dyn Error>>{
                         path,
                     })),
                     "geojson" => build.push(MapType::GEOJSON(GEOJSONMap {
+                        path,
+                    })),
+                    "mbtiles" => build.push(MapType::MBTILES(MBTilesMap {
+                        path,
+                    })),
+                    "gpkg" => build.push(MapType::GPKG(GPKGMap {
                         path,
                     })),
                     "shp" => {
