@@ -13,7 +13,7 @@ test_job:
   script:
     - cargo test --verbose --all
 
-build_backends:
+build_backend:
   stage: build
   before_script:
     - rustup target add x86_64-pc-windows-gnu
@@ -25,8 +25,22 @@ build_backends:
     - cargo build --verbose --target x86_64-pc-windows-gnu --bin sh35-backend --all --release
     - tree
   artifacts:
-    name: "prototype"
+    name: "backend_prototype"
     untracked: false
     when: on_success
     paths:
       - "backend/target/x86_64-pc-windows-gnu/release/sh35-backend.exe"
+
+build_frontend:
+  stage: build
+  before_script:
+    - cd frontend
+    - tree
+  script:
+    - npm run make -- --platform=win32
+  artifacts:
+    name: "electron_prototype"
+    untracked: false
+    when: on_success
+    paths:
+      - "frontend/out/make/zip/win32/x64/electron-refactor-win32-x64-*.*.*.zip"
