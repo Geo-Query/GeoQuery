@@ -79,3 +79,45 @@ pub fn parse_mbtiles(filepath: &str ) -> Result<MBTilesMetaData> {
         tags
     });
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rusqlite::{params, Connection};
+    use tempfile::NamedTempFile;
+    use std::fs;
+
+    fn create_test_mbtiles() -> NamedTempFile {
+        let temp_file = NamedTempFile::new().unwrap();
+        let conn = Connection::open(temp_file.path()).unwrap();
+
+        // Creates the metadata table and inserts test bounds
+        conn.execute(
+            "CREATE TABLE metadata (name TEXT, value TEXT);",
+            [],
+        ).unwrap();
+
+        conn.execute(
+            "INSERT INTO metadata (name, value) VALUES (?1, ?2), (?3, ?4)",
+            params![
+                "bounds", "10.1,20.2,30.3,40.4", // left, bottom, right, top
+                "name", "Test MBTiles"
+            ],
+        ).unwrap();
+
+        temp_file
+    }
+
+    #[test]
+    fn test_parse_mbtiles() {
+        let temp_file = create_test_mbtiles();
+        let temp_file_path = temp_file.path().to_str().unwrap();
+
+        let metadata = parse_mbtiles(temp_file_path).unwrap();
+
+        assert_eq!(metadata.region.top_left, (10.1, 40.4));
+        assert_eq!(metadata.region.bottom_right, (30.3, 20.2));
+        assert!(metadata.tags.iter().any(|(key, value)| key == "Filetype" && value == "MBTiles"));
+    }
+}
+

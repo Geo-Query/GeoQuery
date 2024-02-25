@@ -85,3 +85,44 @@ pub fn parse_gpkg(filepath: &str) ->Result<GPKGMetaData> {
         tags
     });
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rusqlite::{params, Connection};
+    use tempfile::NamedTempFile;
+
+    // Creates a temporary GPKG file for testing
+    fn create_test_gpkg() -> NamedTempFile {
+        let temp_file = NamedTempFile::new().unwrap();
+        let conn = Connection::open(temp_file.path()).unwrap();
+
+        // Create gpkg_contents table and insert test coordinates
+        conn.execute(
+            "CREATE TABLE gpkg_contents (min_x REAL, min_y REAL, max_x REAL, max_y REAL);",
+            [],
+        ).unwrap();
+
+        conn.execute(
+            "INSERT INTO gpkg_contents (min_x, min_y, max_x, max_y) VALUES (?1, ?2, ?3, ?4)",
+            params![10.1, 20.2, 30.3, 40.4], // Sample bounds
+        ).unwrap();
+
+        temp_file
+    }
+
+    #[test]
+    fn test_parse_gpkg() {
+        let temp_file = create_test_gpkg();
+        let temp_file_path = temp_file.path().to_str().unwrap();
+
+        let metadata = parse_gpkg(temp_file_path).unwrap();
+
+        // Asserts the top_left and bottom_right coordinates are as expected
+        assert_eq!(metadata.region.top_left, (10.1, 40.4));
+        assert_eq!(metadata.region.bottom_right, (30.3, 20.2));
+
+        // Checks if the tags contain the "Filetype" => "GPKG" entry
+        assert!(metadata.tags.iter().any(|(key, value)| key == "Filetype" && value == "GPKG"));
+    }
+}
