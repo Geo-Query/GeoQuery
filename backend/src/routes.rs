@@ -54,11 +54,11 @@ pub async fn results(Extension(state): Extension<Arc<State>>, Query(query): Quer
             let v = v.read().await;
 
             let window = if let Some(page) = pagination.page {
-                if (PER_PAGE * page-1) > v.results.len() {
+                if (PER_PAGE * (page-1)) > v.results.len() {
                     println!("{}", v.results.len());
                     return Err((StatusCode::NOT_FOUND, "Invalid page!".to_string()))
                 } else {
-                    ((PER_PAGE*page) - 1)..(((PER_PAGE*(page+1))).min(v.results.len()))
+                    ((PER_PAGE*(page - 1))..(((PER_PAGE*(page))).min(v.results.len())))
                 }
             } else {
                 (0..(PER_PAGE.min(v.results.len())))
