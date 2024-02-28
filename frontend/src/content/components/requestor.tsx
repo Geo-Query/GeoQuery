@@ -107,14 +107,14 @@ async function pollQuery(
         try {
             let shouldContinue = true;
             while (shouldContinue) {
-                // const resp = await axios.get(`${BACKEND_URL}/results`, {
-                //     params: {
-                //         uuid: queryToken,
-                //         page: currentPage, // Use currentPage in request
-                //     }
-                // });
+                const resp = await axios.get(`${BACKEND_URL}/results`, {
+                    params: {
+                        uuid: queryToken,
+                        page: currentPage, // Use currentPage in request
+                    }
+                });
 
-                const resp = generatePaginationResponse(100, 10, currentPage);
+                // const resp = generatePaginationResponse(100, 10, currentPage);
 
                 console.log(resp);
 
