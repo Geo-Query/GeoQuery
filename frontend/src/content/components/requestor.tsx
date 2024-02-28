@@ -93,8 +93,11 @@ async function pollQuery(
                         setQueryState(state);
                     }
 
+                    // Calculate total pages based on the pagination details
+                    const total_pages = Math.ceil(pagination.count / pagination.per_page);
+                    
                     // Check if we need to request the next page
-                    if (pagination && currentPage < pagination.current_page && pagination.count > 0) {
+                    if (pagination && currentPage < total_pages) {
                         currentPage++; // Prepare to request the next page
                     } else {
                         shouldContinue = false; // Stop the loop if we're on the last page or no pagination data
@@ -119,6 +122,7 @@ async function pollQuery(
         }
     }
 }
+
 
 function isQueryUnique(newRegion: Region, queryHistory: QueryHistory): boolean {
     return !queryHistory.queries.some(query =>
