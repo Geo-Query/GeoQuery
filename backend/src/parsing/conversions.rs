@@ -71,3 +71,4 @@ impl From<ShapeFileMetaData> for MetaData {
         }
     }
 }
+
