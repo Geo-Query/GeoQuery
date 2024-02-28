@@ -27,7 +27,7 @@ export function validateAndConformCoordinate(initial: string): number {
 
 export function checkFormat(initial: string): number {
 
-    const DD = /^\d{1,3}(?:\.\d*)?$/;
+    const DD = /^-?\d{1,3}(?:\.\d*)?$/;
     const DMS = /^(\d{1,2} \d{1,2} \d{1,2}) ([NESW])$/;
     const DMDM = /^(\d{1,2} \d{1,2}\.\d{4}) ([NESW])$/;
 
