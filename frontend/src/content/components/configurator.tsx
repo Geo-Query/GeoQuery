@@ -20,46 +20,60 @@ export default function Configurator(props: ConfiguratorProps) {
 
         // validates present coordinates
         if (northWestLat && northWestLong && southEastLat && southEastLong) {
-            console.log("Coords present");
+            console.log("Here is the coord: " + northWestLat);
+            console.log("Here is the coord: " + northWestLong);
+            console.log("Here is the coord: " + southEastLat);
+            console.log("Here is the coord: " + northWestLat);
 
             // converts all formats to decimal degrees
             const formattedNorthWestLat = checkFormat(northWestLat);
             const formattedNorthWestLong = checkFormat(northWestLong);
             const formattedSouthEastLat = checkFormat(southEastLat);
             const formattedSouthEastLong = checkFormat(southEastLong);
-            console.log("Coords formatted");
+
+            console.log("Here is the formatted coord: " + formattedNorthWestLat);
+            console.log("Here is the formatted coord: " + formattedNorthWestLong);
+            console.log("Here is the formatted coord: " + formattedSouthEastLat);
+            console.log("Here is the formatted coord: " + formattedSouthEastLong);
+
+            if (formattedNorthWestLat === 999 &&
+                formattedNorthWestLong === 999 &&
+                formattedSouthEastLat === 999 &&
+                formattedSouthEastLong === 999) {
+                // grey out button
+            }
 
             const validNorthWestLat = checkValid("lat", formattedNorthWestLat);
             const validNorthWestLong = checkValid("long", formattedNorthWestLong);
             const validSouthEastLat = checkValid("lat", formattedSouthEastLat);
             const validSouthEastLong = checkValid("long", formattedSouthEastLong);
-            console.log("Coords validated");
 
-            console.log(validNorthWestLat)
-            console.log(validNorthWestLong)
-            console.log(validSouthEastLat)
-            console.log(validSouthEastLong)
+            console.log("Is the coord valid: " + validNorthWestLat.isValid + ", " + validNorthWestLat.result);
+            console.log("Is the coord valid: " + validNorthWestLong.isValid + ", " + validNorthWestLong.result);
+            console.log("Is the coord valid: " + validSouthEastLat.isValid + ", " + validSouthEastLat.result);
+            console.log("Is the coord valid: " + validSouthEastLong.isValid + ", " + validSouthEastLong.result);
 
-            if(validNorthWestLat.isValid && validNorthWestLong.isValid && validSouthEastLat.isValid && validSouthEastLong.isValid){
-            console.log("Attempting to plot");
-                // check valid and convert formats
-                // if not valid 'grey out' make request button
-                // ACHIEVE BY SHARING SOME STATE BETWEEN REQUESTOR & CONFIGURATOR COMPONENT!
-                // ONLY SETSELECTEDREGION if valid.
-                props.setSelectedRegion({
-                    enteredManually: true,
-                    region: {
-                        northWest: {
-                            lat: validNorthWestLat.result,
-                            long: validNorthWestLong.result
-                        },
-                        southEast: {
-                            lat: validSouthEastLat.result,
-                            long: validSouthEastLong.result
-                        }
-                    }
-                })
+            if(validNorthWestLat.isValid &&
+                validNorthWestLong.isValid &&
+                validSouthEastLat.isValid &&
+                validSouthEastLong.isValid){
+                //grey out button
             }
+
+            console.log("Attempting to plot");
+            props.setSelectedRegion({
+                enteredManually: true,
+                region: {
+                    northWest: {
+                        lat: validNorthWestLat.result,
+                        long: validNorthWestLong.result
+                    },
+                    southEast: {
+                        lat: validSouthEastLat.result,
+                        long: validSouthEastLong.result
+                    }
+                }
+            })
         }
     }, [northWestLat, northWestLong, southEastLat, southEastLong]);
 
