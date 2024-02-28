@@ -200,13 +200,7 @@ async fn main() {
                 }
                 Some(node) => {
                     event!(Level::DEBUG, "Found & Inserted: {:?}", node);
-                    idx.insert(node.clone());
-                    idx.insert(node.clone());
-                    idx.insert(node.clone());
-                    idx.insert(node.clone());
-                    idx.insert(node.clone());
-                    idx.insert(node.clone());
-                    idx.insert(node.clone());
+                    idx.insert(node);
 
                 }
             },
