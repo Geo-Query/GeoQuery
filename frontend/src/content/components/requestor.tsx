@@ -31,66 +31,6 @@ function arbitraryFailure() {
     }).showToast();
 }
 
-type QResult = {
-    metadata: {
-        region: {
-            top_left: number[],
-            bottom_right: number[]
-        },
-        tags: [string, string][]
-    },
-    map: {
-        [key: string]: {
-            path: string
-        }
-    }
-};
-
-function generatePaginationResponse(totalCount: number, resultsPerPage: number, currentPage: number): any {
-    const totalPages = Math.ceil(totalCount / resultsPerPage);
-    const results: QResult[] = [];
-
-    // Ensure the currentPage is within the valid range
-    const validCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
-
-    // Calculate the start index for the current page
-    const startIndex = (validCurrentPage - 1) * resultsPerPage;
-    const endIndex = Math.min(startIndex + resultsPerPage, totalCount);
-
-    for (let i = startIndex; i < endIndex; i++) {
-        results.push({
-            metadata: {
-                region: {
-                    top_left: [-179.999999 + i, 83.533339 - i],
-                    bottom_right: [179.999997 - i, -89.900021 + i]
-                },
-                tags: [["Filetype", "GEOJSON"]]
-            },
-            map: {
-                GEOJSON: {
-                    path: `/path/to/data${i + 1}.geojson`
-                }
-            }
-        });
-    }
-
-    const response = {
-        status: 200, // Mock HTTP status code
-        data: {
-            "status": "Complete",
-            "pagination": {
-                "count": totalCount,
-                "current_page": currentPage,
-                "per_page": resultsPerPage,
-                "total_pages": totalPages
-            },
-            "results": results
-        }};
-
-    return response;
-}
-
-
 async function pollQuery(
     queryState: QueryState,
     setQueryState: React.Dispatch<React.SetStateAction<QueryState>>,
@@ -106,7 +46,7 @@ async function pollQuery(
     if (queryToken) {
         try {
             let shouldContinue = true;
-            while (shouldContinue) {
+            while (shouldContinue && queryState !== QueryState.COMPLETE) {
                 const resp = await axios.get(`${BACKEND_URL}/results`, {
                     params: {
                         uuid: queryToken,
@@ -114,13 +54,13 @@ async function pollQuery(
                     }
                 });
 
-                // const resp = generatePaginationResponse(100, 10, currentPage);
-
                 console.log(resp);
 
                 if (resp.status === 200 && resp.data?.results && resp.data?.status) {
                     const state = queryStateFromString(resp.data.status);
                     const pagination = resp.data.pagination; // Capture pagination info
+
+
 
                     if (resp.data.results) {
                         const build: QueryResult[] = resp.data.results.map((node: any) => {
@@ -259,6 +199,7 @@ export default function Requestor(props: RequestorProps) {
     const [pollCount, setPollCount] = useState(0);
 
     console.log("RERENDER!");
+    console.log(props.queryState);
     console.log(results);
     console.log(queryToken);
 
