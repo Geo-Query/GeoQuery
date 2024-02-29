@@ -15,7 +15,7 @@ use uuid::Uuid;
 use crate::index::Node;
 use crate::routes::{index, results, search};
 use crate::worker::{QueryTask, worker};
-use crate::config::Config;
+use crate::config::read_path;
 use tower_http::cors::{Any, CorsLayer};
 use http::Method;
 use serde::{Deserialize, Serialize};
@@ -148,17 +148,17 @@ fn traverse(p: PathBuf) -> Result<Vec<MapType>, Box<dyn Error>>{
 async fn main() {
     tracing_subscriber::fmt::init();
     // Load Config (Expect in WD)
-    let cfg = match std::env::current_dir() {
-        Ok(d) => match File::open(d.join("config.json")) {
-            Ok(f) => match serde_json::from_reader::<BufReader<File>, Config>(BufReader::new(f)) {
-                Ok(cfg) => cfg,
+    let directory = match std::env::current_dir() {
+        Ok(d) => match File::open(d.join("config.txt")) {
+            Ok(f) => match read_path(f) {
+                Ok(directory) => directory,
                 Err(e) => {
-                    event!(Level::ERROR, "Failed to parse config.json, reason: {e:?}");
+                    event!(Level::ERROR, "Failed to parse config.txt, reason: {e:?}");
                     panic!();
                 }
             },
             Err(e) => {
-                event!(Level::ERROR, "Failed to open config.json in current wd, reason: {e:?}");
+                event!(Level::ERROR, "Failed to open config.txt in current wd, reason: {e:?}");
                 panic!();
             }
         },
@@ -167,16 +167,16 @@ async fn main() {
             panic!();
         }
     };
-    event!(Level::INFO, "config.json Loaded from current working directory!");
+    event!(Level::INFO, "config.txt Loaded from current working directory!");
 
-    if !cfg.directory.exists() {
-        event!(Level::ERROR, "Map Directory: {:?}", cfg.directory);
-        event!(Level::ERROR, "Does not exist! Please edit in config.json!");
+    if !directory.exists() {
+        event!(Level::ERROR, "Map Directory: {:?}", directory);
+        event!(Level::ERROR, "Does not exist! Please edit in config.txt!");
         panic!();
     }
 
 
-    let files: Vec<Arc<MapType>> = match traverse(cfg.directory) {
+    let files: Vec<Arc<MapType>> = match traverse(directory) {
         Ok(files) => files.into_iter().map(Arc::new).collect(),
         Err(e) => {
             event!(Level::ERROR, "Failed to traverse files to build index.");
