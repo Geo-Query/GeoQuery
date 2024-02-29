@@ -200,7 +200,8 @@ async fn main() {
                 }
                 Some(node) => {
                     event!(Level::DEBUG, "Found & Inserted: {:?}", node);
-                    idx.insert(node)
+                    idx.insert(node);
+
                 }
             },
             Err(e) => {
