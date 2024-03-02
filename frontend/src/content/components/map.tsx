@@ -26,7 +26,8 @@ export default function Map(props: MapProps) {
 
     // Init draw function!
     useEffect(() => {
-        if (props.selectedRegion.region) {
+        console.log("DIDNT CHANGE!");
+        if (props.selectedRegion?.region) {
             draw(props.selectedRegion.region, drawLayerRef, mapRef);
         }
     }, [props.selectedRegion]);

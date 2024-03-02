@@ -11,7 +11,13 @@ import Requestor from "./components/requestor";
 import History from "./components/history";
 
 function App() {
-    const [selectedRegion, setSelectedRegion] = useState(new SelectedRegion())
+    const [selectedRegion, setSelectedRegionWrapped] = useState(undefined);
+
+    const setSelectedRegion = (v) => {
+        console.log("SETTER CALLED!");
+        console.trace();
+        setSelectedRegionWrapped(v);
+    }
     const [queryHistory, setQueryHistoryWrapped] = useState(loadQueryHistory());
     const [queryState, setQueryState] = useState<QueryState>(QueryState.BUILDING);
 

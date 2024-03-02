@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import SelectedRegion, { checkFormat, checkValid, validateAndConformCoordinate } from "../utils/region";
 import QueryHistory from "../utils/queryhistory";
+import Toastify from "toastify-js";
 
 interface ConfiguratorProps {
     selectedRegion: SelectedRegion,
@@ -10,83 +11,54 @@ interface ConfiguratorProps {
 }
 
 export default function Configurator(props: ConfiguratorProps) {
-    const [northWestLat, setNWLat] = useState(undefined);
-    const [northWestLong, setNWLong] = useState(undefined);
-    const [southEastLat, setSELat] = useState(undefined);
-    const [southEastLong, setSELong] = useState(undefined);
+    const [northWestLatInput, setNWLatInput] = useState(undefined);
+    const [northWestLongInput, setNWLongInput] = useState(undefined);
+    const [southEastLatInput, setSELatInput] = useState(undefined);
+    const [southEastLongInput, setSELongInput] = useState(undefined);
 
-    // Once populated, and every change after
+
+    const [northWestLatReal, setNorthWestLatReal] = useState(undefined);
+    const [northWestLongReal, setNorthWestLongReal] = useState(undefined);
+    const [southEastLatReal, setSouthEastLatReal] = useState(undefined);
+    const [southEastLongReal, setSouthEastLongReal] = useState(undefined);
+
+
     useEffect(() => {
-
-        // validates present coordinates
-        if (northWestLat && northWestLong && southEastLat && southEastLong) {
-            console.log("Here is the coord: " + northWestLat);
-            console.log("Here is the coord: " + northWestLong);
-            console.log("Here is the coord: " + southEastLat);
-            console.log("Here is the coord: " + northWestLat);
-
-            // converts all formats to decimal degrees
-            const formattedNorthWestLat = checkFormat(northWestLat);
-            const formattedNorthWestLong = checkFormat(northWestLong);
-            const formattedSouthEastLat = checkFormat(southEastLat);
-            const formattedSouthEastLong = checkFormat(southEastLong);
-
-            console.log("Here is the formatted coord: " + formattedNorthWestLat);
-            console.log("Here is the formatted coord: " + formattedNorthWestLong);
-            console.log("Here is the formatted coord: " + formattedSouthEastLat);
-            console.log("Here is the formatted coord: " + formattedSouthEastLong);
-
-            if (formattedNorthWestLat === 999 &&
-                formattedNorthWestLong === 999 &&
-                formattedSouthEastLat === 999 &&
-                formattedSouthEastLong === 999) {
-                // grey out button
-            }
-
-            const validNorthWestLat = checkValid("lat", formattedNorthWestLat);
-            const validNorthWestLong = checkValid("long", formattedNorthWestLong);
-            const validSouthEastLat = checkValid("lat", formattedSouthEastLat);
-            const validSouthEastLong = checkValid("long", formattedSouthEastLong);
-
-            console.log("Is the coord valid: " + validNorthWestLat.isValid + ", " + validNorthWestLat.result);
-            console.log("Is the coord valid: " + validNorthWestLong.isValid + ", " + validNorthWestLong.result);
-            console.log("Is the coord valid: " + validSouthEastLat.isValid + ", " + validSouthEastLat.result);
-            console.log("Is the coord valid: " + validSouthEastLong.isValid + ", " + validSouthEastLong.result);
-
-            if(validNorthWestLat.isValid &&
-                validNorthWestLong.isValid &&
-                validSouthEastLat.isValid &&
-                validSouthEastLong.isValid){
-                //grey out button
-            }
-
-            console.log("Attempting to plot");
+        console.log("FIRED!");
+        if (southEastLongReal && southEastLatReal && northWestLongReal && northWestLatReal) {
             props.setSelectedRegion({
                 enteredManually: true,
                 region: {
                     northWest: {
-                        lat: validNorthWestLat.result,
-                        long: validNorthWestLong.result
+                        lat: northWestLatReal,
+                        long: northWestLongReal
                     },
                     southEast: {
-                        lat: validSouthEastLat.result,
-                        long: validSouthEastLong.result
+                        lat: southEastLatReal,
+                        long: southEastLongReal
                     }
                 }
             })
         }
-    }, [northWestLat, northWestLong, southEastLat, southEastLong]);
+
+    }, [northWestLatReal, northWestLongReal, southEastLatReal, southEastLongReal]);
 
     // if box drawn plot, if entered leave box
     useEffect(() => {
-        if(!props.selectedRegion.enteredManually){
-            setNWLat(props.selectedRegion.region?.northWest.lat.toString());
-            setNWLong(props.selectedRegion.region?.northWest.long.toString());
-            setSELat(props.selectedRegion.region?.southEast.lat.toString());
-            setSELong(props.selectedRegion.region?.southEast.long.toString());
+        if (props.selectedRegion) {
+            if (!props.selectedRegion.enteredManually) {
+                setNWLatInput(props.selectedRegion.region?.northWest.lat.toString());
+                setNWLongInput(props.selectedRegion.region?.northWest.long.toString());
+                setSELatInput(props.selectedRegion.region?.southEast.lat.toString());
+                setSELongInput(props.selectedRegion.region?.southEast.long.toString());
+                setNorthWestLatReal(props.selectedRegion.region?.northWest.lat);
+                setNorthWestLongReal(props.selectedRegion.region?.northWest.long);
+                setSouthEastLatReal(props.selectedRegion.region?.southEast.lat);
+                setSouthEastLongReal(props.selectedRegion.region?.southEast.long);
+            }
         }
-
     }, [props.selectedRegion]);
+
 
     // every change
     return (
@@ -96,17 +68,72 @@ export default function Configurator(props: ConfiguratorProps) {
                 <div className="flex gap-3 w-full">
                     <input
                         type="text"
-                        value={northWestLat || ''}
+                        value={northWestLatInput || ''}
                         onChange={(e) => {
-                            setNWLat(e.target.value)
+                            setNWLatInput(e.target.value)
+                        }}
+                        onBlur={(e) => {
+                            console.log("BLURRED?!?!?");
+                            const converted = checkFormat(e.target.value);
+                            if (converted) {
+                                if (checkValid('lat', converted).isValid) {
+                                    setNorthWestLatReal(converted);
+                                    setNWLatInput(converted.toString());
+                                } else {
+                                    Toastify({
+                                        text: "Failed to parse coordinate input!",
+                                        duration: 3000,
+                                        gravity: "bottom", // `top` or `bottom`
+                                        position: "right", // `left`, `center` or `right`
+                                        stopOnFocus: true, // Prevents dismissing of toast on hover
+                                        style: {
+                                            background: "red",
+                                        },
+                                    }).showToast();
+                                }
+                            } else {
+                                Toastify({
+                                    text: "Failed to parse coordinate input!",
+                                    duration: 3000,
+                                    gravity: "bottom", // `top` or `bottom`
+                                    position: "right", // `left`, `center` or `right`
+                                    stopOnFocus: true, // Prevents dismissing of toast on hover
+                                    style: {
+                                        background: "red",
+                                    },
+                                }).showToast();
+                            }
                         }}
                         className="w-full px-4 py-2 text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     />
                     <input
                         type="text"
-                        value={northWestLong || ''}
+                        value={northWestLongInput || ''}
                         onChange={(e) => {
-                            setNWLong(e.target.value)
+                            setNWLongInput(e.target.value)
+                        }}
+                        onBlur={(e) => {
+                            console.log("BLURRED!");
+                            const converted = checkFormat(e.target.value);
+                            if (converted) {
+                                if (checkValid('long', converted).isValid) {
+                                    console.log("BLURRED!")
+                                    setNorthWestLongReal(converted);
+                                    setNWLongInput(converted.toString());
+                                } else {
+                                    Toastify({
+                                        text: "Failed to parse coordinate input!",
+                                        duration: 3000,
+                                        gravity: "bottom", // `top` or `bottom`
+                                        position: "right", // `left`, `center` or `right`
+                                        stopOnFocus: true, // Prevents dismissing of toast on hover
+                                        style: {
+                                            background: "red",
+                                        },
+                                    }).showToast();
+                                }
+
+                            }
                         }}
                         className="w-full px-4 py-2 text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     />
@@ -118,17 +145,63 @@ export default function Configurator(props: ConfiguratorProps) {
 
                     <input
                         type="text"
-                        value={southEastLat || ''}
+                        value={southEastLatInput || ''}
                         onChange={(e) => {
-                            setSELat(e.target.value)
+                            setSELatInput(e.target.value)
+                        }}
+                        onBlur={(e) => {
+                            console.log("BLURRED!")
+
+                            const converted = checkFormat(e.target.value);
+                            if (converted) {
+                                if (checkValid('lat', converted).isValid) {
+                                    setSouthEastLatReal(converted);
+                                    setSELatInput(converted.toString());
+                                } else {
+                                    Toastify({
+                                        text: "Failed to parse coordinate input!",
+                                        duration: 3000,
+                                        gravity: "bottom", // `top` or `bottom`
+                                        position: "right", // `left`, `center` or `right`
+                                        stopOnFocus: true, // Prevents dismissing of toast on hover
+                                        style: {
+                                            background: "red",
+                                        },
+                                    }).showToast();
+                                }
+
+                            }
                         }}
                         className="w-full px-4 py-2 text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     />
                     <input
                         type="text"
-                        value={southEastLong || ''}
+                        value={southEastLongInput || ''}
                         onChange={(e) => {
-                            setSELong(e.target.value)
+                            setSELongInput(e.target.value)
+                        }}
+                        onBlur={(e) => {
+                            console.log("BLURRED!")
+
+                            const converted = checkFormat(e.target.value);
+                            if (converted) {
+                                if (checkValid('long', converted).isValid) {
+                                    setSouthEastLongReal(converted);
+                                    setSELongInput(converted.toString());
+                                } else {
+                                    Toastify({
+                                        text: "Failed to parse coordinate input!",
+                                        duration: 3000,
+                                        gravity: "bottom", // `top` or `bottom`
+                                        position: "right", // `left`, `center` or `right`
+                                        stopOnFocus: true, // Prevents dismissing of toast on hover
+                                        style: {
+                                            background: "red",
+                                        },
+                                    }).showToast();
+                                }
+
+                            }
                         }}
                         className="w-full px-4 py-2 text-black border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                     />

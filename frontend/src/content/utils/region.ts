@@ -25,7 +25,7 @@ export function validateAndConformCoordinate(initial: string): number {
     return parseFloat(initial);
 }
 
-export function checkFormat(initial: string): number {
+export function checkFormat(initial: string): number | undefined {
 
     const DD = /^-?\d{1,3}(?:\.\d*)?$/;
     const DMS = /^(\d{1,2} \d{1,2} \d{1,2}) ([NESW])$/;
@@ -40,7 +40,7 @@ export function checkFormat(initial: string): number {
     } else if (DD.test(initial)) {
         return parseFloat(initial);
     } else {
-        return 999; //if the box entry is not in either DD, DMS or DMDM return error code 999
+        return undefined;
     }
 }
 

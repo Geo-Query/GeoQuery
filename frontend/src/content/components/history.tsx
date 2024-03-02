@@ -31,7 +31,7 @@ export default function History(props: QueryProps) {
                 {props.queryHistory.queries.map((query, index) => (
                     <div
                         className="bg-[#525461] text-white font-bold py-2 px-4 rounded w-full md:w-auto md:min-w-200px hover:bg-[#526071] flex gap-4 text-left justify-between"
-                        key={index} onClick={() => props.setSelectedRegion(new SelectedRegion(query))}>
+                        key={index} onClick={() => props.setSelectedRegion(new SelectedRegion(false, query))}>
                         <span className="coordinate"><b>North West:</b>   <span
                             className="darker"> {query.northWest.lat.toFixed(8)}, {query.northWest.long.toFixed(8)}</span></span>
                         <span className="coordinate"><b>South East:</b>   <span
