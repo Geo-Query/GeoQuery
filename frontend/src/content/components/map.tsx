@@ -26,7 +26,8 @@ export default function Map(props: MapProps) {
 
     // Init draw function!
     useEffect(() => {
-        if (props.selectedRegion.region) {
+        console.log("DIDNT CHANGE!");
+        if (props.selectedRegion?.region) {
             draw(props.selectedRegion.region, drawLayerRef, mapRef);
         }
     }, [props.selectedRegion]);
@@ -44,7 +45,8 @@ function handleDrawEvent(
     setSelectedRegion: React.Dispatch<React.SetStateAction<SelectedRegion>>,
 ) {
     const latlngs = event.layer.getLatLngs();
-    setSelectedRegion(new SelectedRegion({
+    setSelectedRegion(new SelectedRegion(
+         false, {
         northWest: {
             lat: latlngs[0][1].lat,
             long: latlngs[0][1].lng

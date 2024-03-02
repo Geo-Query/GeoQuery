@@ -153,28 +153,45 @@ async function makeQuery(
         if (isQueryUnique(selectedRegion.region, queryHistory)) {
             setQueryHistory(queryHistory.add(selectedRegion.region));
         }
-        // Proceed with making the query as before
-        try {
-            const resp = await axios.get(`${BACKEND_URL}/search`, {
-                params: {
-                    top_left_lat: selectedRegion.region.northWest.lat,
-                    top_left_long: selectedRegion.region.northWest.long,
-                    bottom_right_lat: selectedRegion.region.southEast.lat,
-                    bottom_right_long: selectedRegion.region.southEast.long
+
+        if (selectedRegion.region.southEast.long == undefined ||
+        selectedRegion.region.southEast.lat == undefined ||
+        selectedRegion.region.northWest.long == undefined ||
+        selectedRegion.region.northWest.lat == undefined) {
+            Toastify({
+                text: "Missing at least one coordinate input!",
+                duration: 3000,
+                gravity: "bottom", // `top` or `bottom`
+                position: "right", // `left`, `center` or `right`
+                stopOnFocus: true, // Prevents dismissing of toast on hover
+                style: {
+                    background: "red",
+                },
+            }).showToast();
+        } else {
+            // Proceed with making the query as before
+            try {
+                const resp = await axios.get(`${BACKEND_URL}/search`, {
+                    params: {
+                        top_left_lat: selectedRegion.region.northWest.lat,
+                        top_left_long: selectedRegion.region.northWest.long,
+                        bottom_right_lat: selectedRegion.region.southEast.lat,
+                        bottom_right_long: selectedRegion.region.southEast.long
+                    }
+                });
+                if (resp.status == 200 && resp.data?.token) {
+                    setQueryToken(resp.data.token);
+                    setQueryState(QueryState.WAITING);
+                    setPollCount(pollCount + 1);
+                } else {
+                    arbitraryFailure();
+                    setQueryState(QueryState.FAILED);
                 }
-            });
-            if (resp.status == 200 && resp.data?.token) {
-                setQueryToken(resp.data.token);
-                setQueryState(QueryState.WAITING);
-                setPollCount(pollCount + 1);
-            } else {
+            } catch (e) {
+                console.error("Request failed; or unexpected response!", e);
                 arbitraryFailure();
                 setQueryState(QueryState.FAILED);
             }
-        } catch (e) {
-            console.error("Request failed; or unexpected response!", e);
-            arbitraryFailure();
-            setQueryState(QueryState.FAILED);
         }
     } else {
         // Existing no region selected notification
