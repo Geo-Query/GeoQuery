@@ -52,4 +52,5 @@ build_structure:
   script:
     - tree
   dependencies:
-    - build
+    - build_frontend
+    - build_backend
