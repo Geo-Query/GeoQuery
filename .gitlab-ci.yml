@@ -52,7 +52,7 @@ build_structure:
   script:
     - mkdir structured_build
     - cp frontend/out/make/zip/win32/x64/electron-refactor-win32-x64-*.*.*.zip structured_build/frontend.zip
-    - cp backend/target/x86_64-pc-windows-gnu/release/sh35-backend.exe structured_buld/backend.exe
+    - cp backend/target/x86_64-pc-windows-gnu/release/sh35-backend.exe structured_build/backend.exe
     - tree
   dependencies:
     - build_frontend
