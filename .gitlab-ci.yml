@@ -1,6 +1,7 @@
 stages:
   - test
   - build
+  - structure
 
 test_job:
   stage: test
@@ -45,3 +46,10 @@ build_frontend:
     when: on_success
     paths:
       - "frontend/out/make/zip/win32/x64/electron-refactor-win32-x64-*.*.*.zip"
+
+build_structure:
+  stage: structure
+  script:
+    - tree
+  dependencies:
+    - build
