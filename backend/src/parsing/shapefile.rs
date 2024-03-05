@@ -119,3 +119,37 @@ pub fn parse_shapefile(shp_reader: &mut BufReader<File>, prj_reader: Option<&mut
         });
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+
+    #[test]
+    fn test_from_bytes_f64() {
+        let bytes = 42.42f64.to_le_bytes();
+        let result = f64::from_bytes(&bytes);
+        assert!((result - 42.42).abs() < f64::EPSILON);
+    }
+    #[test]
+    fn test_parse_header_valid() {
+        let mut header_bytes = vec![0; 100];
+        header_bytes[0] = 0;
+        header_bytes[1] = 0;
+        header_bytes[2] = 39;
+        header_bytes[3] = 10;
+        // Populate with test coordinate data
+        let x_min_bytes = (-123.456f64).to_le_bytes();
+        header_bytes[36..44].copy_from_slice(&x_min_bytes);
+
+        let header = parse_header(&header_bytes).unwrap();
+        assert_eq!(header.x_min, -123.456);
+    }
+
+    #[test]
+    fn test_parse_header_invalid_magic_number() {
+        let header_bytes = vec![0; 100];
+        assert!(parse_header(&header_bytes).is_err());
+    }
+}
