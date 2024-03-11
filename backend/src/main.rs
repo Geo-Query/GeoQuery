@@ -261,7 +261,7 @@ async fn main() {
     event!(Level::INFO, "Starting Web Server & Parallel Worker!");
 
 
-    if let Ok(_) = Command::new("electron-refactor").spawn() {
+    if let Ok(_) = Command::new("frontend/electron-refactor").spawn() {
         println!("Launched Frontend!");
     } else {
         println!("Failed to launch frontend!")
