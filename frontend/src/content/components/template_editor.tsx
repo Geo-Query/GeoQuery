@@ -139,7 +139,7 @@ const renameFolder = (folderId: number, newName: string) => {
 const renderFolderCards = (folders: Folder[], depth = 0): JSX.Element[] => {
   return folders.map(folder => {
     // Log the ID of the folder being rendered
-    console.log(`Rendering folder ID: ${folder.id} at depth: ${depth}`);
+    // console.log(`Rendering folder ID: ${folder.id} at depth: ${depth}`);
 
     return (
       <FolderCard
