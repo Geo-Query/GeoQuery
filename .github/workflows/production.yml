@@ -7,17 +7,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/cache@v3
-        continue-on-error: false
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            backend/target/            
-          key: cachet
-          restore-keys: ${{ runner.os }}-cargo-
+          shared-key: "test_cache"
+          workspaces: "backend -> backend/target"
       - run: |
           cd backend 
           cargo test --verbose --all
@@ -44,17 +37,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/cache@v3
-        continue-on-error: false
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            backend/target/            
-          key: cachev
-          restore-keys: ${{ runner.os }}-cargo-
+          shared-key: "build_cache"
+          workspaces: "backend -> backend/target"
       - run: |
           cd backend 
           cargo build --verbose --target x86_64-pc-windows-msvc --bin sh35-backend --all --release 
@@ -75,11 +61,9 @@ jobs:
       - run: |
           mkdir frontend_extract
           7z x -ofrontend_extract frontend/*.zip
-          echo "FOOTEXT"
+          mkdir build
+          move frontend_extract build/frontend
+          move backend/sh35-backend.exe "build/Start Geoquery.exe"
+          cd build
           dir
-          dir
-          cd frontend_extract
-          dir
-          dir
-
          
