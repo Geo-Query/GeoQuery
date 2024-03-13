@@ -8,5 +8,7 @@ jobs:
       steps:
         - uses: actions/checkout@v4
         - uses: dtolnay/rust-toolchain@stable
-        - run: cargo test --verbose --all 
+        - run: |
+            cd backend
+            cargo test --verbose --all 
 
