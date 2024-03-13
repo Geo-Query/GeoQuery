@@ -8,7 +8,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - run: |
-          cd backend
+          cd backend \
           cargo test --verbose --all
 
   build_frontend:
@@ -18,9 +18,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4.0.2
       - run: |
-          cd frontend
-          npm install
-          npm run make -- --platform=win32
+          cd frontend \
+          npm install \
+          npm run make -- --platform=win32 \
           cd ..
     - uses: actions/upload-artifact@v4
       with:
@@ -34,8 +34,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - run: |
-          cd backend  
-          cargo build --verbose --target x86_64-pc-windows-msvc --bin sh35-backend --all --release
+          cd backend \
+          cargo build --verbose --target x86_64-pc-windows-msvc --bin sh35-backend --all --release \
           cd ..
       - uses: actions/upload-artifact@v4
         with:
