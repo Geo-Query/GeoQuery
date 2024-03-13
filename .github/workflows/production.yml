@@ -11,4 +11,13 @@ jobs:
         - run: |
             cd backend
             cargo test --verbose --all 
-
+  build_frontend:
+      name: frontend
+      runs-on: windows-latest
+      steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-node@v4.0.2
+        - run: |
+            cd frontend
+            npm install
+            npm run make -- --platform=win32
