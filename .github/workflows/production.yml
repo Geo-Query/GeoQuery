@@ -64,6 +64,7 @@ jobs:
           7z x -o"/frontend_extract" frontend/*.zip
           echo "FOOTEXT"
           cd frontend_extract
-          dir
+          tree
+          tree
 
          
