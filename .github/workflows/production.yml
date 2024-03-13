@@ -21,3 +21,30 @@ jobs:
             cd frontend
             npm install
             npm run make -- --platform=win32
+            cd ..
+        - uses: actions/upload-artifact@v4
+          with:
+              name: frontend
+              path: frontend/out/make/zip/win32/x64/electron-refactor-win32-x64-*.*.*.zip
+  build_backend:
+      name: backend
+      runs-on: windows-latest
+      steps:
+        - uses: actions/checkout@v4
+        - uses: dtolnay/rust-toolchain@stable
+        - run: |
+            cd backend
+            cargo build --verbose --target x86_64-pc-windows-msvc --bin sh35-backend --all --release
+            cd ..
+        - uses: actions/upload-artifact@v4
+          with:
+            name: backend
+            path: backend/target/x86_64-pc-windows-gnu/release/sh35-backend.exe
+          
+  bundle:
+      name: bundle
+      runs-on: windows-latest
+      steps:
+        uses: actions/download-artifact@v4
+        run: |
+          tree
