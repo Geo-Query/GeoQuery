@@ -7,6 +7,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "cache"
+          workspaces: "backend -> backend/target"
       - run: |
           cd backend 
           cargo test --verbose --all
@@ -33,6 +37,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "cache"
+          workspaces: "backend -> backend/target"
+
       - run: |
           cd backend 
           cargo build --verbose --target x86_64-pc-windows-msvc --bin sh35-backend --all --release 
@@ -55,3 +64,5 @@ jobs:
           7z x -o"/frontend_extract" frontend/*.zip
           cd frontend_extract
           dir
+
+         
