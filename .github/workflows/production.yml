@@ -7,9 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: >
-          cd backend 
-          cargo test --verbose --all
+      - run: "cd backend \n cargo test --verbose --all"
 
   build_frontend:
     name: frontend
