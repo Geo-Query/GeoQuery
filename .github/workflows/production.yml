@@ -10,7 +10,7 @@ jobs:
         - uses: dtolnay/rust-toolchain@stable
         - run: |
             cd backend
-          cargo test --verbose --all
+            cargo test --verbose --all
   build_frontend:
       name: frontend
       runs-on: windows-latest
