@@ -7,10 +7,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/cache@v3
+        continue-on-error: false
         with:
-          shared-key: "cache"
-          workspaces: "backend -> backend/target"
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/            
+          key: cachev
+          restore-keys: ${{ runner.os }}-cargo-
       - run: |
           cd backend 
           cargo test --verbose --all
@@ -37,11 +44,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/cache@v3
+        continue-on-error: false
         with:
-          shared-key: "cache"
-          workspaces: "backend -> backend/target"
-
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/            
+          key: cachev
+          restore-keys: ${{ runner.os }}-cargo-
       - run: |
           cd backend 
           cargo build --verbose --target x86_64-pc-windows-msvc --bin sh35-backend --all --release 
