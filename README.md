@@ -4,8 +4,6 @@
 Contains two subprojects...
 frontend & backend.
 
-As well as a basic Flask app to provide relay functionality from frontend to backend.
-
 Team Members:
 ------------------
 Ruari O'Hara, 2666047o@student.gla.ac.uk, 07939544510
@@ -51,19 +49,16 @@ Requirements:
 
 Progression:
 - RStar Implementation [x]
-- Region Parsing: [ ]
+- Region Parsing: [ X]
   - KML [x]
   - GEOTIFF w/o sidecar [x]
   - DTED [x]
-  - GEOTIFF w/ sidecar [ ]
   - GEOJSON [x]
-  - GPKG [ 
-  - MBTILES [ ]
-  - OSM/PBF [ ]
-  - SHAPEFILE [ ]
-- File Searching [ ]
-- Index save/read [ ]
-- I/O for Flask server [ ]
+  - GPKG [X] 
+  - MBTILES [X]
+  - SHAPEFILE [X ]
+- File Searching [X]
+- Index save/read [X ]
 
 Requirements:
 - Must run in acceptable time, over multiple TB of raw data.
