@@ -15,7 +15,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/            
+            backend/target/            
           key: cachev
           restore-keys: ${{ runner.os }}-cargo-
       - run: |
@@ -52,7 +52,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            target/            
+            backend/target/            
           key: cachev
           restore-keys: ${{ runner.os }}-cargo-
       - run: |
