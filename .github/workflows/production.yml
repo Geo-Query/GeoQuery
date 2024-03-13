@@ -1,0 +1,79 @@
+name: production
+on: [push]
+jobs:
+  test:
+    name: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "test_cache"
+          workspaces: "backend -> backend/target"
+      - run: |
+          cd backend 
+          cargo test --verbose --all
+
+  build_frontend:
+    name: build_frontend
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4.0.2
+      - run: |
+          cd frontend 
+          npm install 
+          npm run make -- --platform=win32 
+          cd ..
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend
+          path: frontend/out/make/zip/win32/x64/electron-refactor-win32-x64-*.*.*.zip
+
+  build_backend:
+    name: build_backend
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "build_cache"
+          workspaces: "backend -> backend/target"
+      - run: |
+          cd backend 
+          cargo build --verbose --target x86_64-pc-windows-msvc --bin sh35-backend --all --release 
+          cd ..
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backend
+          path: backend/target/x86_64-pc-windows-msvc/release/sh35-backend.exe
+
+  bundle:
+    name: bundle
+    needs: [build_frontend, build_backend]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: ./repo
+      - uses: actions/download-artifact@v4
+        with:
+          path: .
+      - run: |
+          mkdir frontend_extract
+          7z x -ofrontend_extract frontend/*.zip
+          mkdir build
+          move frontend_extract build/frontend
+          move backend/sh35-backend.exe "build/Start Geoquery.exe"
+          move repo/backend/config.txt.example build/config.txt.example
+          7z a GeoQuery.zip ./build/*
+      - uses: xresloader/upload-to-github-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: "GeoQuery.zip"
+          tags: false
+          draft: false
+
