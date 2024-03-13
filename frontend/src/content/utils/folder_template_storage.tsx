@@ -29,6 +29,7 @@ export interface FolderTemplate{
     }
 
     add(template: FolderTemplate) {
+        this.templates = this.templates.filter((v) => {return v.folderName != template.folderName});
         this.templates.push(template);
         this.saveToStorage();
     }
@@ -47,7 +48,7 @@ export interface FolderTemplate{
                 const templates: FolderTemplate[] = JSON.parse(storedTemplates);
                 return new FolderTemplatesStorage(templates);
             } catch (e) {
-                console.error("Failed to parse folder templates from storage", e);
+                console.error("Failed to parse f" + "folder templates from storage", e);
                 return new FolderTemplatesStorage();
             }
         } else {

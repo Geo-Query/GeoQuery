@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import FolderTemplatesStorage from '../utils/folder_template_storage'; // Adjust the import path as necessary
 import TemplateEditor from './template_editor'; // Adjust the import path as necessary
 import { FolderTemplate } from '../utils/folder_template_storage';
@@ -23,7 +23,8 @@ interface FoldersTemplateProps {
 
 const FoldersTemplate: React.FC<FoldersTemplateProps> = ({ results }) => {
   const [selectedTemplate, setSelectedTemplate] = useState<Folder | null>(null);
-  const folderTemplates = FolderTemplatesStorage.loadFromStorage();
+  const [selectedTemplateName, setSelectedTemplateName] = useState<string | null>(null);
+  const [folderTemplates, setFolderTemplates] = useState(FolderTemplatesStorage.loadFromStorage());
   const [, setDirectoryPath] = useState("");
 
   const [editedTemplate, setEditedTemplate] = useState<Folder | null>(null);
@@ -41,6 +42,9 @@ const FoldersTemplate: React.FC<FoldersTemplateProps> = ({ results }) => {
     }
   };
 
+    useEffect(() => {
+        setFolderTemplates(FolderTemplatesStorage.loadFromStorage());
+    }, [selectedTemplate]);
 
   const exportData = async (selectedTemplate: Folder, queryResults: Array<QueryResult>) => {
     try {
@@ -170,9 +174,11 @@ const FoldersTemplate: React.FC<FoldersTemplateProps> = ({ results }) => {
 };
 
  
-  const onSelectTemplate = (template: Folder) => {
-    setSelectedTemplate(template);
+  const onSelectTemplate = (template: Folder, name?: string) => {
+      setSelectedTemplateName(name);
+      setSelectedTemplate(template);
   };
+
 
   const addNewTemplate = () => {
     const newFolderTempalate: Folder = {
@@ -184,12 +190,13 @@ const FoldersTemplate: React.FC<FoldersTemplateProps> = ({ results }) => {
 
     //create a new folder
 
-    onSelectTemplate(newFolderTempalate);
+    onSelectTemplate(newFolderTempalate, null);
 
   };
 
   const handleDelete = (templateId: number) => {
     folderTemplates.delete(templateId);
+    setFolderTemplates(FolderTemplatesStorage.loadFromStorage())
   };
 
   return (
@@ -198,6 +205,7 @@ const FoldersTemplate: React.FC<FoldersTemplateProps> = ({ results }) => {
       <>
         <div className="flex flex-col h-full justify-between">
         <TemplateEditor
+            name={selectedTemplateName}
           folder={selectedTemplate}
           onUpdateTemplate={handleTemplateEdit}
         />
@@ -231,7 +239,7 @@ const FoldersTemplate: React.FC<FoldersTemplateProps> = ({ results }) => {
           {folderTemplates.templates.map((template, index) => (
             <div key={index} className="flex justify-between items-center mb-2 bg-[#525461] rounded-lg shadow-lg p-4 transition-transform duration-300 ease-in-out hover:bg-[#526071]">
               <button 
-                onClick={() => onSelectTemplate(template.folder)} 
+                onClick={() => onSelectTemplate(template.folder, template.folderName)}
                 className="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow transition duration-150 ease-in-out"
               >
                 {template.folderName}

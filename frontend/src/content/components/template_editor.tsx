@@ -13,12 +13,13 @@ interface Folder {
 }
 interface TemplateEditorProps {
   folder: Folder;
+  name: string | null;
   onUpdateTemplate: (updatedTemplate: Folder) => void;
 }
 
-const TemplateEditor: React.FC<TemplateEditorProps> = ({ folder, onUpdateTemplate }) => {
+const TemplateEditor: React.FC<TemplateEditorProps> = ({ folder, name,  onUpdateTemplate }) => {
 
-  const [newTemplateName, setNewTemplateName] = useState("");
+  const [newTemplateName, setNewTemplateName] = useState(name ? name : "");
   const [folders, setFolders] = useState<Folder[]>([folder]);
   const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
   const [deletedFolder, setDeletedFolder] = useState<{ folder: Folder; parentId: number | null } | null>(null);
@@ -175,7 +176,6 @@ const saveCurrentTemplate = () => {
   const storage = FolderTemplatesStorage.loadFromStorage();
   storage.add(newTemplate);
   console.log("Template saved");
-  setNewTemplateName(""); // Reset the template name input after saving
 };
 
 
