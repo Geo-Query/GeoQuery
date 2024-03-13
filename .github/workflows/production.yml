@@ -10,7 +10,7 @@ jobs:
       - run: "cd backend \n cargo test --verbose --all"
 
   build_frontend:
-    name: frontend
+    name: build_frontend
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,7 +26,7 @@ jobs:
         path: frontend/out/make/zip/win32/x64/electron-refactor-win32-x64-*.*.*.zip
         
   build_backend:
-    name: backend
+    name: build_backend
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
