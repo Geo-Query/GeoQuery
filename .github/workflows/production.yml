@@ -40,7 +40,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: backend
-          path: backend/target/x86_64-pc-windows-gnu/release/sh35-backend.exe
+          path: backend/target/x86_64-pc-windows-msvc/release/sh35-backend.exe
 
   bundle:
     name: bundle
