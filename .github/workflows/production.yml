@@ -68,6 +68,11 @@ jobs:
           move frontend_extract build/frontend
           move backend/sh35-backend.exe "build/Start Geoquery.exe"
           move repo/backend/config.txt.example build/config.txt.example
-          cd build
-          dir
-         
+          7z a GeoQuery.zip ./build/*
+      - uses: xresloader/upload-to-github-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: "GeoQuery.zip"
+          tags: false
+          draft: false
