@@ -51,9 +51,7 @@ jobs:
         with:
           path: .
       - run: |
-          cd frontend
+          mkdir frontend_extract
+          7z x -o"/frontend_extract" frontend/*.zip
+          cd frontend_extract
           dir
-          cd ..
-          cd backend
-          dir
-
