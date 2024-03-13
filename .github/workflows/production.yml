@@ -55,6 +55,9 @@ jobs:
     needs: [build_frontend, build_backend]
     runs-on: windows-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          path: ./repo
       - uses: actions/download-artifact@v4
         with:
           path: .
@@ -64,6 +67,6 @@ jobs:
           mkdir build
           move frontend_extract build/frontend
           move backend/sh35-backend.exe "build/Start Geoquery.exe"
-          cd build
+          move repo/backend/config.txt.example build/config.txt.example
           dir
          
