@@ -24,7 +24,7 @@ pub struct MBTilesMap {
 
 pub fn parse_mbtiles(filepath: &str ) -> Result<MBTilesMetaData> {
     //Tags for metadata
-    let mut tags = vec![("Filetype".to_string(), "MBTiles".to_string())];
+    let mut tags = vec![("Filetype".to_string(), "MBTILES".to_string())];
 
     let conn_result = Connection::open(filepath);
 
