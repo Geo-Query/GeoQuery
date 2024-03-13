@@ -57,7 +57,7 @@ build_structure:
     - mkdir final_build
     - mkdir final_build/frontend
     - unzip -d electron_unpack frontend.zip
-    - cp electron_unpack/electron-refactor-win32-x64/* final_build/frontend/
+    - cp -r electron_unpack/electron-refactor-win32-x64/* final_build/frontend/
     - cp backend.exe "final_build/Start Geoquery.exe"
     - cd final_build
     - zip -r GeoQuery.zip .
