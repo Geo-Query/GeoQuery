@@ -117,7 +117,7 @@ mod tests {
 
         assert_eq!(metadata.region.top_left, (10.1, 40.4));
         assert_eq!(metadata.region.bottom_right, (30.3, 20.2));
-        assert!(metadata.tags.iter().any(|(key, value)| key == "Filetype" && value == "MBTiles"));
+        assert!(metadata.tags.iter().any(|(key, value)| key == "Filetype" && value == "MBTILES"));
     }
 }
 
