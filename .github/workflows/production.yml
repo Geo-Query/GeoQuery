@@ -1,0 +1,12 @@
+name: production
+run-name: #{{ github.actor }} build production
+on: [push]
+jobs:
+  test:
+      name: test
+      runs-on: windows-latest
+      steps:
+        - uses: actions/checkout@v4
+        - uses: dtolnay/rust-toolchain@stable
+        - run: cargo test --verbose --all: 
+
