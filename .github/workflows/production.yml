@@ -51,5 +51,9 @@ jobs:
         with:
           path: .
       - run: |
-          tree
+          cd frontend
+          dir
+          cd ..
+          cd backend
+          dir
 
