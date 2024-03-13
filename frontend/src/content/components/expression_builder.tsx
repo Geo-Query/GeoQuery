@@ -19,16 +19,16 @@ interface AttributeOption {
 const attributeOptions: Record<string, AttributeOption> = {
   FileType: {
     operators: ['=', '!='],
-    values: ['TIFF', 'JPEG', 'PNG', 'GEOJSON', 'KML'],
+    values: ['DTED', 'GEOJSON', 'GPKG', 'KML', 'MBTILES', 'SHAPEFILE', 'TIFF'],
   },
-  Resolution: {
-    operators: ['=', '!=', '>', '<', '>=', '<='],
-    values: ['5','10','20','50','100'] // Resolution options
-  },
-  Size: {
-    operators: ['>', '<', '>=', '<='],
-    values: [] // Assuming numeric input; no predefined values
-  }
+  // Resolution: {
+  //   operators: ['=', '!=', '>', '<', '>=', '<='],
+  //   values: ['5','10','20','50','100'] // Resolution options
+  // },
+  // Size: {
+  //   operators: ['>', '<', '>=', '<='],
+  //   values: [] // Assuming numeric input; no predefined values
+  // }
 };
 
 const TagBuilder: React.FC<TagBuilderProps> = ({ onTagsUpdated }) => {
