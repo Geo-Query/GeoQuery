@@ -16,7 +16,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             backend/target/            
-          key: cachev
+          key: cachet
           restore-keys: ${{ runner.os }}-cargo-
       - run: |
           cd backend 
@@ -74,7 +74,7 @@ jobs:
           path: .
       - run: |
           mkdir frontend_extract
-          7z x -o"/frontend_extract" frontend/*.zip
+          7z x -ofrontend_extract frontend/*.zip
           echo "FOOTEXT"
           dir
           dir
