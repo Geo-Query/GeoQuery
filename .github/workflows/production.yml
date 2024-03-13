@@ -68,5 +68,6 @@ jobs:
           move frontend_extract build/frontend
           move backend/sh35-backend.exe "build/Start Geoquery.exe"
           move repo/backend/config.txt.example build/config.txt.example
+          cd build
           dir
          
