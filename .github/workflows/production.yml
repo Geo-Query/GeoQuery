@@ -7,7 +7,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: "cd backend \n cargo test --verbose --all"
+      - run: |
+          cd backend 
+          cargo test --verbose --all
 
   build_frontend:
     name: build_frontend
@@ -15,23 +17,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4.0.2
-      - run: >
+      - run: |
           cd frontend 
           npm install 
           npm run make -- --platform=win32 
           cd ..
-    - uses: actions/upload-artifact@v4
-      with:
-        name: frontend
-        path: frontend/out/make/zip/win32/x64/electron-refactor-win32-x64-*.*.*.zip
-        
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend
+          path: frontend/out/make/zip/win32/x64/electron-refactor-win32-x64-*.*.*.zip
+
   build_backend:
     name: build_backend
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: >
+      - run: |
           cd backend 
           cargo build --verbose --target x86_64-pc-windows-msvc --bin sh35-backend --all --release 
           cd ..
@@ -46,5 +48,6 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/download-artifact@v4
-      - run: >
+      - run: |
           tree
+
