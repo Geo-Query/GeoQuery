@@ -63,6 +63,7 @@ build_structure:
     - cp config.txt.example final_build/config.txt.example
     - cd final_build
     - zip -r GeoQuery.zip .
+    - cp GeoQuery.zip ../../GeoQuery.zip
   dependencies:
     - build_frontend
     - build_backend
@@ -71,4 +72,4 @@ build_structure:
     untracked: false
     when: on_success
     paths:
-      - "structured_build/final_build/GeoQuery.zip"
+      - "GeoQuery.zip"
