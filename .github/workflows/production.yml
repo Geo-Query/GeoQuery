@@ -11,7 +11,7 @@ jobs:
         with:
           shared-key: "cache"
           workspaces: "backend -> backend/target"
-      - run: >
+      - run: |
           cd backend 
           cargo test --verbose --all
 
@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4.0.2
-      - run: >
+      - run: |
           cd frontend 
           npm install 
           npm run make -- --platform=win32 
@@ -42,7 +42,7 @@ jobs:
           shared-key: "cache"
           workspaces: "backend -> backend/target"
 
-      - run: >
+      - run: |
           cd backend 
           cargo build --verbose --target x86_64-pc-windows-msvc --bin sh35-backend --all --release 
           cd ..
@@ -59,7 +59,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: .
-      - run: >
+      - run: |
           mkdir frontend_extract
           7z x -o"/frontend_extract" frontend/*.zip
           echo "FOOTEXT"
