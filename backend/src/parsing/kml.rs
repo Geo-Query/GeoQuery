@@ -181,4 +181,110 @@ mod tests {
         let result = parse_kml(&mut reader);
         assert!(matches!(result, Err(NotEnoughGeoData)));
     }
+
+    #[test]
+    fn test_parse_kml_with_invalid_coordinates_format() {
+        let kml_data = r#"
+        <kml>
+            <Document>
+                <Placemark>
+                    <Point>
+                        <coordinates>abc,xyz,0</coordinates>
+                    </Point>
+                </Placemark>
+            </Document>
+        </kml>
+    "#;
+        let mut file = tempfile().unwrap();
+        write!(file, "{}", kml_data).unwrap();
+        file.flush().unwrap();
+        file.seek(std::io::SeekFrom::Start(0)).unwrap();
+
+        let mut reader = BufReader::new(file);
+        let result = parse_kml(&mut reader);
+
+        assert!(matches!(result, Err(UnexpectedFormat(_))));
+    }
+
+    #[test]
+    fn test_parse_kml_empty_coordinates() {
+        let kml_data = r#"
+        <kml>
+            <Document>
+                <Placemark>
+                    <Point>
+                        <coordinates></coordinates>
+                    </Point>
+                </Placemark>
+            </Document>
+        </kml>
+    "#;
+        let mut file = tempfile().unwrap();
+        write!(file, "{}", kml_data).unwrap();
+        file.flush().unwrap();
+        file.seek(std::io::SeekFrom::Start(0)).unwrap();
+
+        let mut reader = BufReader::new(file);
+        let result = parse_kml(&mut reader);
+
+        assert!(matches!(result, Err(NotEnoughGeoData)));
+    }
+
+    #[test]
+    fn test_parse_kml_multiple_placemarks() {
+        let kml_data = r#"
+        <kml>
+            <Document>
+                <Placemark>
+                    <Point>
+                        <coordinates>-122.0,37.0,0</coordinates>
+                    </Point>
+                </Placemark>
+                <Placemark>
+                    <Point>
+                        <coordinates>-123.0,38.0,0</coordinates>
+                    </Point>
+                </Placemark>
+                <!-- More Placemark elements can be added as needed -->
+            </Document>
+        </kml>
+    "#;
+        let mut file = tempfile().unwrap();
+        write!(file, "{}", kml_data).unwrap();
+        file.flush().unwrap();
+        file.seek(std::io::SeekFrom::Start(0)).unwrap();
+
+        let mut reader = BufReader::new(file);
+        let result = parse_kml(&mut reader).unwrap();
+
+        // Verify if the region boundary defined by all the Placemark elements is correctly calculated
+        assert_eq!(result.region.bottom_left, (-123.0, 37.0));
+        assert_eq!(result.region.top_right, (-122.0, 38.0));
+    }
+
+    #[test]
+    fn test_parse_kml_insufficient_coordinates() {
+        let kml_data = r#"
+        <kml>
+            <Document>
+                <Placemark>
+                    <Point>
+                        <coordinates>-122.0822035425683,37.42228990140251,0</coordinates>
+                    </Point>
+                </Placemark>
+            </Document>
+        </kml>
+    "#;
+        let mut file = tempfile().unwrap();
+        write!(file, "{}", kml_data).unwrap();
+        file.flush().unwrap();
+        file.seek(std::io::SeekFrom::Start(0)).unwrap();
+
+        let mut reader = BufReader::new(file);
+        let result = parse_kml(&mut reader);
+
+        assert!(result.is_ok());
+    }
+
+
 }

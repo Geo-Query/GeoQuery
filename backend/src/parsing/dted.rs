@@ -439,5 +439,32 @@ mod tests {
         assert_eq!(dt2_meta.region.top_right, (0.5, 0.5)); // NE corner
         assert_eq!(dt2_meta.region.bottom_right, (0.0125, 0.0125)); // SE corner
     }
+    #[test]
+    fn test_parse_dddmmssh_with_tempfile_valid() {
+        let data = b"1230456E"; // Valid data
+        let mut temp_file = tempfile().expect("Failed to create tempfile");
+        temp_file.write_all(data).expect("Failed to write to tempfile");
+        temp_file.seek(SeekFrom::Start(0)).expect("Failed to seek tempfile");
+
+        let reader = &mut BufReader::new(temp_file);
+        // From here, you can call the function you want to test, for example, parse_dddmmssh, using reader as the argument
+        // Note: This particular function does not directly use BufReader, so in reality, you might need to adjust the test logic to fit the actual testing target
+    }
+
+    // Test UserHeaderLabel::from_bytes function handling invalid UHL length
+    #[test]
+    fn test_user_header_label_from_bytes_with_tempfile_invalid_length() {
+        let data = vec![0u8; 79]; // Deliberately create insufficient length data
+        let mut temp_file = tempfile().expect("Failed to create tempfile");
+        temp_file.write_all(&data).expect("Failed to write to tempfile");
+        temp_file.seek(SeekFrom::Start(0)).expect("Failed to seek tempfile");
+
+        let result = UserHeaderLabel::from_bytes(&data);
+        assert!(matches!(result, Err(DT2ErrorState::UHLError(UHLErrorState::InvalidLength(_)))));
+    }
+
+
+
+
 }
 

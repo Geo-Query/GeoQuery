@@ -82,6 +82,7 @@ mod tests {
     use crate::spatial::Coordinate;
     use crate::spatial::Region;
     use crate::parsing::kml::KMLRegion;
+    use std::collections::HashMap;
     use super::*;
 
     #[test]
@@ -218,5 +219,91 @@ mod tests {
         assert_eq!(meta_data.region.bottom_right, (35.0, -105.0));
         assert_eq!(meta_data.tags, vec![("attribute".to_string(), "value".to_string())]);
     }
+    #[test]
+    fn test_metadata_conversion_with_empty_tags() {
+        let geojson_region = GeoJSONRegion {
+            top_right: (60.0, -80.0),
+            bottom_left: (55.0, -85.0),
+        };
+        let geojson_metadata = GeoJSONMetaData {
+            region: geojson_region,
+            tags: Vec::new(), // Empty tag list
+        };
+        let meta_data: MetaData = geojson_metadata.into();
+        assert!(meta_data.tags.is_empty());
+    }
+
+    // Test handling a large number of tags
+    #[test]
+    fn test_handling_large_amount_of_tags() {
+        let mbtiles_region = MBTilesRegion {
+            top_left: (70.0, -60.0),
+            bottom_right: (65.0, -55.0),
+        };
+        let mut tags = Vec::new();
+        for i in 0..1000 { // Generate 1000 tags
+            tags.push((format!("key{}", i), format!("value{}", i)));
+        }
+        let mbtiles_metadata = MBTilesMetaData {
+            region: mbtiles_region,
+            tags,
+        };
+        let meta_data: MetaData = mbtiles_metadata.into();
+        assert_eq!(meta_data.tags.len(), 1000);
+    }
+
+    #[test]
+    fn test_empty_tags_conversion() {
+        let kml_region = KMLRegion {
+            top_right: (45.0, -90.0),
+            bottom_left: (40.0, -95.0),
+        };
+        let kml_metadata = KMLMetadata {
+            region: kml_region,
+            tags: Vec::new(), // Empty tag vector
+        };
+        let meta_data: MetaData = From::from(kml_metadata);
+        assert!(meta_data.tags.is_empty()); // Confirm that the converted tags vector is empty
+    }
+
+    // Test conversion with multiple tags
+    #[test]
+    fn test_multiple_tags_conversion() {
+        let geojson_region = GeoJSONRegion {
+            top_right: (60.0, -80.0),
+            bottom_left: (55.0, -85.0),
+        };
+        let geojson_metadata = GeoJSONMetaData {
+            region: geojson_region,
+            tags: vec![
+                ("type".to_string(), "feature".to_string()),
+                ("source".to_string(), "user".to_string()),
+            ],
+        };
+        let meta_data: MetaData = From::from(geojson_metadata);
+
+        assert_eq!(meta_data.tags.len(), 2);
+        assert!(meta_data.tags.contains(&("type".to_string(), "feature".to_string())));
+        assert!(meta_data.tags.contains(&("source".to_string(), "user".to_string())));
+    }
+
+    // Test conversion with region boundary values
+    #[test]
+    fn test_region_boundary_values_conversion() {
+        let gpkg_region = GPKGRegion {
+            top_left: (90.0, -180.0),
+            bottom_right: (-90.0, 180.0),
+        };
+        let gpkg_metadata = GPKGMetaData {
+            region: gpkg_region,
+            tags: vec![("coverage".to_string(), "global".to_string())],
+        };
+        let meta_data: MetaData = From::from(gpkg_metadata);
+
+        assert_eq!(meta_data.region.top_left, (90.0, -180.0));
+        assert_eq!(meta_data.region.bottom_right, (-90.0, 180.0));
+        assert_eq!(meta_data.tags, vec![("coverage".to_string(), "global".to_string())]);
+    }
+
 
 }

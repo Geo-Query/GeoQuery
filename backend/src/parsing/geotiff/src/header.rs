@@ -119,5 +119,33 @@ mod tests {
         let (_, ifd_offset) = result.unwrap();
         assert_eq!(ifd_offset, SeekFrom::Start(4294967295));
     }
+    #[test]
+    fn test_parse_header_empty_buffer() {
+        let buffer = [];
+        let result = parse_header(&buffer);
+        assert!(matches!(result, Err(TIFFErrorState::HeaderError(HeaderErrorState::InvalidLength(0)))));
+    }
+    #[test]
+    fn test_parse_header_buffer_too_long() {
+        let buffer = [0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00]; // 9 bytes, longer than the expected 8 bytes
+        let result = parse_header(&buffer);
+        assert!(matches!(result, Err(TIFFErrorState::HeaderError(HeaderErrorState::InvalidLength(9)))));
+    }
+    #[test]
+    fn test_parse_header_invalid_magic_number_with_correct_byte_order() {
+        let buffer = [0x49, 0x49, 0xFF, 0xFF, 0x08, 0x00, 0x00, 0x00]; // Used an invalid magic number
+        let result = parse_header(&buffer);
+        assert!(matches!(result, Err(TIFFErrorState::HeaderError(HeaderErrorState::UnexpectedMagicNumber([0xFF, 0xFF])))));
+    }
+    #[test]
+    fn test_parse_header_max_ifd_offset() {
+        // Using the maximum u32 value as the IFD offset
+        let buffer = [0x49, 0x49, 0x2A, 0x00, 0xFF, 0xFF, 0xFF, 0xFF];
+        let result = parse_header(&buffer);
+        assert!(result.is_ok());
+        let (_, ifd_offset) = result.unwrap();
+        assert_eq!(ifd_offset, SeekFrom::Start(u32::MAX as u64));
+    }
+
 }
 
