@@ -29,6 +29,7 @@ const createWindow = (): void => {
     },
 
   });
+  mainWindow.maximize();
 
 
   // Load the index.html of the app.
@@ -37,8 +38,6 @@ const createWindow = (): void => {
   } else {
     mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
 };
 
 // IPC event for selecting the destination directory
