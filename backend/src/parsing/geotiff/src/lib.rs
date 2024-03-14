@@ -300,5 +300,18 @@ mod tests {
         let result = GeoKeyDirectory::from_shorts(&unsupported_version_header);
         assert!(result.is_err(), "Expected an error due to unsupported GeoKeyDirectory version");
     }
+     #[test]
+     fn test_parse_tiff_incomplete_header() {
+         let incomplete_header = vec![0u8; 4]; // Incomplete header
+         let mut file = tempfile().expect("Failed to create temporary file");
+         file.write_all(&incomplete_header).expect("Failed to write to temporary file");
+         file.seek(SeekFrom::Start(0)).expect("Failed to seek to start of file");
+
+         let mut reader = BufReader::new(file);
+         let tfw_reader = None;
+         let result = parse_tiff(&mut reader, tfw_reader);
+         assert!(matches!(result, Err(TIFFErrorState::UnexpectedFormat(_))), "Expected an error due to incomplete header");
+     }
+
 
 }

@@ -153,6 +153,37 @@ mod tests {
         assert_eq!(region.top_left, (1.0, 2.0));
         assert_eq!(region.bottom_right, (3.0, 4.0));
     }
+    #[test]
+    fn test_convert_from_mbtiles_region() {
+        let mbtiles_region = MBTilesRegion {
+            top_left: (1.0, 2.0),
+            bottom_right: (3.0, 4.0),
+        };
+        let region: Region = mbtiles_region.into();
+        assert_eq!(region.top_left, (1.0, 2.0));
+        assert_eq!(region.bottom_right, (3.0, 4.0));
+    }
+    #[test]
+    fn test_convert_from_gpkg_region() {
+        let gpkg_region = GPKGRegion {
+            top_left: (0.5, 3.5),
+            bottom_right: (2.5, 1.5),
+        };
+        let region: Region = gpkg_region.into();
+        assert_eq!(region.top_left, (0.5, 3.5), "GPKGRegion to Region conversion failed for top_left");
+        assert_eq!(region.bottom_right, (2.5, 1.5), "GPKGRegion to Region conversion failed for bottom_right");
+    }
+
+    #[test]
+    fn test_region_methods() {
+        let region = Region {
+            top_left: (1.0, 4.0),
+            bottom_right: (3.0, 2.0),
+        };
+        assert_eq!(region.bottom_left(), (1.0, 2.0), "bottom_left method failed");
+        assert_eq!(region.top_right(), (3.0, 4.0), "top_right method failed");
+    }
+
 }
 
 

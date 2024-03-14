@@ -125,4 +125,34 @@ mod tests {
         // Checks if the tags contain the "Filetype" => "GPKG" entry
         assert!(metadata.tags.iter().any(|(key, value)| key == "Filetype" && value == "GPKG"));
     }
+
+    #[test]//Panic?
+    #[should_panic]
+    fn test_parse_gpkg_empty() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_path = temp_file.path().to_str().unwrap();
+
+        let metadata = parse_gpkg(temp_file_path);
+
+        assert!(metadata.is_err());
+    }
+    #[test]
+    fn test_parse_gpkg_multiple_entries() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let conn = Connection::open(temp_file.path()).unwrap();
+
+        conn.execute(
+            "CREATE TABLE gpkg_contents (min_x REAL, min_y REAL, max_x REAL, max_y REAL);",
+            [],
+        ).unwrap();
+
+        conn.execute("INSERT INTO gpkg_contents (min_x, min_y, max_x, max_y) VALUES (1.0, 2.0, 3.0, 4.0), (5.0, 6.0, 7.0, 8.0);", []).unwrap();
+
+        let temp_file_path = temp_file.path().to_str().unwrap();
+        let metadata = parse_gpkg(temp_file_path).unwrap();
+
+        assert_eq!(metadata.region.top_left, (5.0,8.0));
+        assert_eq!(metadata.region.bottom_right, (7.0, 6.0));
+    }
+
 }
