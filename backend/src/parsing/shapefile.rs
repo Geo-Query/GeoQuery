@@ -119,3 +119,117 @@ pub fn parse_shapefile(shp_reader: &mut BufReader<File>, prj_reader: Option<&mut
         });
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use std::io;
+    use super::*;
+    use std::io::{Seek, Write};
+    use tempfile::NamedTempFile;
+
+
+    #[test]
+    fn test_from_bytes_f64() {
+        let bytes = 42.42f64.to_le_bytes();
+        let result = f64::from_bytes(&bytes);
+        assert!((result - 42.42).abs() < f64::EPSILON);
+    }
+    #[test]
+    fn test_parse_header_valid() {
+        let mut header_bytes = vec![0; 100];
+        header_bytes[0] = 0;
+        header_bytes[1] = 0;
+        header_bytes[2] = 39;
+        header_bytes[3] = 10;
+        // Populate with test coordinate data
+        let x_min_bytes = (-123.456f64).to_le_bytes();
+        header_bytes[36..44].copy_from_slice(&x_min_bytes);
+
+        let header = parse_header(&header_bytes).unwrap();
+        assert_eq!(header.x_min, -123.456);
+    }
+
+    #[test]
+    fn test_parse_header_invalid_magic_number() {
+        let header_bytes = vec![0; 100];
+        assert!(parse_header(&header_bytes).is_err());
+    }
+    fn create_temp_shapefile(header_bytes: &[u8], prj_content: Option<&str>) -> (BufReader<File>, Option<BufReader<File>>) {
+        let mut temp_shp = NamedTempFile::new().unwrap();
+        temp_shp.write_all(header_bytes).unwrap();
+        temp_shp.as_file().sync_all().unwrap();
+        let shp_reader = BufReader::new(temp_shp.reopen().unwrap());
+
+        let prj_reader = if let Some(content) = prj_content {
+            let mut temp_prj = NamedTempFile::new().unwrap();
+            temp_prj.write_all(content.as_bytes()).unwrap();
+            temp_prj.as_file().sync_all().unwrap();
+            Some(BufReader::new(temp_prj.reopen().unwrap()))
+        } else {
+            None
+        };
+
+        (shp_reader, prj_reader)
+    }
+
+    #[test]
+    fn test_reading_shapefile_with_io_error() {
+        let temp_shp = NamedTempFile::new().unwrap();
+        let mut shp_reader = BufReader::new(temp_shp.reopen().unwrap());
+
+        // Write invalid content to trigger an error during the read process
+        let invalid_content = vec![0; 10];
+        shp_reader.get_mut().write_all(&invalid_content).unwrap();
+        shp_reader.get_mut().sync_all().unwrap();
+        shp_reader.get_mut().seek(io::SeekFrom::Start(0)).unwrap();
+
+        let result = parse_shapefile(&mut shp_reader, None);
+        assert!(result.is_err());
+    }
+    #[test]
+    fn test_parse_shapefile_with_invalid_prj_content() {
+        let header_bytes = [0; 100];
+        let prj_content = "INVALID_PROJECTION"; // Invalid PRJ content
+        let (mut shp_reader, mut prj_reader) = create_temp_shapefile(&header_bytes, Some(prj_content));
+
+        let result = parse_shapefile(&mut shp_reader, prj_reader.as_mut());
+        assert!(result.is_err());
+    }
+    #[test]
+    fn test_parse_empty_shapefile() {
+        let header_bytes = []; // Empty header size
+        let (mut shp_reader, mut prj_reader) = create_temp_shapefile(&header_bytes, None);
+
+        let result = parse_shapefile(&mut shp_reader, prj_reader.as_mut());
+        assert!(result.is_err());
+    }
+    #[test]
+    fn test_parse_shapefile_with_large_coordinates() {
+        let mut header_bytes = vec![0; 100];
+        header_bytes[0] = 0;
+        header_bytes[1] = 0;
+        header_bytes[2] = 39;
+        header_bytes[3] = 10;
+        // Set abnormally large coordinate values
+        let large_value = 1e40f64.to_le_bytes();
+        header_bytes[36..44].copy_from_slice(&large_value);
+        header_bytes[52..60].copy_from_slice(&large_value);
+
+        let (mut shp_reader, mut prj_reader) = create_temp_shapefile(&header_bytes, None);
+
+        let result = parse_shapefile(&mut shp_reader, prj_reader.as_mut());
+        assert!(result.is_ok(), "Should handle large coordinates gracefully");
+    }
+
+    #[test]
+    fn test_parse_shapefile_with_incorrect_header_size() {
+        let header_bytes = [0; 90]; // Incorrect header size
+        let (mut shp_reader, mut prj_reader) = create_temp_shapefile(&header_bytes, None);
+
+        let result = parse_shapefile(&mut shp_reader, prj_reader.as_mut());
+        assert!(result.is_err());
+    }
+
+
+}

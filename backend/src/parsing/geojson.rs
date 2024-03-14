@@ -171,6 +171,38 @@ mod tests {
         let mut reader = BufReader::new(temp_file);
         let result = parse_geojson(&mut reader);
         assert!(result.is_ok()); // Assert that parsing was successful
-    } 
+    }
+
+    #[test]
+    fn test_parse_geojson_empty_file() {
+        let empty_data = br#""#;
+        let mut temp_file = tempfile().unwrap();
+        temp_file.write_all(empty_data).unwrap();
+        temp_file.seek(SeekFrom::Start(0)).unwrap();
+
+        let mut reader = BufReader::new(temp_file);
+        let result = parse_geojson(&mut reader);
+        assert!(matches!(result, Err(GeoJSONErrorState::InvalidJSON(_))));
+    }
+
+    #[test]
+    fn test_parse_geojson_missing_coordinates() {
+        let missing_coordinates_geojson_data = br#"{
+        "type": "Feature",
+        "geometry": {
+            "type": "Polygon"
+            // Missing "coordinates" field
+        }
+    }"#;
+        let mut temp_file = tempfile().unwrap();
+        temp_file.write_all(missing_coordinates_geojson_data).unwrap();
+        temp_file.seek(SeekFrom::Start(0)).unwrap();
+
+        let mut reader = BufReader::new(temp_file);
+        let result = parse_geojson(&mut reader);
+        assert!(matches!(result, Err(GeoJSONErrorState::InvalidJSON(_))));
+    }
+
+
 }
 

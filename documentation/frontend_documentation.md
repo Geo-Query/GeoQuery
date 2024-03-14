@@ -38,6 +38,18 @@ This is a TypeScript-based React frontend application that provides a user inter
   - When clicked, it triggers the handleDirectorySelect function.
 
 
+### `DMDM-DD.tsx`
+- **Functions**
+  `dmdmToDecimal`: Converts degrees and minutes to decimal degrees based on the given direction.
+- **Return Element**:
+  - `number`: The resulting decimal degree value.
+
+### `DMS-DD.tsx`
+- **Functions**
+  `dmsToDecimal`: Converts degrees, minutes, and seconds to decimal degrees based on the given direction.
+- **Return Element**:
+  - `number`: The resulting decimal degree value.
+
 ### `ExportUserFeedback.tsx`
 - **Note**
   - ***The component is marked as deprecated due to the implementation of IPC. However, it can still be reused as needed!***
@@ -172,14 +184,12 @@ This is a TypeScript-based React frontend application that provides a user inter
 - **Return Element**
   - The return element is a modal dialog containing different content based on the query state. It displays the export wizard title, query progress or results, and buttons for continuing or closing the modal. Additionally, it includes a backdrop element for overlay effects.
 
-### `query_progress.tsx`(unfinished)
+### `query_progress.tsx`
 - **Components**
   - `QueryProgress`:It receives the following props:
     - `queryState`: The current state of the query (e.g., WAITING, PROCESSING, COMPLETE).
-- **Function/Method**
-  - unfinished
 - **Return Element**
-  - unfinished
+  - representing the query progress component.
 
 ### `requestor.tsx`
 - **Components**
@@ -238,6 +248,8 @@ This is a TypeScript-based React frontend application that provides a user inter
   - `saveToStorage()`: Saves the current state of the folder templates to local storage.
 
 ### `query.ts`
+- **Enums**
+  - `QueryState`: Defines various states of a query process, including `BUILDING`, `WAITING`, `PROCESSING`, `COMPLETE`, `EDITOR`, `EXPORTING`, `EXPORTED`, and `FAILED`.
 - **Function/Method**
   - `queryString(state: QueryState)`: string: Converts a QueryState enum value to its corresponding string representation.
   - `queryStateFromString(state: string)`: Converts a string representation of a query state to its corresponding QueryState enum value.
@@ -254,15 +266,16 @@ This is a TypeScript-based React frontend application that provides a user inter
   - `saveToStorage()`: Saves the current query history to the local storage.
   - `add(region: Region)`: Adds a region to the query history.  - **Interfaces**
   - `loadQueryHistory()`: QueryHistory: Loads the query history from local storage and returns a QueryHistory instance. If no history is found, it initializes a new instance with an empty array.
-- **Interfaces**
-  - `Region`: Represents a geographic region.
+
 
 ### `region.ts`
 - **Function/Method**
   - `validateAndConformCoordinate(initial: string)`: number: Validates and converts a string representation of a coordinate to a number.
+  - `checkFormat(initial: string)`: number | undefined: Checks the format of the coordinate string and converts it to decimal degrees if possible. Returns undefined if the format is invalid.
+  - `checkValid(coordType: 'lat' | 'long', initial: number): { isValid: boolean; result?: number; error?: string}`: Checks the validity of latitude or longitude coordinates. Returns an object indicating whether the coordinate is valid, along with any error message if applicable.
 - **Interfaces**
-  - `Coordinate`: Represents geographic coordinates with latitude and longitude.
-  
+  - `Coordinate`: Represents geographic coordinates with `latitude` and `longitude`.
+  - `Region`: Interface representing a geographical region defined by its northwest and southeast coordinates.
 ## Link to other documentation
 - [Link to backtend File](./backend_documentation.md)
 - [Link to web-api File](./web-api_documentation.md)

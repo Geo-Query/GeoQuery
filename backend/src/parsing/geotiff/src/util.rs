@@ -83,5 +83,33 @@ mod tests {
         let result_be = f64::from_bytes(&bytes_be, &ByteOrder::BigEndian);
         assert_eq!(result_be, 3.0);
     }
+
+    #[test]
+    fn test_f64_extreme_values() {
+        // Test maximum positive value
+        let max_positive = f64::MAX.to_le_bytes();
+        let result_max_positive_le = f64::from_bytes(&max_positive, &ByteOrder::LittleEndian);
+        assert_eq!(result_max_positive_le, f64::MAX);
+
+        let max_positive_be = f64::MAX.to_be_bytes();
+        let result_max_positive_be = f64::from_bytes(&max_positive_be, &ByteOrder::BigEndian);
+        assert_eq!(result_max_positive_be, f64::MAX);
+
+        // Test maximum negative value
+        let max_negative = f64::MIN.to_le_bytes();
+        let result_max_negative_le = f64::from_bytes(&max_negative, &ByteOrder::LittleEndian);
+        assert_eq!(result_max_negative_le, f64::MIN);
+
+        let max_negative_be = f64::MIN.to_be_bytes();
+        let result_max_negative_be = f64::from_bytes(&max_negative_be, &ByteOrder::BigEndian);
+        assert_eq!(result_max_negative_be, f64::MIN);
+    }
+    #[test]
+    fn test_byte_order_enum_completeness() {
+        assert_eq!(ByteOrder::LittleEndian, ByteOrder::LittleEndian);
+        assert_eq!(ByteOrder::BigEndian, ByteOrder::BigEndian);
+    }
+
+
 }
 

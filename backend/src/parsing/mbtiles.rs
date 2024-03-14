@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::{BufReader,Read};
+use std::io::{BufReader,Read,BufRead};
 use std::path::PathBuf;
 use crate::spatial::Coordinate;
 use rusqlite::{Connection, Result};
@@ -119,5 +119,27 @@ mod tests {
         assert_eq!(metadata.region.bottom_right, (30.3, 20.2));
         assert!(metadata.tags.iter().any(|(key, value)| key == "Filetype" && value == "MBTILES"));
     }
+
+    #[test]
+    fn test_parse_mbtiles_empty() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_path = temp_file.path().to_str().unwrap();
+
+        let conn = Connection::open(temp_file_path).unwrap();
+        conn.execute("CREATE TABLE metadata (name TEXT, value TEXT);", []).unwrap();
+
+        let result = parse_mbtiles(temp_file_path);
+
+        // If the function is expected to return an Ok response with default or empty data when no bounds are found
+        if let Ok(metadata) = result {
+            assert_eq!(metadata.region.top_left, (0.0, 0.0));
+            assert_eq!(metadata.region.bottom_right, (0.0, 0.0));
+        } else {
+            panic!("Expected Ok response with default or empty data, got Err.");
+        }
+    }
+
+
+
 }
 
