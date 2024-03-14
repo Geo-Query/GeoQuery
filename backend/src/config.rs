@@ -15,5 +15,6 @@ pub fn read_path(configFile: File) -> Result<PathBuf ,Box<dyn Error>> {
             path_str.pop();
         }
     }
+    path_str = path_str.replace("\"", "");
     return Ok(PathBuf::from(path_str));
 }
