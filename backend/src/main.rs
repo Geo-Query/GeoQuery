@@ -19,7 +19,7 @@ use crate::config::read_path;
 use tower_http::cors::{Any, CorsLayer};
 use http::Method;
 use serde::{Deserialize, Serialize};
-use std::io::BufReader;
+use std::io::{BufReader, Read, stdin, stdout, Write};
 use parsing::parse;
 use std::process::Command;
 use geotiff::GeoTiffMap;
@@ -146,6 +146,8 @@ fn traverse(p: PathBuf) -> Result<Vec<MapType>, Box<dyn Error>>{
 
 #[tokio::main]
 async fn main() {
+    let mut stdin = stdin();
+    let mut stdout = stdout();
     tracing_subscriber::fmt::init();
     // Load Config (Expect in WD)
     let directory = match std::env::current_dir() {
@@ -154,16 +156,34 @@ async fn main() {
                 Ok(directory) => directory,
                 Err(e) => {
                     event!(Level::ERROR, "Failed to parse config.txt, reason: {e:?}");
+                    // We want the cursor to stay at the end of the line, so we print without a newline and flush manually.
+                    write!(stdout, "Press any key to continue...").unwrap();
+                    stdout.flush().unwrap();
+
+                    // Read a single byte and discard
+                    let _ = stdin.read(&mut [0u8]).unwrap();
                     panic!();
                 }
             },
             Err(e) => {
                 event!(Level::ERROR, "Failed to open config.txt in current wd, reason: {e:?}");
+                // We want the cursor to stay at the end of the line, so we print without a newline and flush manually.
+                write!(stdout, "Press any key to continue...").unwrap();
+                stdout.flush().unwrap();
+
+                // Read a single byte and discard
+                let _ = stdin.read(&mut [0u8]).unwrap();
                 panic!();
             }
         },
         Err(e) => {
             event!(Level::ERROR, "Failed to read current wd, reason: {e:?}");
+            // We want the cursor to stay at the end of the line, so we print without a newline and flush manually.
+            write!(stdout, "Press any key to continue...").unwrap();
+            stdout.flush().unwrap();
+
+            // Read a single byte and discard
+            let _ = stdin.read(&mut [0u8]).unwrap();
             panic!();
         }
     };
@@ -172,6 +192,12 @@ async fn main() {
     if !directory.exists() {
         event!(Level::ERROR, "Map Directory: {:?}", directory);
         event!(Level::ERROR, "Does not exist! Please edit in config.txt!");
+        // We want the cursor to stay at the end of the line, so we print without a newline and flush manually.
+        write!(stdout, "Press any key to continue...").unwrap();
+        stdout.flush().unwrap();
+
+        // Read a single byte and discard
+        let _ = stdin.read(&mut [0u8]).unwrap();
         panic!();
     }
 
@@ -181,6 +207,12 @@ async fn main() {
         Err(e) => {
             event!(Level::ERROR, "Failed to traverse files to build index.");
             event!(Level::ERROR, "Reason: {e:?}");
+            // We want the cursor to stay at the end of the line, so we print without a newline and flush manually.
+            write!(stdout, "Press any key to continue...").unwrap();
+            stdout.flush().unwrap();
+
+            // Read a single byte and discard
+            let _ = stdin.read(&mut [0u8]).unwrap();
             panic!();
         }
     };
@@ -251,6 +283,12 @@ async fn main() {
         Ok(t) => t,
         Err(e) => {
             event!(Level::ERROR, "Failed to open TCP Listener, reasion: {e:?}");
+            // We want the cursor to stay at the end of the line, so we print without a newline and flush manually.
+            write!(stdout, "Press any key to continue...").unwrap();
+            stdout.flush().unwrap();
+
+            // Read a single byte and discard
+            let _ = stdin.read(&mut [0u8]).unwrap();
             panic!();
         }
     };
