@@ -67,8 +67,7 @@ jobs:
           mkdir build
           move frontend_extract build/frontend
           move backend/sh35-backend.exe "build/Start Geoquery.exe"
-          move repo/backend/config.txt.example build/example_config.txt
-          copy build/example_config.txt build/config.txt
+          move repo/backend/config.txt.example build/config.txt
           7z a GeoQuery.zip ./build/*
       - uses: xresloader/upload-to-github-release@v1
         env:
