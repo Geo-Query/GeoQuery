@@ -4,6 +4,9 @@
 Contains two subprojects...
 frontend & backend.
 
+# Installation & Usage
+Please consult the [User Manual](manual.pdf)
+
 Team Members:
 ------------------
 Ruari O'Hara, 2666047o@student.gla.ac.uk, 07939544510
