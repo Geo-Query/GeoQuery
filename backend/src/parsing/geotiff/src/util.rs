@@ -2,7 +2,7 @@
 #[derive(Debug, Clone, PartialEq)]
 pub enum ByteOrder {
     LittleEndian,
-    BigEndian
+    BigEndian,
 }
 
 // Integer parsing impls.
@@ -16,8 +16,8 @@ impl FromBytes for u16 {
         let bytes: [u8; 2] = bytes.try_into().unwrap();
         return match byte_order {
             ByteOrder::LittleEndian => u16::from_le_bytes(bytes),
-            ByteOrder::BigEndian => u16::from_be_bytes(bytes)
-        }
+            ByteOrder::BigEndian => u16::from_be_bytes(bytes),
+        };
     }
 }
 
@@ -26,8 +26,8 @@ impl FromBytes for u32 {
         let bytes: [u8; 4] = bytes.try_into().unwrap();
         return match byte_order {
             ByteOrder::LittleEndian => u32::from_le_bytes(bytes),
-            ByteOrder::BigEndian => u32::from_be_bytes(bytes)
-        }
+            ByteOrder::BigEndian => u32::from_be_bytes(bytes),
+        };
     }
 }
 impl FromBytes for f64 {
@@ -35,11 +35,10 @@ impl FromBytes for f64 {
         let bytes: [u8; 8] = bytes.try_into().unwrap();
         return match byte_order {
             ByteOrder::LittleEndian => f64::from_le_bytes(bytes),
-            ByteOrder::BigEndian => f64::from_be_bytes(bytes)
-        }
+            ByteOrder::BigEndian => f64::from_be_bytes(bytes),
+        };
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -109,7 +108,4 @@ mod tests {
         assert_eq!(ByteOrder::LittleEndian, ByteOrder::LittleEndian);
         assert_eq!(ByteOrder::BigEndian, ByteOrder::BigEndian);
     }
-
-
 }
-

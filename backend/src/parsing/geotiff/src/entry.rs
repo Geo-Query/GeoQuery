@@ -1,10 +1,9 @@
+use crate::error::{IFDEntryErrorState, TIFFErrorState};
+use crate::util;
+use crate::util::FromBytes;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use util::ByteOrder;
-use crate::util;
-use crate::error::{IFDEntryErrorState, TIFFErrorState};
-use crate::util::FromBytes;
-
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum EntryType {
@@ -14,7 +13,7 @@ pub enum EntryType {
     LONG,
     RATIONAL,
     UNDEFINED,
-    DOUBLE
+    DOUBLE,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -25,7 +24,7 @@ pub enum EntryValue {
     LONG(Vec<u32>),
     RATIONAL(Vec<(u32, u32)>),
     UNDEFINED(Vec<u8>),
-    DOUBLE(Vec<f64>)
+    DOUBLE(Vec<f64>),
 }
 
 #[derive(Debug, Clone)]
@@ -34,14 +33,16 @@ pub struct IFDEntry {
     count: u32,
     field_type: EntryType,
     associated_bytes: [u8; 4],
-    value: Option<EntryValue>
+    value: Option<EntryValue>,
 }
-
 
 impl IFDEntry {
     pub fn new(entry_buf: &[u8], byte_order: &ByteOrder) -> Result<IFDEntry, TIFFErrorState> {
-        if entry_buf.len() != 12 { // Ensure expected entry buffer length (Entries are 12 bytes)
-            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::InvalidLength(entry_buf.len())));
+        if entry_buf.len() != 12 {
+            // Ensure expected entry buffer length (Entries are 12 bytes)
+            return Err(TIFFErrorState::IFDEntryError(
+                IFDEntryErrorState::InvalidLength(entry_buf.len()),
+            ));
         }
 
         let tag = u16::from_bytes(&entry_buf[0..2], &byte_order); // Get tag ID
@@ -56,7 +57,11 @@ impl IFDEntry {
             5 => EntryType::RATIONAL,
             7 => EntryType::UNDEFINED,
             12 => EntryType::DOUBLE,
-            _ => return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::UnexpectedEntryType(field_type)))
+            _ => {
+                return Err(TIFFErrorState::IFDEntryError(
+                    IFDEntryErrorState::UnexpectedEntryType(field_type),
+                ))
+            }
         };
 
         // Get count of values
@@ -71,31 +76,44 @@ impl IFDEntry {
         });
     }
 
-
-
-    pub fn resolve(&mut self, byte_order: &ByteOrder, reader: &mut BufReader<File>) -> Result<&EntryValue, TIFFErrorState> {
+    pub fn resolve(
+        &mut self,
+        byte_order: &ByteOrder,
+        reader: &mut BufReader<File>,
+    ) -> Result<&EntryValue, TIFFErrorState> {
         if self.value.is_none() {
             let value: EntryValue = match &self.field_type {
                 EntryType::BYTES => EntryValue::BYTES(if self.count < 5 {
                     Vec::from(self.associated_bytes)
                 } else {
-                    let offset = SeekFrom::Start(u32::from_bytes(&self.associated_bytes, &byte_order) as u64);
+                    let offset = SeekFrom::Start(u32::from_bytes(
+                        &self.associated_bytes,
+                        &byte_order,
+                    ) as u64);
                     match reader.seek(offset) {
                         Ok(_) => {
                             let mut values = vec![0u8; self.count as usize];
                             match reader.read_exact(&mut values) {
-                                Ok(..) => {
-                                    values
-                                },
+                                Ok(..) => values,
                                 Err(e) => {
-                                    eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                    return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
+                                    eprintln!(
+                                        "Failed to read bytes for tag: {}, Error: {:?}",
+                                        self.tag, e
+                                    );
+                                    return Err(TIFFErrorState::IFDEntryError(
+                                        IFDEntryErrorState::MissingAssociatedValue(self.tag),
+                                    ));
                                 }
                             }
-                        },
+                        }
                         Err(e) => {
-                            eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
+                            eprintln!(
+                                "Failed to seek to associated bytes for tag: {}, Error: {:?}",
+                                self.tag, e
+                            );
+                            return Err(TIFFErrorState::IFDEntryError(
+                                IFDEntryErrorState::MissingAssociatedValue(self.tag),
+                            ));
                         }
                     }
                 }),
@@ -103,12 +121,20 @@ impl IFDEntry {
                     match String::from_utf8(self.associated_bytes.to_vec()) {
                         Ok(s) => vec![s.trim_end_matches("\0").to_string()],
                         Err(e) => {
-                            eprintln!("Failed to parse string from bytes for tag: {}, Error: {:?}", self.tag, e);
-                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)));
+                            eprintln!(
+                                "Failed to parse string from bytes for tag: {}, Error: {:?}",
+                                self.tag, e
+                            );
+                            return Err(TIFFErrorState::IFDEntryError(
+                                IFDEntryErrorState::MissingAssociatedValue(self.tag),
+                            ));
                         }
                     }
                 } else {
-                    let offset = SeekFrom::Start(u32::from_bytes(&self.associated_bytes, &byte_order) as u64);
+                    let offset = SeekFrom::Start(u32::from_bytes(
+                        &self.associated_bytes,
+                        &byte_order,
+                    ) as u64);
 
                     match reader.seek(offset) {
                         Ok(_) => {
@@ -119,18 +145,30 @@ impl IFDEntry {
                                     Ok(s) => vec![s.trim_end_matches("\0").to_string()],
                                     Err(e) => {
                                         eprintln!("Failed to parse string from bytes for tag: {}, Error: {:?}", self.tag, e);
-                                        return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)));
+                                        return Err(TIFFErrorState::IFDEntryError(
+                                            IFDEntryErrorState::MissingAssociatedValue(self.tag),
+                                        ));
                                     }
                                 },
                                 Err(e) => {
-                                    eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                    return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
+                                    eprintln!(
+                                        "Failed to read bytes for tag: {}, Error: {:?}",
+                                        self.tag, e
+                                    );
+                                    return Err(TIFFErrorState::IFDEntryError(
+                                        IFDEntryErrorState::MissingAssociatedValue(self.tag),
+                                    ));
                                 }
                             }
-                        },
+                        }
                         Err(e) => {
-                                eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                                return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
+                            eprintln!(
+                                "Failed to seek to associated bytes for tag: {}, Error: {:?}",
+                                self.tag, e
+                            );
+                            return Err(TIFFErrorState::IFDEntryError(
+                                IFDEntryErrorState::MissingAssociatedValue(self.tag),
+                            ));
                         }
                     }
                 }),
@@ -138,12 +176,18 @@ impl IFDEntry {
                     let mut values: Vec<u16> = Vec::with_capacity(self.count as usize);
 
                     if self.count < 3 {
-                        for cursor in (0..self.count*2).step_by(2) {
-                            values.push(u16::from_bytes(&self.associated_bytes[(cursor as usize)..(cursor as usize)+2], &byte_order));
+                        for cursor in (0..self.count * 2).step_by(2) {
+                            values.push(u16::from_bytes(
+                                &self.associated_bytes[(cursor as usize)..(cursor as usize) + 2],
+                                &byte_order,
+                            ));
                         }
                         EntryValue::SHORT(values)
                     } else {
-                        let offset = SeekFrom::Start(u32::from_bytes(&self.associated_bytes, &byte_order) as u64);
+                        let offset = SeekFrom::Start(u32::from_bytes(
+                            &self.associated_bytes,
+                            &byte_order,
+                        ) as u64);
 
                         match reader.seek(offset) {
                             Ok(_) => {
@@ -152,21 +196,34 @@ impl IFDEntry {
                                     match reader.read_exact(&mut value_buf) {
                                         Ok(..) => {
                                             values.push(u16::from_bytes(&value_buf, &byte_order))
-                                        },
+                                        }
                                         Err(e) => {
-                                            eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))                                        }
+                                            eprintln!(
+                                                "Failed to read bytes for tag: {}, Error: {:?}",
+                                                self.tag, e
+                                            );
+                                            return Err(TIFFErrorState::IFDEntryError(
+                                                IFDEntryErrorState::MissingAssociatedValue(
+                                                    self.tag,
+                                                ),
+                                            ));
+                                        }
                                     }
                                 }
                                 EntryValue::SHORT(values)
-                            },
+                            }
                             Err(e) => {
-                                eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                                return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
+                                eprintln!(
+                                    "Failed to seek to associated bytes for tag: {}, Error: {:?}",
+                                    self.tag, e
+                                );
+                                return Err(TIFFErrorState::IFDEntryError(
+                                    IFDEntryErrorState::MissingAssociatedValue(self.tag),
+                                ));
                             }
                         }
                     }
-                },
+                }
                 EntryType::LONG => {
                     let mut values: Vec<u32> = Vec::with_capacity((self.count) as usize);
 
@@ -174,7 +231,10 @@ impl IFDEntry {
                         values.push(u32::from_bytes(&self.associated_bytes, &byte_order));
                         EntryValue::LONG(values)
                     } else {
-                        let offset = SeekFrom::Start(u32::from_bytes(&self.associated_bytes, &byte_order) as u64);
+                        let offset = SeekFrom::Start(u32::from_bytes(
+                            &self.associated_bytes,
+                            &byte_order,
+                        ) as u64);
 
                         match reader.seek(offset) {
                             Ok(_) => {
@@ -183,26 +243,43 @@ impl IFDEntry {
                                     match reader.read_exact(&mut value_buf) {
                                         Ok(..) => {
                                             values.push(u32::from_bytes(&value_buf, byte_order));
-                                        },
+                                        }
                                         Err(e) => {
-                                            eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))                                                    }
+                                            eprintln!(
+                                                "Failed to read bytes for tag: {}, Error: {:?}",
+                                                self.tag, e
+                                            );
+                                            return Err(TIFFErrorState::IFDEntryError(
+                                                IFDEntryErrorState::MissingAssociatedValue(
+                                                    self.tag,
+                                                ),
+                                            ));
+                                        }
                                     }
                                 }
                                 EntryValue::LONG(values)
-                            },
+                            }
                             Err(e) => {
-                                eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                                return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
+                                eprintln!(
+                                    "Failed to seek to associated bytes for tag: {}, Error: {:?}",
+                                    self.tag, e
+                                );
+                                return Err(TIFFErrorState::IFDEntryError(
+                                    IFDEntryErrorState::MissingAssociatedValue(self.tag),
+                                ));
                             }
                         }
                     }
-                },
+                }
                 EntryType::RATIONAL => {
-                    let offset = SeekFrom::Start(u32::from_bytes(&self.associated_bytes, &byte_order) as u64);
+                    let offset = SeekFrom::Start(u32::from_bytes(
+                        &self.associated_bytes,
+                        &byte_order,
+                    ) as u64);
                     match reader.seek(offset) {
                         Ok(_) => {
-                            let mut values: Vec<(u32, u32)> = Vec::with_capacity(self.count as usize);
+                            let mut values: Vec<(u32, u32)> =
+                                Vec::with_capacity(self.count as usize);
                             for _ in 0..self.count {
                                 let mut value_buf = [0u8; 8];
                                 match reader.read_exact(&mut value_buf) {
@@ -211,26 +288,37 @@ impl IFDEntry {
                                             u32::from_bytes(&value_buf[0..4], &byte_order),
                                             u32::from_bytes(&value_buf[4..8], &byte_order),
                                         ));
-                                    },
+                                    }
                                     Err(e) => {
-                                        eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                        return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
+                                        eprintln!(
+                                            "Failed to read bytes for tag: {}, Error: {:?}",
+                                            self.tag, e
+                                        );
+                                        return Err(TIFFErrorState::IFDEntryError(
+                                            IFDEntryErrorState::MissingAssociatedValue(self.tag),
+                                        ));
                                     }
                                 }
-                            };
+                            }
                             EntryValue::RATIONAL(values)
-
-                        },
+                        }
                         Err(e) => {
-                            eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
+                            eprintln!(
+                                "Failed to seek to associated bytes for tag: {}, Error: {:?}",
+                                self.tag, e
+                            );
+                            return Err(TIFFErrorState::IFDEntryError(
+                                IFDEntryErrorState::MissingAssociatedValue(self.tag),
+                            ));
                         }
                     }
                 }
                 EntryType::DOUBLE => {
                     let mut values: Vec<f64> = Vec::with_capacity(self.count as usize);
-                    let offset = SeekFrom::Start(u32::from_bytes(&self.associated_bytes, &byte_order) as u64);
-
+                    let offset = SeekFrom::Start(u32::from_bytes(
+                        &self.associated_bytes,
+                        &byte_order,
+                    ) as u64);
 
                     match reader.seek(offset) {
                         Ok(_) => {
@@ -239,45 +327,65 @@ impl IFDEntry {
                                 match reader.read_exact(&mut value_buf) {
                                     Ok(..) => {
                                         values.push(f64::from_bytes(&value_buf, &byte_order));
-                                    },
+                                    }
                                     Err(e) => {
-                                        eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                        return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
+                                        eprintln!(
+                                            "Failed to read bytes for tag: {}, Error: {:?}",
+                                            self.tag, e
+                                        );
+                                        return Err(TIFFErrorState::IFDEntryError(
+                                            IFDEntryErrorState::MissingAssociatedValue(self.tag),
+                                        ));
                                     }
                                 }
-                            };
+                            }
                             EntryValue::DOUBLE(values)
-
-                        },
+                        }
                         Err(e) => {
-                            eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
+                            eprintln!(
+                                "Failed to seek to associated bytes for tag: {}, Error: {:?}",
+                                self.tag, e
+                            );
+                            return Err(TIFFErrorState::IFDEntryError(
+                                IFDEntryErrorState::MissingAssociatedValue(self.tag),
+                            ));
                         }
                     }
-                },
+                }
                 EntryType::UNDEFINED => EntryValue::UNDEFINED(if self.count < 5 {
                     Vec::from(self.associated_bytes)
                 } else {
-                    let offset = SeekFrom::Start(u32::from_bytes(&self.associated_bytes, &byte_order) as u64);
+                    let offset = SeekFrom::Start(u32::from_bytes(
+                        &self.associated_bytes,
+                        &byte_order,
+                    ) as u64);
                     match reader.seek(offset) {
                         Ok(_) => {
                             let mut bytes = vec![0u8; self.count as usize];
                             match reader.read_exact(&mut bytes) {
-                                Ok(..) => {
-                                    bytes
-                                },
+                                Ok(..) => bytes,
                                 Err(e) => {
-                                    eprintln!("Failed to read bytes for tag: {}, Error: {:?}", self.tag, e);
-                                    return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
+                                    eprintln!(
+                                        "Failed to read bytes for tag: {}, Error: {:?}",
+                                        self.tag, e
+                                    );
+                                    return Err(TIFFErrorState::IFDEntryError(
+                                        IFDEntryErrorState::MissingAssociatedValue(self.tag),
+                                    ));
                                 }
                             }
-                        },
+                        }
                         Err(e) => {
-                            eprintln!("Failed to seek to associated bytes for tag: {}, Error: {:?}", self.tag, e);
-                            return Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::MissingAssociatedValue(self.tag)))
+                            eprintln!(
+                                "Failed to seek to associated bytes for tag: {}, Error: {:?}",
+                                self.tag, e
+                            );
+                            return Err(TIFFErrorState::IFDEntryError(
+                                IFDEntryErrorState::MissingAssociatedValue(self.tag),
+                            ));
                         }
                     }
-                })
+                }),
             };
 
             self.value = Some(value);
@@ -288,14 +396,11 @@ impl IFDEntry {
     }
 }
 
-
-
-
 #[cfg(test)]
 mod tests {
-    use std::io::Write;
     use super::*;
     use crate::util::ByteOrder;
+    use std::io::Write;
     use tempfile::tempfile;
     #[test]
     fn test_ifd_entry_new() {
@@ -353,7 +458,10 @@ mod tests {
 
         let result = entry.resolve(&ByteOrder::LittleEndian, &mut reader);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), &EntryValue::ASCII(vec!["Hello".to_string()]));
+        assert_eq!(
+            result.unwrap(),
+            &EntryValue::ASCII(vec!["Hello".to_string()])
+        );
     }
 
     #[test]
@@ -379,8 +487,10 @@ mod tests {
         let byte_order = ByteOrder::LittleEndian;
         let text = "Hello\0";
         let mut file = tempfile().expect("Failed to create tempfile");
-        file.write_all(text.as_bytes()).expect("Failed to write to tempfile");
-        file.seek(SeekFrom::Start(0)).expect("Failed to seek to start of tempfile");
+        file.write_all(text.as_bytes())
+            .expect("Failed to write to tempfile");
+        file.seek(SeekFrom::Start(0))
+            .expect("Failed to seek to start of tempfile");
         let mut reader = BufReader::new(file);
 
         let mut entry = IFDEntry {
@@ -393,7 +503,10 @@ mod tests {
 
         let result = entry.resolve(&byte_order, &mut reader);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), &EntryValue::ASCII(vec!["Hello".to_string()]));
+        assert_eq!(
+            result.unwrap(),
+            &EntryValue::ASCII(vec!["Hello".to_string()])
+        );
     }
 
     #[test]
@@ -419,7 +532,8 @@ mod tests {
     #[test]
     fn test_resolve_rational() {
         let mut file = tempfile().unwrap();
-        file.write_all(&[1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0]).unwrap(); // Two RATIONAL value：(1, 2), (3, 4)
+        file.write_all(&[1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0])
+            .unwrap(); // Two RATIONAL value：(1, 2), (3, 4)
         file.seek(SeekFrom::Start(0)).unwrap();
         let mut reader = BufReader::new(file);
 
@@ -442,7 +556,12 @@ mod tests {
         let byte_order = ByteOrder::LittleEndian;
 
         let result = IFDEntry::new(&entry_buf, &byte_order);
-        assert!(matches!(result, Err(TIFFErrorState::IFDEntryError(IFDEntryErrorState::InvalidLength(_)))));
+        assert!(matches!(
+            result,
+            Err(TIFFErrorState::IFDEntryError(
+                IFDEntryErrorState::InvalidLength(_)
+            ))
+        ));
     }
 
     #[test]
@@ -462,10 +581,4 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), &EntryValue::ASCII(vec!["".to_string()]));
     }
-
-
-
-
 }
-
-

@@ -1,39 +1,36 @@
+use crate::entry::{EntryValue, IFDEntry};
+use crate::geokeydirectory::GeoKeyDirectory;
+use crate::tfw::parse_tfw;
+use crate::util::FromBytes;
+pub use error::GeoKeyDirectoryErrorState;
+pub use error::HeaderErrorState;
+pub use error::IFDEntryErrorState;
+use error::TIFFErrorState;
+use error::TIFFErrorState::ProjectionError;
+use proj4rs::proj::ProjType;
+use proj4rs::Proj;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::PathBuf;
-use proj4rs::Proj;
-use proj4rs::proj::ProjType;
-use error::TIFFErrorState;
-use crate::entry::{EntryValue, IFDEntry};
-pub use error::GeoKeyDirectoryErrorState;
-pub use error::HeaderErrorState;
-pub use error::IFDEntryErrorState;
-use crate::geokeydirectory::GeoKeyDirectory;
-use error::TIFFErrorState::ProjectionError;
-use serde::{Deserialize, Serialize};
-use crate::tfw::parse_tfw;
-use crate::util::FromBytes;
 
-
-mod util;
 mod entry;
-mod header;
-mod geokeydirectory;
 mod error;
+mod geokeydirectory;
+mod header;
 mod tfw;
+mod util;
 
 pub trait FileDescriptor {
     fn get_path(&self) -> &PathBuf;
 }
 
-
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GeoTiffMap {
     pub tiff: PathBuf,
     pub tfw: Option<PathBuf>,
-    pub prj: Option<PathBuf>
+    pub prj: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone)]
@@ -45,16 +42,16 @@ pub struct GeoTiffRegion {
 #[derive(Debug, Clone)]
 pub struct GeoTiffMetaData {
     pub region: GeoTiffRegion,
-    pub tags: Vec<(String, String)>
+    pub tags: Vec<(String, String)>,
 }
 
-pub fn parse_tiff(reader: &mut BufReader<File>, tfw_reader: Option<&mut BufReader<File>>) -> Result<GeoTiffMetaData, TIFFErrorState> {
+pub fn parse_tiff(
+    reader: &mut BufReader<File>,
+    tfw_reader: Option<&mut BufReader<File>>,
+) -> Result<GeoTiffMetaData, TIFFErrorState> {
     if tfw_reader.is_some() {
         parse_tfw(&mut tfw_reader.unwrap());
     }
-
-
-
 
     let tags = vec![("Filetype".to_string(), "TIFF".to_string())];
     // Parse the file header.
@@ -65,14 +62,21 @@ pub fn parse_tiff(reader: &mut BufReader<File>, tfw_reader: Option<&mut BufReade
         Ok(_) => {
             let mut header_buf = [0u8; 8];
             match reader.read_exact(&mut header_buf) {
-                Ok(_) => {
-                    header::parse_header(&header_buf)?
-                },
-                Err(e) => return Err(TIFFErrorState::UnexpectedFormat(String::from(format!("Read of header failed: {:?}", e))))
+                Ok(_) => header::parse_header(&header_buf)?,
+                Err(e) => {
+                    return Err(TIFFErrorState::UnexpectedFormat(String::from(format!(
+                        "Read of header failed: {:?}",
+                        e
+                    ))))
+                }
             }
-
         }
-        Err(e) => return Err(TIFFErrorState::UnexpectedFormat(String::from(format!("Seek to header failed: {:?}", e))))
+        Err(e) => {
+            return Err(TIFFErrorState::UnexpectedFormat(String::from(format!(
+                "Seek to header failed: {:?}",
+                e
+            ))))
+        }
     };
 
     // Parse the IFD header; (Get entry count)
@@ -83,13 +87,21 @@ pub fn parse_tiff(reader: &mut BufReader<File>, tfw_reader: Option<&mut BufReade
         Ok(_) => {
             let mut entry_count_buf = [0u8; 2];
             match reader.read_exact(&mut entry_count_buf) {
-                Ok(_) => {
-                    u16::from_bytes(&entry_count_buf, &byte_order)
-                },
-                Err(e) => return Err(TIFFErrorState::UnexpectedFormat(String::from(format!("Read of IFD entry count failed: {:?}", e))))
+                Ok(_) => u16::from_bytes(&entry_count_buf, &byte_order),
+                Err(e) => {
+                    return Err(TIFFErrorState::UnexpectedFormat(String::from(format!(
+                        "Read of IFD entry count failed: {:?}",
+                        e
+                    ))))
+                }
             }
-        },
-        Err(e) => return Err(TIFFErrorState::UnexpectedFormat(String::from(format!("Seek to IFD failed: {:?}", e))))
+        }
+        Err(e) => {
+            return Err(TIFFErrorState::UnexpectedFormat(String::from(format!(
+                "Seek to IFD failed: {:?}",
+                e
+            ))))
+        }
     };
 
     // Init hashmap for entries.
@@ -101,22 +113,30 @@ pub fn parse_tiff(reader: &mut BufReader<File>, tfw_reader: Option<&mut BufReade
             Ok(_) => {
                 let entry = IFDEntry::new(&entry_buf, &byte_order)?;
                 entries.insert(entry.tag, entry);
-            },
-            Err(e) => return Err(TIFFErrorState::UnexpectedFormat(String::from(format!("Expected IFD Entry #{}, could not read, due to {:?}", entry_number, e))))
+            }
+            Err(e) => {
+                return Err(TIFFErrorState::UnexpectedFormat(String::from(format!(
+                    "Expected IFD Entry #{}, could not read, due to {:?}",
+                    entry_number, e
+                ))))
+            }
         }
     }
     // Read next 4 bytes for next ifd if you care
     // TODO: Implement support for multiple IFDs.
     // println!("Entries: {:?}", entries);
 
-
     let geo_key_directory = match entries.get_mut(&34735) {
-        Some(v) => if let EntryValue::SHORT(v) = v.resolve(&byte_order, reader)?  {
-            v
-        } else {
-            return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected GeoKeyDirectory to be of type SHORT!")));
-        },
-        None => return Err(TIFFErrorState::NotEnoughGeoData)
+        Some(v) => {
+            if let EntryValue::SHORT(v) = v.resolve(&byte_order, reader)? {
+                v
+            } else {
+                return Err(TIFFErrorState::UnexpectedFormat(String::from(
+                    "Expected GeoKeyDirectory to be of type SHORT!",
+                )));
+            }
+        }
+        None => return Err(TIFFErrorState::NotEnoughGeoData),
     };
 
     let geo_key_directory = GeoKeyDirectory::from_shorts(geo_key_directory)?;
@@ -128,26 +148,34 @@ pub fn parse_tiff(reader: &mut BufReader<File>, tfw_reader: Option<&mut BufReade
 
     let top_left = match entries.get_mut(&33922) {
         None => return Err(TIFFErrorState::NotEnoughGeoData),
-        Some(v) => if let EntryValue::DOUBLE(v) = v.resolve(&byte_order, reader)? {
-            if let (Some(x), Some(y)) = (v.get(3), v.get(4)) {
-                (x.clone(), y.clone())
+        Some(v) => {
+            if let EntryValue::DOUBLE(v) = v.resolve(&byte_order, reader)? {
+                if let (Some(x), Some(y)) = (v.get(3), v.get(4)) {
+                    (x.clone(), y.clone())
+                } else {
+                    return Err(TIFFErrorState::NotEnoughGeoData);
+                }
             } else {
-                return Err(TIFFErrorState::NotEnoughGeoData)
+                return Err(TIFFErrorState::UnexpectedFormat(String::from(
+                    "Expected ModelTiePoint to be of type DOUBLE!",
+                )));
             }
-        } else {
-            return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected ModelTiePoint to be of type DOUBLE!")));
         }
     };
-    let scale =  match entries.get_mut(&33550) {
+    let scale = match entries.get_mut(&33550) {
         None => return Err(TIFFErrorState::NotEnoughGeoData),
-        Some(v) => if let EntryValue::DOUBLE(v) = v.resolve(&byte_order, reader)? {
-            if let (Some(x), Some(y)) = (v.get(0), v.get(1)) {
-                (x.clone(), y.clone())
+        Some(v) => {
+            if let EntryValue::DOUBLE(v) = v.resolve(&byte_order, reader)? {
+                if let (Some(x), Some(y)) = (v.get(0), v.get(1)) {
+                    (x.clone(), y.clone())
+                } else {
+                    return Err(TIFFErrorState::NotEnoughGeoData);
+                }
             } else {
-                return Err(TIFFErrorState::NotEnoughGeoData)
+                return Err(TIFFErrorState::UnexpectedFormat(String::from(
+                    "Expected ModelTiePoint to be of type DOUBLE!",
+                )));
             }
-        } else {
-            return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected ModelTiePoint to be of type DOUBLE!")));
         }
     };
     let x = if let Some(entry) = entries.get_mut(&256) {
@@ -156,15 +184,20 @@ pub fn parse_tiff(reader: &mut BufReader<File>, tfw_reader: Option<&mut BufReade
             if let Some(x) = v.get(0) {
                 x.clone()
             } else {
-                return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected ImageWidth!")));
+                return Err(TIFFErrorState::UnexpectedFormat(String::from(
+                    "Expected ImageWidth!",
+                )));
             }
         } else {
-            return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected ImageWidth to be of type SHORT!")));
-
+            return Err(TIFFErrorState::UnexpectedFormat(String::from(
+                "Expected ImageWidth to be of type SHORT!",
+            )));
         }
     } else {
         // If the entry for ImageWidth does not exist, return an error.
-        return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected ImageWidth!")));
+        return Err(TIFFErrorState::UnexpectedFormat(String::from(
+            "Expected ImageWidth!",
+        )));
     };
 
     let y = if let Some(entry) = entries.get_mut(&257) {
@@ -173,33 +206,36 @@ pub fn parse_tiff(reader: &mut BufReader<File>, tfw_reader: Option<&mut BufReade
             if let Some(y) = v.get(0) {
                 y.clone()
             } else {
-                return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected ImageLength!")));
+                return Err(TIFFErrorState::UnexpectedFormat(String::from(
+                    "Expected ImageLength!",
+                )));
             }
         } else {
-            return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected ImageLength to be of type SHORT!")));
-
+            return Err(TIFFErrorState::UnexpectedFormat(String::from(
+                "Expected ImageLength to be of type SHORT!",
+            )));
         }
     } else {
         // If the entry for ImageWidth does not exist, return an error.
-        return Err(TIFFErrorState::UnexpectedFormat(String::from("Expected ImageLength!")));
+        return Err(TIFFErrorState::UnexpectedFormat(String::from(
+            "Expected ImageLength!",
+        )));
     };
 
-    let region = calculate_extent(top_left, scale, (x,y), projection)?;
+    let region = calculate_extent(top_left, scale, (x, y), projection)?;
 
-    return Ok(GeoTiffMetaData {
-        region,
-        tags
-    });
+    return Ok(GeoTiffMetaData { region, tags });
 }
 
 fn calculate_extent(
     top_left: (f64, f64),
     scale: (f64, f64),
     image_dimensions: (u16, u16),
-    from_proj: Proj
+    from_proj: Proj,
 ) -> Result<GeoTiffRegion, TIFFErrorState> {
     // Initialize the Proj struct with the known CRS (Coordinate Reference System)
-    let to_proj = Proj::from_proj_string(crs_definitions::EPSG_4326.proj4).expect("FAILED TO BUILD DEFAULT PROJ!");
+    let to_proj = Proj::from_proj_string(crs_definitions::EPSG_4326.proj4)
+        .expect("FAILED TO BUILD DEFAULT PROJ!");
 
     let mut top_left = top_left.clone();
 
@@ -210,7 +246,10 @@ fn calculate_extent(
     );
 
     let (mut top_left_r, mut bottom_right_r) = match from_proj.projection_type() {
-        ProjType::Latlong => ((top_left.0.to_radians(), top_left.1.to_radians()), (bottom_right.0.to_radians(), bottom_right.1.to_radians())),
+        ProjType::Latlong => (
+            (top_left.0.to_radians(), top_left.1.to_radians()),
+            (bottom_right.0.to_radians(), bottom_right.1.to_radians()),
+        ),
         ProjType::Other => (top_left, bottom_right),
         ProjType::Geocentric => {
             return Err(ProjectionError(format!("Unsupported projection! From GEOCENTRIC! Please contact developer, and send file content for implementation.")));
@@ -218,37 +257,40 @@ fn calculate_extent(
     };
 
     if let Err(e) = proj4rs::transform::transform(&from_proj, &to_proj, &mut top_left_r) {
-        return Err(ProjectionError(format!("Failed to apply tranformation for {from_proj:?} to {to_proj:?}, for points: {top_left:?}, with reason {e:?}")))
-    } else {};
+        return Err(ProjectionError(format!("Failed to apply tranformation for {from_proj:?} to {to_proj:?}, for points: {top_left:?}, with reason {e:?}")));
+    } else {
+    };
     if let Err(e) = proj4rs::transform::transform(&from_proj, &to_proj, &mut bottom_right_r) {
-        return Err(ProjectionError(format!("Failed to apply tranformation for {from_proj:?} to {to_proj:?}, for points: {bottom_right:?}, with reason {e:?}")))
-    } else {};
-
+        return Err(ProjectionError(format!("Failed to apply tranformation for {from_proj:?} to {to_proj:?}, for points: {bottom_right:?}, with reason {e:?}")));
+    } else {
+    };
 
     return Ok(GeoTiffRegion {
         top_left: (top_left_r.0.to_degrees(), top_left_r.1.to_degrees()),
-        bottom_right: (bottom_right_r.0.to_degrees(), bottom_right_r.1.to_degrees())
+        bottom_right: (bottom_right_r.0.to_degrees(), bottom_right_r.1.to_degrees()),
     });
 }
 
-
- #[cfg(test)]
+#[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::{Write, Seek, SeekFrom};
-    use tempfile::tempfile;
+    use byteorder::{ByteOrder, LittleEndian, WriteBytesExt};
     use std::fs::File;
     use std::io::BufReader;
-    use byteorder::{LittleEndian, WriteBytesExt,ByteOrder};
+    use std::io::{Seek, SeekFrom, Write};
+    use tempfile::tempfile;
     fn mock_geo_tiff_data() -> Vec<u8> {
         let mut data = Vec::new();
         // Mock GeoKeyDirectory header data
         let geo_key_directory_header = vec![1u16, 1, 0, 1]; // Key Directory Version, Key Revision, Minor Revision, Number of Keys
-        // Mock GeoKey: GeographicTypeGeoKey (ID 2048) set to EPSG:4326 (WGS 84)
+                                                            // Mock GeoKey: GeographicTypeGeoKey (ID 2048) set to EPSG:4326 (WGS 84)
         let geographic_type_geo_key = vec![2048u16, 0, 1, 4326]; // ID, Location, Count, Value
 
         // Write the header and key into data
-        for value in geo_key_directory_header.iter().chain(geographic_type_geo_key.iter()) {
+        for value in geo_key_directory_header
+            .iter()
+            .chain(geographic_type_geo_key.iter())
+        {
             data.write_u16::<LittleEndian>(*value).unwrap(); // Note: using unwrap() here; handle errors more gracefully in production code
         }
 
@@ -261,8 +303,10 @@ mod tests {
         let mock_data = mock_geo_tiff_data();
         // Create a temporary file and write mock data into it
         let mut file = tempfile().expect("Failed to create temporary file");
-        file.write_all(&mock_data).expect("Failed to write mock data to temporary file");
-        file.seek(SeekFrom::Start(0)).expect("Failed to rewind temporary file");
+        file.write_all(&mock_data)
+            .expect("Failed to write mock data to temporary file");
+        file.seek(SeekFrom::Start(0))
+            .expect("Failed to rewind temporary file");
 
         // Read the temporary file into a BufReader
         let reader = BufReader::new(file);
@@ -274,15 +318,25 @@ mod tests {
 
         // Attempt to parse the GeoKeyDirectory
         let result = GeoKeyDirectory::from_shorts(&shorts);
-        assert!(result.is_ok(), "Failed to parse GeoKeyDirectory from mock data");
+        assert!(
+            result.is_ok(),
+            "Failed to parse GeoKeyDirectory from mock data"
+        );
 
         // Further validate the GeoKeyDirectory
         let geo_key_directory = result.unwrap();
         assert_eq!(geo_key_directory.header.key_revision, 1);
         assert_eq!(geo_key_directory.header.minor_revision, 0);
         assert_eq!(geo_key_directory.header.count, 1);
-        assert!(geo_key_directory.keys.contains_key(&2048), "GeoKeyDirectory does not contain expected GeoKey");
-        assert_eq!(geo_key_directory.keys.get(&2048).unwrap().value, Some(4326), "GeographicTypeGeoKey does not match expected value");
+        assert!(
+            geo_key_directory.keys.contains_key(&2048),
+            "GeoKeyDirectory does not contain expected GeoKey"
+        );
+        assert_eq!(
+            geo_key_directory.keys.get(&2048).unwrap().value,
+            Some(4326),
+            "GeographicTypeGeoKey does not match expected value"
+        );
     }
 
     #[test]
@@ -290,7 +344,10 @@ mod tests {
         // Create mock data with incorrect header length to simulate an error
         let incorrect_header = vec![1, 1, 0]; // Missing one element
         let result = GeoKeyDirectory::from_shorts(&incorrect_header);
-        assert!(result.is_err(), "Expected an error due to incorrect header length");
+        assert!(
+            result.is_err(),
+            "Expected an error due to incorrect header length"
+        );
     }
 
     #[test]
@@ -298,20 +355,26 @@ mod tests {
         // Create mock data with an unsupported version to simulate an error
         let unsupported_version_header = vec![0, 1, 0, 1]; // Version set to 0
         let result = GeoKeyDirectory::from_shorts(&unsupported_version_header);
-        assert!(result.is_err(), "Expected an error due to unsupported GeoKeyDirectory version");
+        assert!(
+            result.is_err(),
+            "Expected an error due to unsupported GeoKeyDirectory version"
+        );
     }
-     #[test]
-     fn test_parse_tiff_incomplete_header() {
-         let incomplete_header = vec![0u8; 4]; // Incomplete header
-         let mut file = tempfile().expect("Failed to create temporary file");
-         file.write_all(&incomplete_header).expect("Failed to write to temporary file");
-         file.seek(SeekFrom::Start(0)).expect("Failed to seek to start of file");
+    #[test]
+    fn test_parse_tiff_incomplete_header() {
+        let incomplete_header = vec![0u8; 4]; // Incomplete header
+        let mut file = tempfile().expect("Failed to create temporary file");
+        file.write_all(&incomplete_header)
+            .expect("Failed to write to temporary file");
+        file.seek(SeekFrom::Start(0))
+            .expect("Failed to seek to start of file");
 
-         let mut reader = BufReader::new(file);
-         let tfw_reader = None;
-         let result = parse_tiff(&mut reader, tfw_reader);
-         assert!(matches!(result, Err(TIFFErrorState::UnexpectedFormat(_))), "Expected an error due to incomplete header");
-     }
-
-
+        let mut reader = BufReader::new(file);
+        let tfw_reader = None;
+        let result = parse_tiff(&mut reader, tfw_reader);
+        assert!(
+            matches!(result, Err(TIFFErrorState::UnexpectedFormat(_))),
+            "Expected an error due to incomplete header"
+        );
+    }
 }

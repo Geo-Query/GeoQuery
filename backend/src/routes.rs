@@ -1,21 +1,27 @@
-use std::sync::Arc;
-use axum::{Extension, Json};
+use crate::index::Node;
+use crate::io::{
+    Page, PaginatedQueryResponse, Pagination, QueryRegion, ResultQuery, SearchQueryResponse,
+    PER_PAGE,
+};
+use crate::worker::QueryState::Waiting;
+use crate::worker::QueryTask;
+use crate::State;
 use axum::extract::Query;
 use axum::http::StatusCode;
+use axum::{Extension, Json};
+use std::sync::Arc;
 use tokio::sync::RwLock;
+use tracing::{event, span, Level};
 use uuid::Uuid;
-use crate::State;
-use crate::index::Node;
-use crate::io::{PaginatedQueryResponse, Page, Pagination, PER_PAGE, QueryRegion, ResultQuery, SearchQueryResponse};
-use crate::worker::QueryState::Waiting;
-use crate::worker::{QueryTask};
-use tracing::{event, Level, span};
 
 pub async fn index() -> &'static str {
     "INDEX ROOT"
 }
 
-pub async fn search(Extension(state): Extension<Arc<State>>, Query(query): Query<QueryRegion>) -> Result<Json<SearchQueryResponse>, (StatusCode, String)> {
+pub async fn search(
+    Extension(state): Extension<Arc<State>>,
+    Query(query): Query<QueryRegion>,
+) -> Result<Json<SearchQueryResponse>, (StatusCode, String)> {
     let search_span = span!(Level::INFO, "/search handler");
     let _g = search_span.enter();
     event!(Level::INFO, "Received search request!");
@@ -26,45 +32,62 @@ pub async fn search(Extension(state): Extension<Arc<State>>, Query(query): Query
         uuid: _uuid.clone(),
         state: Waiting,
         region: query.into(),
-        results: Vec::new() // TODO: With capacity?
+        results: Vec::new(), // TODO: With capacity?
     }));
     return match state.tx.send(task.clone()) {
         Ok(_) => {
-            event!(Level::DEBUG, "Sent task to worker! Adding to lookup and returning token!");
+            event!(
+                Level::DEBUG,
+                "Sent task to worker! Adding to lookup and returning token!"
+            );
             state.j.write().await.insert(_uuid, task);
-            event!(Level::INFO, "Created and Responded with new Task; uuid: {_uuid:?}");
+            event!(
+                Level::INFO,
+                "Created and Responded with new Task; uuid: {_uuid:?}"
+            );
             Ok(Json(SearchQueryResponse {
-                token: _uuid.clone()
+                token: _uuid.clone(),
             }))
-        }, Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, format!("{:?}", e)))
+        }
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, format!("{:?}", e))),
     };
 }
 
-
-pub async fn results(Extension(state): Extension<Arc<State>>, Query(query): Query<ResultQuery>, Query(pagination): Query<Page>) -> Result<Json<PaginatedQueryResponse>, (StatusCode, String)> {
+pub async fn results(
+    Extension(state): Extension<Arc<State>>,
+    Query(query): Query<ResultQuery>,
+    Query(pagination): Query<Page>,
+) -> Result<Json<PaginatedQueryResponse>, (StatusCode, String)> {
     let results_span = span!(Level::INFO, "/results handler");
     let _g = results_span.enter();
 
-
     // Lock results tabletable
-    event!(Level::INFO, "Got /results request, for task: {:?}", query.uuid);
+    event!(
+        Level::INFO,
+        "Got /results request, for task: {:?}",
+        query.uuid
+    );
     match state.j.read().await.get(&query.uuid) {
         Some(v) => {
             event!(Level::DEBUG, "Awaiting READ lock on lookup table!");
             let v = v.read().await;
 
             let window = if let Some(page) = pagination.page {
-                if (PER_PAGE * (page-1)) > v.results.len() {
+                if (PER_PAGE * (page - 1)) > v.results.len() {
                     println!("{}", v.results.len());
-                    return Err((StatusCode::NOT_FOUND, "Invalid page!".to_string()))
+                    return Err((StatusCode::NOT_FOUND, "Invalid page!".to_string()));
                 } else {
-                    ((PER_PAGE*(page - 1))..(((PER_PAGE*(page))).min(v.results.len())))
+                    ((PER_PAGE * (page - 1))..((PER_PAGE * (page)).min(v.results.len())))
                 }
             } else {
                 (0..(PER_PAGE.min(v.results.len())))
             };
             event!(Level::DEBUG, "Got lock, building & paginating results!");
-            event!(Level::INFO, "Returning current state for task: {:?}", query.uuid);
+            event!(
+                Level::INFO,
+                "Returning current state for task: {:?}",
+                query.uuid
+            );
             // Have results here
             return Ok(Json(PaginatedQueryResponse {
                 status: v.state.clone(),
@@ -73,9 +96,9 @@ pub async fn results(Extension(state): Extension<Arc<State>>, Query(query): Quer
                     current_page: window.len(),
                     per_page: PER_PAGE as usize,
                 },
-                results: v.results[window].to_vec()
+                results: v.results[window].to_vec(),
             }));
-        },
-        None => return Err((StatusCode::NOT_FOUND, "Task not found".to_string()))
+        }
+        None => return Err((StatusCode::NOT_FOUND, "Task not found".to_string())),
     }
 }

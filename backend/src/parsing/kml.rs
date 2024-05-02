@@ -1,14 +1,13 @@
+use crate::parsing::kml::KMLErrorState::{NotEnoughGeoData, UnexpectedFormat};
+use crate::spatial::Coordinate;
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use crate::spatial::Coordinate;
 use std::fs::File;
-use std::io::{BufReader};
+use std::io::BufReader;
 use std::path::PathBuf;
 use std::str::FromStr;
-use serde::{Deserialize, Serialize};
 use xml::reader::{EventReader, XmlEvent};
-use crate::parsing::kml::KMLErrorState::{NotEnoughGeoData, UnexpectedFormat};
-
 
 pub fn get_boundaries(coordinates: Vec<Coordinate>) -> (Coordinate, Coordinate) {
     let mut min_x: f64 = coordinates[0].0;
@@ -32,7 +31,6 @@ pub fn get_boundaries(coordinates: Vec<Coordinate>) -> (Coordinate, Coordinate) 
     return ((min_x, min_y), (max_x, max_y));
 }
 
-
 #[derive(Debug)]
 pub struct KMLRegion {
     pub top_right: Coordinate,
@@ -41,31 +39,35 @@ pub struct KMLRegion {
 #[derive(Debug)]
 pub struct KMLMetadata {
     pub region: KMLRegion,
-    pub tags: Vec<(String, String)>
+    pub tags: Vec<(String, String)>,
 }
 
 #[derive(Debug)]
 pub enum KMLErrorState {
     UnexpectedFormat(String),
-    NotEnoughGeoData
+    NotEnoughGeoData,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KMLMap {
-    pub(crate) path: PathBuf
+    pub(crate) path: PathBuf,
 }
 
 impl Display for KMLErrorState {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            UnexpectedFormat(s) => format!("UnexpectedFormatError: {s}"),
-            NotEnoughGeoData => "Not enough geographic data within the file to establish a boundary!".to_string()
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                UnexpectedFormat(s) => format!("UnexpectedFormatError: {s}"),
+                NotEnoughGeoData =>
+                    "Not enough geographic data within the file to establish a boundary!"
+                        .to_string(),
+            }
+        )
     }
 }
 impl Error for KMLErrorState {}
-
 
 pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLMetadata, KMLErrorState> {
     // Initialise Event iterator, as well as coordinate buffer.
@@ -73,19 +75,27 @@ pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLMetadata, KMLErrorSt
     let tags = vec![("Filetype".to_string(), "KML".to_string())];
     let mut coordinates: Vec<(f64, f64)> = vec![];
 
-    while let Some(Ok(event)) = reader.next() { // Capture events until file over.
+    while let Some(Ok(event)) = reader.next() {
+        // Capture events until file over.
         match event {
-            XmlEvent::StartElement {name, ..} if name.local_name == "coordinates" => { // When Coordinate element starts...
-                while let Some(Ok(event)) = reader.next() { // Start capturing all events until Coordinate element ends.
+            XmlEvent::StartElement { name, .. } if name.local_name == "coordinates" => {
+                // When Coordinate element starts...
+                while let Some(Ok(event)) = reader.next() {
+                    // Start capturing all events until Coordinate element ends.
                     match event {
-                        XmlEvent::Characters(_0) => { // While capturing, get all raw chars.
+                        XmlEvent::Characters(_0) => {
+                            // While capturing, get all raw chars.
                             // Conform data into coordinate pairs...
                             let _0 = _0.replace("\n", "");
                             let coordinate_pairs = _0.split_whitespace(); // Split by whitespace, each coord set is space seperated.
                             for coordinate_pair in coordinate_pairs {
-                                let coordinate_strs: Vec<&str> = coordinate_pair.split(",").collect();
+                                let coordinate_strs: Vec<&str> =
+                                    coordinate_pair.split(",").collect();
                                 if coordinate_strs.len() < 2 {
-                                    return Err(UnexpectedFormat(format!("Expected coordinate pair of len 2, got: {:?}", coordinate_strs)));
+                                    return Err(UnexpectedFormat(format!(
+                                        "Expected coordinate pair of len 2, got: {:?}",
+                                        coordinate_strs
+                                    )));
                                 }
                                 coordinates.push((
                                     match f64::from_str(coordinate_strs[0]) {
@@ -101,8 +111,8 @@ pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLMetadata, KMLErrorSt
                                     }
                                 ));
                             }
-                        },
-                        XmlEvent::EndElement {name} if name.local_name == "coordinates" => break, // Handle end of coordinate element
+                        }
+                        XmlEvent::EndElement { name } if name.local_name == "coordinates" => break, // Handle end of coordinate element
                         _ => {} // Ignore contained elems
                     }
                 }
@@ -119,18 +129,18 @@ pub fn parse_kml(reader: &mut BufReader<File>) -> Result<KMLMetadata, KMLErrorSt
     return Ok(KMLMetadata {
         region: KMLRegion {
             bottom_left,
-            top_right
+            top_right,
         },
-        tags
-        }); // Return region defined by file.
+        tags,
+    }); // Return region defined by file.
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempfile;
-    use std::io::{Seek, Write};
     use std::io::BufReader;
+    use std::io::{Seek, Write};
+    use tempfile::tempfile;
 
     #[test]
     fn test_parse_kml_with_tempfile() {
@@ -167,8 +177,14 @@ mod tests {
 
         // Check if the parsed result matches the expected values
         let kml_meta = result.unwrap();
-        assert_eq!(kml_meta.region.bottom_left, (-123.0822035425683, 37.42228990140251));
-        assert_eq!(kml_meta.region.top_right, (-122.0822035425683, 38.42228990140251));
+        assert_eq!(
+            kml_meta.region.bottom_left,
+            (-123.0822035425683, 37.42228990140251)
+        );
+        assert_eq!(
+            kml_meta.region.top_right,
+            (-122.0822035425683, 38.42228990140251)
+        );
     }
     #[test]
     fn test_empty_kml() {
@@ -285,6 +301,4 @@ mod tests {
 
         assert!(result.is_ok());
     }
-
-
 }

@@ -1,11 +1,11 @@
+use crate::spatial::Coordinate;
+use json_event_parser::{JsonEvent, JsonReader};
+use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fs::File;
-use std::io::{BufReader};
+use std::io::BufReader;
 use std::path::PathBuf;
-use crate::spatial::Coordinate;
-use json_event_parser::{JsonReader, JsonEvent};
-use serde::{Deserialize, Serialize};
 
 pub fn get_boundaries(coordinates: Vec<[f64; 2]>) -> (Coordinate, Coordinate) {
     let mut min_x: f64 = coordinates[0][0];
@@ -32,12 +32,12 @@ pub fn get_boundaries(coordinates: Vec<[f64; 2]>) -> (Coordinate, Coordinate) {
 #[derive(Debug)]
 pub enum GeoJSONErrorState {
     InvalidJSON(Box<dyn Error>),
-    UnparsableCoordinate(String)
+    UnparsableCoordinate(String),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GEOJSONMap {
-    pub(crate) path: PathBuf
+    pub(crate) path: PathBuf,
 }
 
 impl Display for GeoJSONErrorState {
@@ -53,13 +53,13 @@ impl Error for GeoJSONErrorState {
 #[derive(Debug, Clone)]
 pub struct GeoJSONRegion {
     pub top_right: Coordinate,
-    pub bottom_left: Coordinate
+    pub bottom_left: Coordinate,
 }
 
 #[derive(Debug, Clone)]
 pub struct GeoJSONMetaData {
     pub region: GeoJSONRegion,
-    pub tags: Vec<(String, String)>
+    pub tags: Vec<(String, String)>,
 }
 
 pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<GeoJSONMetaData, GeoJSONErrorState> {
@@ -67,7 +67,6 @@ pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<GeoJSONMetaData, Ge
     let mut buffer = Vec::new();
     let mut coordinate_pairs: Vec<[f64; 2]> = Vec::new();
     let tags = vec![("Filetype".to_string(), "GEOJSON".to_string())];
-
 
     while let event = match json_reader.read_event(&mut buffer) {
         Ok(event) => event,
@@ -86,21 +85,25 @@ pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<GeoJSONMetaData, Ge
                     match event {
                         JsonEvent::StartArray => {
                             depth += 1; // Iterate depth.
-                        },
+                        }
                         JsonEvent::EndArray => {
                             depth -= 1; // Decrement
                             if dimensions != 0 {
                                 coordinate_pairs.push(coord_pair_buf.clone());
                             }
                             dimensions = 0;
-                        },
+                        }
                         JsonEvent::Number(num_str) => {
                             if dimensions < 2 {
                                 coord_pair_buf[dimensions] = match num_str.parse::<f64>() {
                                     Ok(v) => v,
                                     Err(e) => {
-                                        eprintln!("Unparsable number string in GEOJSON file! {e:?}");
-                                        return Err(GeoJSONErrorState::UnparsableCoordinate(num_str.to_string()));
+                                        eprintln!(
+                                            "Unparsable number string in GEOJSON file! {e:?}"
+                                        );
+                                        return Err(GeoJSONErrorState::UnparsableCoordinate(
+                                            num_str.to_string(),
+                                        ));
                                     }
                                 }
                             }
@@ -112,13 +115,13 @@ pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<GeoJSONMetaData, Ge
                         break; // Terminate loop.
                     }
                 }
-
-            },
+            }
             JsonEvent::Eof => {
                 break;
             }
             _ => {}
-    }}
+        }
+    }
 
     let boundaries = get_boundaries(coordinate_pairs);
     return Ok(GeoJSONMetaData {
@@ -126,18 +129,18 @@ pub fn parse_geojson(reader: &mut BufReader<File>) -> Result<GeoJSONMetaData, Ge
             top_right: boundaries.1,
             bottom_left: boundaries.0,
         },
-        tags
-    })
+        tags,
+    });
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempfile;
-    use std::io::Write;
-    use std::io::Seek;
     use std::io::BufReader;
+    use std::io::Seek;
     use std::io::SeekFrom;
+    use std::io::Write;
+    use tempfile::tempfile;
 
     #[test]
     fn test_get_boundaries() {
@@ -150,7 +153,7 @@ mod tests {
         ];
         let (bottom_left, top_right) = get_boundaries(coordinates);
         assert_eq!(bottom_left, (0.0, 0.0)); // Assert bottom left corner
-        assert_eq!(top_right, (2.0, 2.0));   // Assert top right corner
+        assert_eq!(top_right, (2.0, 2.0)); // Assert top right corner
     }
 
     #[test]
@@ -195,14 +198,13 @@ mod tests {
         }
     }"#;
         let mut temp_file = tempfile().unwrap();
-        temp_file.write_all(missing_coordinates_geojson_data).unwrap();
+        temp_file
+            .write_all(missing_coordinates_geojson_data)
+            .unwrap();
         temp_file.seek(SeekFrom::Start(0)).unwrap();
 
         let mut reader = BufReader::new(temp_file);
         let result = parse_geojson(&mut reader);
         assert!(matches!(result, Err(GeoJSONErrorState::InvalidJSON(_))));
     }
-
-
 }
-

@@ -1,36 +1,36 @@
-use std::fs::File;
-use std::io::{BufReader,Read};
-use std::path::PathBuf;
+use crate::parsing::mbtiles::{MBTilesMetaData, MBTilesRegion};
 use crate::spatial::Coordinate;
 use rusqlite::{Connection, Result};
 use serde::{Deserialize, Serialize};
-use crate::parsing::mbtiles::{MBTilesMetaData, MBTilesRegion};
+use std::fs::File;
+use std::io::{BufReader, Read};
+use std::path::PathBuf;
 
 pub struct GPKG {
-    min_x:f64,
-    min_y:f64,
-    max_x:f64,
-    max_y:f64,
+    min_x: f64,
+    min_y: f64,
+    max_x: f64,
+    max_y: f64,
 }
 
 #[derive(Debug)]
 pub struct GPKGRegion {
-    pub top_left: (f64,f64),
-    pub bottom_right: (f64,f64),
+    pub top_left: (f64, f64),
+    pub bottom_right: (f64, f64),
 }
 
 #[derive(Debug)]
 pub struct GPKGMetaData {
     pub region: GPKGRegion,
-    pub tags: Vec<(String, String)>
+    pub tags: Vec<(String, String)>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GPKGMap {
-    pub(crate) path: PathBuf
+    pub(crate) path: PathBuf,
 }
 
-pub fn parse_gpkg(filepath: &str) ->Result<GPKGMetaData> {
+pub fn parse_gpkg(filepath: &str) -> Result<GPKGMetaData> {
     //Tags for metadata
     let mut tags = vec![("Filetype".to_string(), "GPKG".to_string())];
 
@@ -39,7 +39,7 @@ pub fn parse_gpkg(filepath: &str) ->Result<GPKGMetaData> {
     //Some error handling
     let conn = match conn_result {
         Ok(conn) => conn,
-        Err(error) => panic!("Problem Occurred when connecting to DB file: {:?}",error),
+        Err(error) => panic!("Problem Occurred when connecting to DB file: {:?}", error),
     };
 
     let mut stmt_result = conn.prepare("SELECT min_x,min_y,max_x,max_y FROM gpkg_contents");
@@ -60,11 +60,14 @@ pub fn parse_gpkg(filepath: &str) ->Result<GPKGMetaData> {
 
     let coords_iter = match coords_iter_result {
         Ok(coords_iter) => coords_iter,
-        Err(error) => panic!("Problem Occurred when iterating through query results: {:?}", error),
+        Err(error) => panic!(
+            "Problem Occurred when iterating through query results: {:?}",
+            error
+        ),
     };
 
-    let mut top_left_result: (f64,f64) = (0.0,0.0);
-    let mut bottom_right_result: (f64,f64) = (0.0,0.0);
+    let mut top_left_result: (f64, f64) = (0.0, 0.0);
+    let mut bottom_right_result: (f64, f64) = (0.0, 0.0);
 
     //Iterate through results, should only be one set of coords
     for coords in coords_iter {
@@ -73,16 +76,16 @@ pub fn parse_gpkg(filepath: &str) ->Result<GPKGMetaData> {
             Err(error) => panic!("Problem Occurred when retrieving coordinates: {:?}", error),
         };
 
-        top_left_result = (temp.min_x,temp.max_y);
-        bottom_right_result = (temp.max_x,temp.min_y);
+        top_left_result = (temp.min_x, temp.max_y);
+        bottom_right_result = (temp.max_x, temp.min_y);
     }
 
     return Ok(GPKGMetaData {
-        region: GPKGRegion{
-            top_left:top_left_result,
-            bottom_right:bottom_right_result ,
+        region: GPKGRegion {
+            top_left: top_left_result,
+            bottom_right: bottom_right_result,
         },
-        tags
+        tags,
     });
 }
 
@@ -101,12 +104,14 @@ mod tests {
         conn.execute(
             "CREATE TABLE gpkg_contents (min_x REAL, min_y REAL, max_x REAL, max_y REAL);",
             [],
-        ).unwrap();
+        )
+        .unwrap();
 
         conn.execute(
             "INSERT INTO gpkg_contents (min_x, min_y, max_x, max_y) VALUES (?1, ?2, ?3, ?4)",
             params![10.1, 20.2, 30.3, 40.4], // Sample bounds
-        ).unwrap();
+        )
+        .unwrap();
 
         temp_file
     }
@@ -123,10 +128,13 @@ mod tests {
         assert_eq!(metadata.region.bottom_right, (30.3, 20.2));
 
         // Checks if the tags contain the "Filetype" => "GPKG" entry
-        assert!(metadata.tags.iter().any(|(key, value)| key == "Filetype" && value == "GPKG"));
+        assert!(metadata
+            .tags
+            .iter()
+            .any(|(key, value)| key == "Filetype" && value == "GPKG"));
     }
 
-    #[test]//Panic?
+    #[test] //Panic?
     #[should_panic]
     fn test_parse_gpkg_empty() {
         let temp_file = NamedTempFile::new().unwrap();
@@ -144,15 +152,15 @@ mod tests {
         conn.execute(
             "CREATE TABLE gpkg_contents (min_x REAL, min_y REAL, max_x REAL, max_y REAL);",
             [],
-        ).unwrap();
+        )
+        .unwrap();
 
         conn.execute("INSERT INTO gpkg_contents (min_x, min_y, max_x, max_y) VALUES (1.0, 2.0, 3.0, 4.0), (5.0, 6.0, 7.0, 8.0);", []).unwrap();
 
         let temp_file_path = temp_file.path().to_str().unwrap();
         let metadata = parse_gpkg(temp_file_path).unwrap();
 
-        assert_eq!(metadata.region.top_left, (5.0,8.0));
+        assert_eq!(metadata.region.top_left, (5.0, 8.0));
         assert_eq!(metadata.region.bottom_right, (7.0, 6.0));
     }
-
 }

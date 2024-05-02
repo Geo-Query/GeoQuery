@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
 pub enum ParseErrorKind {
-    UnparseableExtension
+    UnparseableExtension,
 }
 
 impl Display for ParseErrorKind {

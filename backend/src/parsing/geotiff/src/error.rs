@@ -29,15 +29,20 @@ impl Error for TIFFErrorState {}
 #[derive(Debug)]
 pub enum GeoKeyDirectoryErrorState {
     ProjectionError(String),
-    UnexpectedFormat(String)
+    UnexpectedFormat(String),
 }
 
 impl Display for GeoKeyDirectoryErrorState {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            GeoKeyDirectoryErrorState::ProjectionError(s) => format!("ProjectionError: {s}"),
-            GeoKeyDirectoryErrorState::UnexpectedFormat(s) => format!("UnexpectedFormatError: {s}")
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                GeoKeyDirectoryErrorState::ProjectionError(s) => format!("ProjectionError: {s}"),
+                GeoKeyDirectoryErrorState::UnexpectedFormat(s) =>
+                    format!("UnexpectedFormatError: {s}"),
+            }
+        )
     }
 }
 
@@ -47,16 +52,21 @@ impl Error for GeoKeyDirectoryErrorState {}
 pub enum HeaderErrorState {
     UnexpectedByteOrder([u8; 2]),
     UnexpectedMagicNumber([u8; 2]),
-    InvalidLength(usize)
+    InvalidLength(usize),
 }
 
 impl Display for HeaderErrorState {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            HeaderErrorState::UnexpectedByteOrder(e) => format!("UnexpectedByteOrder: {e:?}"),
-            HeaderErrorState::UnexpectedMagicNumber(e) => format!("UnexpectedMagicNumber: {e:?}"),
-            HeaderErrorState::InvalidLength(e) => format!("Invalid Header Buffer Length: {e}")
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                HeaderErrorState::UnexpectedByteOrder(e) => format!("UnexpectedByteOrder: {e:?}"),
+                HeaderErrorState::UnexpectedMagicNumber(e) =>
+                    format!("UnexpectedMagicNumber: {e:?}"),
+                HeaderErrorState::InvalidLength(e) => format!("Invalid Header Buffer Length: {e}"),
+            }
+        )
     }
 }
 
@@ -66,16 +76,22 @@ impl Error for HeaderErrorState {}
 pub enum IFDEntryErrorState {
     UnexpectedEntryType(u16),
     MissingAssociatedValue(u16),
-    InvalidLength(usize)
+    InvalidLength(usize),
 }
 
 impl Display for IFDEntryErrorState {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            IFDEntryErrorState::UnexpectedEntryType(t) => format!("UnexpectedEntryType, tag_id: {t}"),
-            IFDEntryErrorState::MissingAssociatedValue(t) => format!("MissingAssociatedValue, tag_id: {t}"),
-            IFDEntryErrorState::InvalidLength(l) => format!("Invalid IFD buffer length! {l}")
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                IFDEntryErrorState::UnexpectedEntryType(t) =>
+                    format!("UnexpectedEntryType, tag_id: {t}"),
+                IFDEntryErrorState::MissingAssociatedValue(t) =>
+                    format!("MissingAssociatedValue, tag_id: {t}"),
+                IFDEntryErrorState::InvalidLength(l) => format!("Invalid IFD buffer length! {l}"),
+            }
+        )
     }
 }
 

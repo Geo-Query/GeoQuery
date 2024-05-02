@@ -1,12 +1,11 @@
-use geotiff::GeoTiffMetaData;
 use crate::index::MetaData;
 use crate::parsing::dted::DT2MetaData;
 use crate::parsing::geojson::GeoJSONMetaData;
+use crate::parsing::gpkg::GPKGMetaData;
 use crate::parsing::kml::KMLMetadata;
 use crate::parsing::mbtiles::MBTilesMetaData;
-use crate::parsing::gpkg::GPKGMetaData;
 use crate::parsing::shapefile::ShapeFileMetaData;
-
+use geotiff::GeoTiffMetaData;
 
 impl From<KMLMetadata> for MetaData {
     fn from(value: KMLMetadata) -> Self {
@@ -21,7 +20,7 @@ impl From<GeoTiffMetaData> for MetaData {
     fn from(value: GeoTiffMetaData) -> Self {
         MetaData {
             region: value.region.into(),
-            tags: value.tags
+            tags: value.tags,
         }
     }
 }
@@ -30,7 +29,7 @@ impl From<DT2MetaData> for MetaData {
     fn from(value: DT2MetaData) -> Self {
         MetaData {
             region: value.region.into(),
-            tags: value.tags
+            tags: value.tags,
         }
     }
 }
@@ -39,7 +38,7 @@ impl From<GeoJSONMetaData> for MetaData {
     fn from(value: GeoJSONMetaData) -> Self {
         let x = MetaData {
             region: value.region.into(),
-            tags: value.tags
+            tags: value.tags,
         };
         return x;
     }
@@ -49,7 +48,7 @@ impl From<MBTilesMetaData> for MetaData {
     fn from(value: MBTilesMetaData) -> Self {
         MetaData {
             region: value.region.into(),
-            tags: value.tags
+            tags: value.tags,
         }
     }
 }
@@ -58,7 +57,7 @@ impl From<GPKGMetaData> for MetaData {
     fn from(value: GPKGMetaData) -> Self {
         MetaData {
             region: value.region.into(),
-            tags: value.tags
+            tags: value.tags,
         }
     }
 }
@@ -67,23 +66,23 @@ impl From<ShapeFileMetaData> for MetaData {
     fn from(value: ShapeFileMetaData) -> Self {
         MetaData {
             region: value.region,
-            tags: value.tags
+            tags: value.tags,
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::parsing::gpkg::GPKGRegion;
-    use crate::parsing::mbtiles::MBTilesRegion;
-    use geotiff::GeoTiffRegion;
+    use super::*;
     use crate::parsing::dted::DT2Region;
     use crate::parsing::geojson::GeoJSONRegion;
+    use crate::parsing::gpkg::GPKGRegion;
+    use crate::parsing::kml::KMLRegion;
+    use crate::parsing::mbtiles::MBTilesRegion;
     use crate::spatial::Coordinate;
     use crate::spatial::Region;
-    use crate::parsing::kml::KMLRegion;
+    use geotiff::GeoTiffRegion;
     use std::collections::HashMap;
-    use super::*;
 
     #[test]
     fn test_kml_metadata_conversion() {
@@ -98,7 +97,10 @@ mod tests {
         let meta_data: MetaData = From::from(kml_metadata);
         // Ensure that your assertions are compatible with how you interpret the region for MetaData
         assert_eq!(meta_data.region.top_left, (40.0, -90.0)); // Corrected expected value
-        assert_eq!(meta_data.tags, vec![("creator".to_string(), "test".to_string())]);
+        assert_eq!(
+            meta_data.tags,
+            vec![("creator".to_string(), "test".to_string())]
+        );
     }
 
     #[test]
@@ -128,7 +130,10 @@ mod tests {
         let meta_data: MetaData = geotiff_metadata.into();
         assert_eq!(meta_data.region.top_left, (30.0, -120.0));
         assert_eq!(meta_data.region.bottom_right, (35.0, -115.0));
-        assert_eq!(meta_data.tags, vec![("resolution".to_string(), "high".to_string())]);
+        assert_eq!(
+            meta_data.tags,
+            vec![("resolution".to_string(), "high".to_string())]
+        );
     }
 
     // Test the conversion from DT2MetaData to MetaData
@@ -148,7 +153,10 @@ mod tests {
         // Assuming the conversion uses top_left and bottom_right for the MetaData region
         assert_eq!(meta_data.region.top_left, (50.0, -100.0));
         assert_eq!(meta_data.region.bottom_right, (45.0, -95.0));
-        assert_eq!(meta_data.tags, vec![("source".to_string(), "satellite".to_string())]);
+        assert_eq!(
+            meta_data.tags,
+            vec![("source".to_string(), "satellite".to_string())]
+        );
     }
 
     // Test the conversion from GeoJSONMetaData to MetaData
@@ -166,7 +174,10 @@ mod tests {
 
         assert_eq!(meta_data.region.top_left, (55.0, -80.0));
         assert_eq!(meta_data.region.bottom_right, (60.0, -85.0));
-        assert_eq!(meta_data.tags, vec![("type".to_string(), "feature".to_string())]);
+        assert_eq!(
+            meta_data.tags,
+            vec![("type".to_string(), "feature".to_string())]
+        );
     }
 
     // Test the conversion from MBTilesMetaData to MetaData
@@ -183,7 +194,10 @@ mod tests {
         let meta_data: MetaData = mbtiles_metadata.into();
         assert_eq!(meta_data.region.top_left, (70.0, -60.0));
         assert_eq!(meta_data.region.bottom_right, (65.0, -55.0));
-        assert_eq!(meta_data.tags, vec![("zoom_level".to_string(), "15".to_string())]);
+        assert_eq!(
+            meta_data.tags,
+            vec![("zoom_level".to_string(), "15".to_string())]
+        );
     }
 
     // Test the conversion from GPKGMetaData to MetaData
@@ -200,7 +214,10 @@ mod tests {
         let meta_data: MetaData = gpkg_metadata.into();
         assert_eq!(meta_data.region.top_left, (30.0, -120.0));
         assert_eq!(meta_data.region.bottom_right, (25.0, -115.0));
-        assert_eq!(meta_data.tags, vec![("table_name".to_string(), "geodata".to_string())]);
+        assert_eq!(
+            meta_data.tags,
+            vec![("table_name".to_string(), "geodata".to_string())]
+        );
     }
 
     // Test the conversion from ShapeFileMetaData to MetaData
@@ -217,7 +234,10 @@ mod tests {
         let meta_data: MetaData = shapefile_metadata.into();
         assert_eq!(meta_data.region.top_left, (40.0, -110.0));
         assert_eq!(meta_data.region.bottom_right, (35.0, -105.0));
-        assert_eq!(meta_data.tags, vec![("attribute".to_string(), "value".to_string())]);
+        assert_eq!(
+            meta_data.tags,
+            vec![("attribute".to_string(), "value".to_string())]
+        );
     }
     #[test]
     fn test_metadata_conversion_with_empty_tags() {
@@ -241,7 +261,8 @@ mod tests {
             bottom_right: (65.0, -55.0),
         };
         let mut tags = Vec::new();
-        for i in 0..1000 { // Generate 1000 tags
+        for i in 0..1000 {
+            // Generate 1000 tags
             tags.push((format!("key{}", i), format!("value{}", i)));
         }
         let mbtiles_metadata = MBTilesMetaData {
@@ -283,8 +304,12 @@ mod tests {
         let meta_data: MetaData = From::from(geojson_metadata);
 
         assert_eq!(meta_data.tags.len(), 2);
-        assert!(meta_data.tags.contains(&("type".to_string(), "feature".to_string())));
-        assert!(meta_data.tags.contains(&("source".to_string(), "user".to_string())));
+        assert!(meta_data
+            .tags
+            .contains(&("type".to_string(), "feature".to_string())));
+        assert!(meta_data
+            .tags
+            .contains(&("source".to_string(), "user".to_string())));
     }
 
     // Test conversion with region boundary values
@@ -302,8 +327,9 @@ mod tests {
 
         assert_eq!(meta_data.region.top_left, (90.0, -180.0));
         assert_eq!(meta_data.region.bottom_right, (-90.0, 180.0));
-        assert_eq!(meta_data.tags, vec![("coverage".to_string(), "global".to_string())]);
+        assert_eq!(
+            meta_data.tags,
+            vec![("coverage".to_string(), "global".to_string())]
+        );
     }
-
-
 }

@@ -1,57 +1,54 @@
+use crate::config::read_path;
+use crate::error::RootErrorKind;
+use crate::index::Node;
+use crate::parsing::dted::DTEDMap;
+use crate::parsing::geojson::GEOJSONMap;
+use crate::parsing::gpkg::GPKGMap;
+use crate::parsing::kml::KMLMap;
+use crate::parsing::mbtiles::MBTilesMap;
+use crate::parsing::shapefile::ShapeFileMap;
+use crate::routes::{index, results, search};
+use crate::worker::{worker, QueryTask};
+use axum;
+use geotiff::GeoTiffMap;
+use http::Method;
+use parsing::parse;
+use rstar::RTree;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fs::{DirEntry, File};
 use std::future::IntoFuture;
-use tracing::{event, Level, span};
+use std::io::{stdin, stdout, BufReader, Read, Write};
 use std::path::PathBuf;
+use std::process::Command;
 use std::sync::Arc;
-use axum;
-use tracing_subscriber;
-use rstar::RTree;
 use tokio;
 use tokio::sync::{mpsc, Mutex, RwLock};
-use uuid::Uuid;
-use crate::index::Node;
-use crate::routes::{index, results, search};
-use crate::worker::{QueryTask, worker};
-use crate::config::read_path;
 use tower_http::cors::{Any, CorsLayer};
-use http::Method;
-use serde::{Deserialize, Serialize};
-use std::io::{BufReader, Read, stdin, stdout, Write};
-use parsing::parse;
-use std::process::Command;
-use geotiff::GeoTiffMap;
-use crate::error::RootErrorKind;
-use crate::parsing::dted::DTEDMap;
-use crate::parsing::geojson::GEOJSONMap;
-use crate::parsing::kml::KMLMap;
-use crate::parsing::mbtiles::MBTilesMap;
-use crate::parsing::gpkg::GPKGMap;
-use crate::parsing::shapefile::ShapeFileMap;
+use tracing::{event, span, Level};
+use tracing_subscriber;
+use uuid::Uuid;
 
-mod spatial;
-mod index;
-mod parsing;
-mod routes;
-mod worker;
-mod io;
 mod config;
 mod error;
+mod index;
+mod io;
+mod parsing;
+mod routes;
+mod spatial;
+mod worker;
 
 const INDEX_ADDRESS: &str = "0.0.0.0:42069";
-
-
 
 #[derive(Debug)]
 struct State {
     i: RwLock<RTree<Node>>,
     j: RwLock<HashMap<Uuid, Arc<RwLock<QueryTask>>>>,
     tx: mpsc::UnboundedSender<Arc<RwLock<QueryTask>>>,
-    rx: Mutex<mpsc::UnboundedReceiver<Arc<RwLock<QueryTask>>>>
+    rx: Mutex<mpsc::UnboundedReceiver<Arc<RwLock<QueryTask>>>>,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MapType {
@@ -61,21 +58,22 @@ pub enum MapType {
     GEOJSON(GEOJSONMap),
     MBTILES(MBTilesMap),
     GPKG(GPKGMap),
-    SHAPEFILE(ShapeFileMap)
+    SHAPEFILE(ShapeFileMap),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileMeta {
-    pub path: PathBuf
+    pub path: PathBuf,
 }
 
-
-
 // File traversal logic.
-fn traverse(p: PathBuf) -> Result<Vec<MapType>, Box<dyn Error>>{
+fn traverse(p: PathBuf) -> Result<Vec<MapType>, Box<dyn Error>> {
     let mut build = Vec::new();
     if !p.is_dir() {
-        return Err(RootErrorKind::InvalidMapDirectory("cfg.directory is not a directory!".to_string()).into());
+        return Err(RootErrorKind::InvalidMapDirectory(
+            "cfg.directory is not a directory!".to_string(),
+        )
+        .into());
     }
 
     let files: Vec<DirEntry> = p.read_dir()?.map(|f| f.unwrap()).collect();
@@ -89,60 +87,87 @@ fn traverse(p: PathBuf) -> Result<Vec<MapType>, Box<dyn Error>>{
                     "tif" => {
                         build.push(MapType::GEOTIFF(GeoTiffMap {
                             tiff: path.clone(),
-                            tfw: files.iter().find(|candidate|
-                                candidate.path().extension().and_then(OsStr::to_str).is_some_and(|s| s == "tfw")
-                                && candidate.path().file_stem().is_some_and(|s| s == path.file_stem().unwrap())
-                            ).map(DirEntry::path),
-                            prj: files.iter().find(|candidate|
-                                candidate.path().extension().and_then(OsStr::to_str).is_some_and(|s| s == "prj")
-                                && candidate.path().file_stem().is_some_and(|s| s == path.file_stem().unwrap())
-                            ).map(DirEntry::path),
+                            tfw: files
+                                .iter()
+                                .find(|candidate| {
+                                    candidate
+                                        .path()
+                                        .extension()
+                                        .and_then(OsStr::to_str)
+                                        .is_some_and(|s| s == "tfw")
+                                        && candidate
+                                            .path()
+                                            .file_stem()
+                                            .is_some_and(|s| s == path.file_stem().unwrap())
+                                })
+                                .map(DirEntry::path),
+                            prj: files
+                                .iter()
+                                .find(|candidate| {
+                                    candidate
+                                        .path()
+                                        .extension()
+                                        .and_then(OsStr::to_str)
+                                        .is_some_and(|s| s == "prj")
+                                        && candidate
+                                            .path()
+                                            .file_stem()
+                                            .is_some_and(|s| s == path.file_stem().unwrap())
+                                })
+                                .map(DirEntry::path),
                         }));
-                    },
-                    "kml" => build.push(MapType::KML(KMLMap {
-                        path,
-                    })),
-                    "dt1" | "dt2" => build.push(MapType::DTED(DTEDMap {
-                        path,
-                    })),
-                    "geojson" => build.push(MapType::GEOJSON(GEOJSONMap {
-                        path,
-                    })),
-                    "mbtiles" => build.push(MapType::MBTILES(MBTilesMap {
-                        path,
-                    })),
-                    "gpkg" => build.push(MapType::GPKG(GPKGMap {
-                        path,
-                    })),
+                    }
+                    "kml" => build.push(MapType::KML(KMLMap { path })),
+                    "dt1" | "dt2" => build.push(MapType::DTED(DTEDMap { path })),
+                    "geojson" => build.push(MapType::GEOJSON(GEOJSONMap { path })),
+                    "mbtiles" => build.push(MapType::MBTILES(MBTilesMap { path })),
+                    "gpkg" => build.push(MapType::GPKG(GPKGMap { path })),
                     "shp" => {
-                        build.push(MapType::SHAPEFILE (ShapeFileMap {
+                        build.push(MapType::SHAPEFILE(ShapeFileMap {
                             shp: path.clone(),
-                            tfw: files.iter().find(|candidate|
-                                candidate.path().extension().and_then(OsStr::to_str).is_some_and(|s| s == "tfw")
-                                    && candidate.path().file_stem().is_some_and(|s| s == path.file_stem().unwrap())
-                            ).map(DirEntry::path),
-                            prj: files.iter().find(|candidate|
-                                candidate.path().extension().and_then(OsStr::to_str).is_some_and(|s| s == "prj")
-                                    && candidate.path().file_stem().is_some_and(|s| s == path.file_stem().unwrap())
-                            ).map(DirEntry::path),
+                            tfw: files
+                                .iter()
+                                .find(|candidate| {
+                                    candidate
+                                        .path()
+                                        .extension()
+                                        .and_then(OsStr::to_str)
+                                        .is_some_and(|s| s == "tfw")
+                                        && candidate
+                                            .path()
+                                            .file_stem()
+                                            .is_some_and(|s| s == path.file_stem().unwrap())
+                                })
+                                .map(DirEntry::path),
+                            prj: files
+                                .iter()
+                                .find(|candidate| {
+                                    candidate
+                                        .path()
+                                        .extension()
+                                        .and_then(OsStr::to_str)
+                                        .is_some_and(|s| s == "prj")
+                                        && candidate
+                                            .path()
+                                            .file_stem()
+                                            .is_some_and(|s| s == path.file_stem().unwrap())
+                                })
+                                .map(DirEntry::path),
                         }));
                     }
-                    _ => {
-
-                    }
+                    _ => {}
                 }
             } else {
-                continue
+                continue;
             }
         } else if path.is_dir() {
-          build.append(&mut traverse(path)?)
+            build.append(&mut traverse(path)?)
         } else {
-            return Err(RootErrorKind::UnexpectedPathType.into())
+            return Err(RootErrorKind::UnexpectedPathType.into());
         }
     }
     return Ok(build);
 }
-
 
 #[tokio::main]
 async fn main() {
@@ -166,7 +191,10 @@ async fn main() {
                 }
             },
             Err(e) => {
-                event!(Level::ERROR, "Failed to open config.txt in current wd, reason: {e:?}");
+                event!(
+                    Level::ERROR,
+                    "Failed to open config.txt in current wd, reason: {e:?}"
+                );
                 // We want the cursor to stay at the end of the line, so we print without a newline and flush manually.
                 write!(stdout, "Press any key to continue...").unwrap();
                 stdout.flush().unwrap();
@@ -187,7 +215,10 @@ async fn main() {
             panic!();
         }
     };
-    event!(Level::INFO, "config.txt Loaded from current working directory!");
+    event!(
+        Level::INFO,
+        "config.txt Loaded from current working directory!"
+    );
 
     if !directory.exists() {
         event!(Level::ERROR, "Map Directory: {:?}", directory);
@@ -200,7 +231,6 @@ async fn main() {
         let _ = stdin.read(&mut [0u8]).unwrap();
         panic!();
     }
-
 
     let files: Vec<Arc<MapType>> = match traverse(directory) {
         Ok(files) => files.into_iter().map(Arc::new).collect(),
@@ -233,7 +263,6 @@ async fn main() {
                 Some(node) => {
                     event!(Level::DEBUG, "Found & Inserted: {:?}", node);
                     idx.insert(node);
-
                 }
             },
             Err(e) => {
@@ -268,7 +297,10 @@ async fn main() {
         .allow_origin(Any)
         .allow_headers(Any);
 
-    event!(Level::WARN, "CORS currently set to allow all! Potential vulnerability, please fix!");
+    event!(
+        Level::WARN,
+        "CORS currently set to allow all! Potential vulnerability, please fix!"
+    );
 
     let app = axum::Router::new()
         .route("/", axum::routing::get(index))
@@ -298,7 +330,6 @@ async fn main() {
 
     event!(Level::INFO, "Starting Web Server & Parallel Worker!");
 
-
     if let Ok(_) = Command::new("frontend/electron-refactor").spawn() {
         println!("Launched Frontend!");
     } else {
@@ -306,5 +337,3 @@ async fn main() {
     }
     futures::join!(axum_task.into_future(), worker(shared_state));
 }
-
-
